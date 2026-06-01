@@ -15,7 +15,8 @@ export const appConfig = {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
     apiKey: process.env.CLOUDINARY_API_KEY || '',
     apiSecret: process.env.CLOUDINARY_API_SECRET || ''
-  }
+  },
+  paystackSecretKey: process.env.PAYSTACK_SECRET_KEY || '',
 };
 
 export const isProduction = appConfig.env === 'production';

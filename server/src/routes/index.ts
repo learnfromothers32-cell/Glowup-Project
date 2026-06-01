@@ -5,6 +5,7 @@ import stylistRoutes from './stylist.routes';
 import bookingRoutes from './booking.routes';
 import reviewRoutes from './review.routes';
 import queueRoutes from './queue.routes';
+import paymentRoutes from './payment.routes';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/stylists', stylistRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/queue', queueRoutes);
+router.use('/payments', paymentRoutes);
 
 export default router;
