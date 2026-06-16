@@ -1,115 +1,77 @@
-import { useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  ArrowRight, ArrowLeft, ChevronRight,
-  Clock, BookOpen,
+  ArrowRight,
+  ArrowLeft,
+  ChevronRight,
+  Clock,
+  BookOpen,
+  Bookmark,
+  BookmarkCheck,
+  Sparkles,
+  Flame,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  tips,
+  ALL_CATEGORIES,
+  CATEGORY_COLORS,
+} from "../../../data/beauty-tips";
+import { useAuth } from "../../../context/authUtils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface Tip {
-  id: number;
-  title: string;
-  excerpt: string;
-  image: string;
-  slug: string;
-  category: string;
-  readTime?: string;
+const BOOKMARKS_KEY = "glowup_tip_bookmarks";
+
+function loadBookmarks(): Set<number> {
+  try {
+    const stored = localStorage.getItem(BOOKMARKS_KEY);
+    return stored ? new Set<number>(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-const tips: Tip[] = [
-  {
-    id: 1,
-    title: "10 Braid Styles for the Summer",
-    excerpt: "Protective, stylish, and easy to maintain — discover the hottest braid trends this season.",
-    image: "https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400&q=80",
-    slug: "braid-styles-summer",
-    category: "Hair",
-    readTime: "4 min",
-  },
-  {
-    id: 2,
-    title: "How to Choose the Right Fade for Your Face Shape",
-    excerpt: "A barber's guide to picking the perfect fade that complements your features.",
-    image: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&q=80",
-    slug: "fade-face-shape",
-    category: "Barber",
-    readTime: "3 min",
-  },
-  {
-    id: 3,
-    title: "Skincare Prep Before a Facial",
-    excerpt: "Maximize your glow with these pre-treatment tips from top estheticians.",
-    image: "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=400&q=80",
-    slug: "skincare-prep",
-    category: "Skin",
-    readTime: "5 min",
-  },
-  {
-    id: 4,
-    title: "Nail Art Trends You'll Love in 2025",
-    excerpt: "From minimalist to bold — get inspired for your next manicure appointment.",
-    image: "https://images.unsplash.com/photo-1610991461101-5b6b8a6d4a1f?w=400&q=80",
-    slug: "nail-art-trends",
-    category: "Nails",
-    readTime: "3 min",
-  },
-  {
-    id: 5,
-    title: "The Ultimate Lash Care Guide",
-    excerpt: "Keep your extensions looking fresh with these expert maintenance tips.",
-    image: "https://images.unsplash.com/photo-1583001931096-959e9a1a6223?w=400&q=80",
-    slug: "lash-care-guide",
-    category: "Lashes",
-    readTime: "4 min",
-  },
-];
-
-// ─── Category color map ───────────────────────────────────────────────────────
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  Hair: { bg: "bg-violet-100", text: "text-violet-700" },
-  Barber: { bg: "bg-blue-100", text: "text-blue-700" },
-  Braids: { bg: "bg-purple-100", text: "text-purple-700" },
-  Skin: { bg: "bg-teal-100", text: "text-teal-700" },
-  Nails: { bg: "bg-pink-100", text: "text-pink-700" },
-  Lashes: { bg: "bg-rose-100", text: "text-rose-700" },
-};
-
-// ─── Skeleton Card ────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="shrink-0 w-[260px] rounded-xl border border-gray-100 overflow-hidden bg-white">
-      <div className="h-40 bg-gray-100 animate-pulse" />
-      <div className="p-3.5 space-y-2">
-        <div className="w-24 h-2.5 rounded-full bg-gray-100 animate-pulse" />
-        <div className="w-full h-3.5 rounded-full bg-gray-100 animate-pulse" />
+    <div className="shrink-0 w-[280px] rounded-xl border border-gray-100 overflow-hidden bg-white">
+      <div className="h-44 bg-gray-100 animate-pulse" />
+      <div className="p-4 space-y-3">
+        <div className="flex gap-2">
+          <div className="w-16 h-3 rounded-full bg-gray-100 animate-pulse" />
+          <div className="w-12 h-3 rounded-full bg-gray-100 animate-pulse" />
+        </div>
+        <div className="w-full h-4 rounded-full bg-gray-100 animate-pulse" />
         <div className="w-3/4 h-3 rounded-full bg-gray-50 animate-pulse" />
       </div>
     </div>
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function BeautyTips() {
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [bookmarks, setBookmarks] = useState<Set<number>>(loadBookmarks);
+  const { isAuthenticated } = useAuth();
 
-  // Simulate loading
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 400);
+    const t = setTimeout(() => setLoading(false), 300);
     return () => clearTimeout(t);
   }, []);
 
-  // ── Scroll arrow visibility ──
-  const checkArrows = () => {
+  const filteredTips =
+    activeCategory === "All"
+      ? tips
+      : tips.filter((t) => t.category === activeCategory);
+
+  const checkArrows = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     setShowLeft(el.scrollLeft > 8);
     setShowRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
-  };
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -123,22 +85,38 @@ export default function BeautyTips() {
       el.removeEventListener("scroll", checkArrows);
       window.removeEventListener("resize", checkArrows);
     };
-  }, [loading]);
+  }, [loading, checkArrows, activeCategory]);
 
   const scroll = (dir: "left" | "right") => {
     scrollRef.current?.scrollBy({
-      left: dir === "left" ? -280 : 280,
+      left: dir === "left" ? -300 : 300,
       behavior: "smooth",
     });
   };
 
+  const toggleBookmark = (tipId: number) => {
+    setBookmarks((prev) => {
+      const next = new Set(prev);
+      if (next.has(tipId)) {
+        next.delete(tipId);
+      } else {
+        next.add(tipId);
+      }
+      localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
+
+  const handleCardClick = (slug: string) => {
+    navigate(`/blog/beauty/${slug}`);
+  };
+
   return (
-    <section>
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between mb-4">
+    <section className="space-y-5">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center">
-            <BookOpen size={15} className="text-pink-500" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center">
+            <BookOpen size={15} className="text-pink-600" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-gray-900 tracking-tight">
@@ -151,22 +129,61 @@ export default function BeautyTips() {
         </div>
 
         <Link
-          to="/blog"
-          className="flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors"
+          to="/blog/beauty"
+          className="flex items-center gap-1 text-xs font-medium text-pink-500 hover:text-pink-600 transition-colors"
         >
           View all
           <ChevronRight size={12} />
         </Link>
       </div>
 
-      {/* ── Cards ── */}
+      <div
+        className="flex gap-1.5 overflow-x-auto pb-1"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {ALL_CATEGORIES.map((cat) => {
+          const isActive = activeCategory === cat;
+          const isAll = cat === "All";
+          const icon = isAll ? Sparkles : undefined;
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 ${
+                isActive
+                  ? "bg-gray-900 text-white shadow-sm dark:bg-indigo-500"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+              }`}
+            >
+              {icon && <Sparkles size={12} />}
+              {cat === "All" ? "All Tips" : cat}
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
-        <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-          {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
+        <div
+          className="flex gap-3 overflow-x-auto pb-1"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : filteredTips.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-100">
+          <BookOpen size={32} className="mx-auto text-gray-300 mb-2" />
+          <p className="text-sm text-gray-400">No tips in this category yet.</p>
+          <button
+            onClick={() => setActiveCategory("All")}
+            className="mt-2 text-xs font-medium text-pink-500 hover:text-pink-600"
+          >
+            View all tips
+          </button>
         </div>
       ) : (
         <div className="relative group/scroll">
-          {/* Left fade + arrow */}
           <AnimatePresence>
             {showLeft && (
               <motion.div
@@ -187,7 +204,6 @@ export default function BeautyTips() {
             )}
           </AnimatePresence>
 
-          {/* Right fade + arrow */}
           <AnimatePresence>
             {showRight && (
               <motion.div
@@ -208,31 +224,31 @@ export default function BeautyTips() {
             )}
           </AnimatePresence>
 
-          {/* Scrollable cards */}
           <div
             ref={scrollRef}
             className="flex gap-3 overflow-x-auto pb-1"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {tips.map((tip, i) => {
+            {filteredTips.map((tip, i) => {
               const colors = CATEGORY_COLORS[tip.category] || {
                 bg: "bg-gray-100",
                 text: "text-gray-700",
+                dot: "bg-gray-500",
               };
+              const isBookmarked = bookmarks.has(tip.id);
 
               return (
                 <motion.div
                   key={tip.id}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06, duration: 0.3 }}
+                  transition={{ delay: i * 0.04, duration: 0.3 }}
                 >
-                  <Link
-                    to={`/blog/${tip.slug}`}
-                    className="group block shrink-0 w-[260px] bg-white rounded-xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-lg hover:shadow-gray-100 transition-all duration-200"
-                  >
-                    {/* Image */}
-                    <div className="relative h-40 overflow-hidden bg-gray-100">
+                  <div className="group block shrink-0 w-[280px] bg-white rounded-xl border border-gray-100 overflow-hidden hover:border-gray-200 hover:shadow-lg hover:shadow-gray-100/50 transition-all duration-200 cursor-pointer">
+                    <div
+                      className="relative h-44 overflow-hidden bg-gray-100"
+                      onClick={() => handleCardClick(tip.slug)}
+                    >
                       <img
                         src={tip.image}
                         alt={tip.title}
@@ -240,25 +256,48 @@ export default function BeautyTips() {
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
 
-                      {/* Gradient overlay */}
-                      <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
 
-                      {/* Category badge */}
-                      <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}>
+                      <span
+                        className={`absolute top-2.5 left-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${colors.bg} ${colors.text}`}
+                      >
                         {tip.category}
                       </span>
 
-                      {/* Read time */}
                       {tip.readTime && (
                         <span className="absolute bottom-2.5 right-2.5 flex items-center gap-1 text-[10px] font-medium text-white/90 bg-black/30 backdrop-blur-sm px-2 py-0.5 rounded-full">
                           <Clock size={9} />
                           {tip.readTime}
                         </span>
                       )}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isAuthenticated) {
+                            navigate("/login");
+                            return;
+                          }
+                          toggleBookmark(tip.id);
+                        }}
+                        className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm transition-all ${
+                          isBookmarked
+                            ? "bg-pink-500/90 text-white"
+                            : "bg-black/30 text-white/80 hover:bg-black/50"
+                        }`}
+                      >
+                        {isBookmarked ? (
+                          <BookmarkCheck size={12} />
+                        ) : (
+                          <Bookmark size={12} />
+                        )}
+                      </button>
                     </div>
 
-                    {/* Content */}
-                    <div className="p-3.5">
+                    <div
+                      className="p-4"
+                      onClick={() => handleCardClick(tip.slug)}
+                    >
                       <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug group-hover:text-gray-700 transition-colors mb-1.5">
                         {tip.title}
                       </h3>
@@ -267,17 +306,41 @@ export default function BeautyTips() {
                       </p>
                       <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-gray-500 group-hover:text-gray-900 transition-colors">
                         Read more
-                        <ArrowRight size={11} className="transition-transform group-hover:translate-x-0.5" />
+                        <ArrowRight
+                          size={11}
+                          className="transition-transform group-hover:translate-x-0.5"
+                        />
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </motion.div>
               );
             })}
 
-            {/* End spacer */}
             <div className="w-1 shrink-0" />
           </div>
+        </div>
+      )}
+
+      {bookmarks.size > 0 && (
+        <div className="flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <Flame size={16} className="text-amber-500" />
+            <div>
+              <p className="text-xs font-semibold text-amber-800">
+                {bookmarks.size} tip{bookmarks.size > 1 ? "s" : ""} saved
+              </p>
+              <p className="text-[11px] text-amber-600/70">
+                Tap the bookmark to save or remove
+              </p>
+            </div>
+          </div>
+          <Link
+            to={`/blog/beauty?bookmarked=true`}
+            className="text-xs font-semibold text-amber-700 hover:text-amber-800 transition-colors"
+          >
+            View saved
+          </Link>
         </div>
       )}
     </section>

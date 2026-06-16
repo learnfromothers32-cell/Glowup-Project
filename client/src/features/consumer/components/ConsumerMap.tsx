@@ -25,9 +25,11 @@ import {
   Locate,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom"; // ← moved here (top‑level)
+import { useNavigate } from "react-router-dom";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import { getLocationString } from "@/utils/location";
+import { getAreas } from "@/api/areas";
+import type { Area } from "@/api/areas";
 import "leaflet/dist/leaflet.css";
 
 // ─── Fix Leaflet default marker icons ─────────────────────
@@ -46,22 +48,7 @@ L.Icon.Default.mergeOptions({
 
 // ─── Constants ─────────────────────────────────────────────
 const STORAGE_KEY = "glowup_user_location";
-const ACCRA_CENTER: [number, number] = [5.6037, -0.187];
-
-const areas = [
-  { name: "Airport", lat: 5.6037, lng: -0.187, tag: "Residential" },
-  { name: "Cantonments", lat: 5.5944, lng: -0.178, tag: "Upscale" },
-  { name: "Osu", lat: 5.5589, lng: -0.185, tag: "Vibrant" },
-  { name: "East Legon", lat: 5.6516, lng: -0.1866, tag: "Popular" },
-  { name: "Labone", lat: 5.5612, lng: -0.1798, tag: "Trendy" },
-  { name: "Dzorwulu", lat: 5.6, lng: -0.215, tag: "Central" },
-  { name: "Tema", lat: 5.6699, lng: -0.0164, tag: "Metro" },
-  { name: "Spintex", lat: 5.6099, lng: -0.1293, tag: "Growing" },
-  { name: "Madina", lat: 5.6826, lng: -0.172, tag: "Bustling" },
-  { name: "Adenta", lat: 5.7069, lng: -0.1562, tag: "Suburban" },
-  { name: "Achimota", lat: 5.615, lng: -0.2297, tag: "Green" },
-  { name: "Teshie", lat: 5.5833, lng: -0.1, tag: "Coastal" },
-];
+const DEFAULT_CENTER: [number, number] = [20, 0];
 
 // ─── Custom marker icons (readable HTML templates) ─────────
 const stylistIcon = L.divIcon({
@@ -148,9 +135,15 @@ function MapController({
 function AreaSelector({
   value,
   onChange,
+  areas,
+  loading,
+  onRetry,
 }: {
   value: string;
   onChange: (name: string) => void;
+  areas: Area[];
+  loading: boolean;
+  onRetry: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -208,7 +201,23 @@ function AreaSelector({
             </div>
 
             <div className="max-h-64 overflow-y-auto overscroll-contain py-1">
-              {filtered.length === 0 ? (
+              {loading ? (
+                <div className="px-4 py-6 text-center">
+                  <Loader2 size={20} className="mx-auto mb-2 text-gray-300 animate-spin" />
+                  <p className="text-xs text-gray-400">Loading areas...</p>
+                </div>
+              ) : areas.length === 0 ? (
+                <div className="px-4 py-6 text-center">
+                  <AlertCircle size={20} className="mx-auto mb-2 text-gray-300" />
+                  <p className="text-xs text-gray-400 mb-2">Could not load areas</p>
+                  <button
+                    onClick={onRetry}
+                    className="text-xs text-blue-600 underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="px-4 py-6 text-center">
                   <MapPin size={20} className="mx-auto mb-2 text-gray-300" />
                   <p className="text-xs text-gray-400">No areas found</p>
@@ -380,16 +389,18 @@ function StylistPopup({
 function StatsBar({
   stylistCount,
   userLocation,
+  selectedArea,
 }: {
   stylistCount: number;
   userLocation: [number, number] | null;
+  selectedArea?: string;
 }) {
   return (
     <div className="flex items-center gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
       <span className="flex items-center gap-1.5">
         <Users size={13} className="text-gray-400" />
         <span className="font-semibold text-gray-700">{stylistCount}</span>
-        stylist{stylistCount !== 1 ? "s" : ""} nearby
+        {selectedArea ? `stylist${stylistCount !== 1 ? "s" : ""} in ${selectedArea}` : `stylist${stylistCount !== 1 ? "s" : ""} nearby`}
       </span>
       {userLocation && (
         <span className="flex items-center gap-1.5 text-green-600">
@@ -420,7 +431,25 @@ export default function ConsumerMap({
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [showUserRadius, setShowUserRadius] = useState(true);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [areasLoading, setAreasLoading] = useState(true);
   const mapInstanceRef = useRef<L.Map | null>(null);
+
+  const fetchAreas = useCallback(async () => {
+    setAreasLoading(true);
+    try {
+      const data = await getAreas();
+      setAreas(data);
+    } catch {
+      /* error handled by UI */
+    } finally {
+      setAreasLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAreas();
+  }, [fetchAreas]);
 
   const handleMapReady = useCallback((map: L.Map) => {
     mapInstanceRef.current = map;
@@ -477,15 +506,31 @@ export default function ConsumerMap({
     }
   };
 
+  const handleRetryAreas = useCallback(() => {
+    fetchAreas();
+  }, [fetchAreas]);
+
   const stylistsWithCoords = stylists.filter(
     (s) => s.location?.lat && s.location?.lng,
   );
+
+  const areaFilteredStylists = selectedArea
+    ? stylistsWithCoords.filter((s) =>
+        s.location.area.toLowerCase().includes(selectedArea.toLowerCase()),
+      )
+    : stylistsWithCoords;
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden relative z-0">
       {/* ── Top controls ──────────────────────────────── */}
       <div className="flex items-center gap-2 p-3 border-b border-gray-100">
-        <AreaSelector value={selectedArea} onChange={handleAreaSelect} />
+        <AreaSelector
+          value={selectedArea}
+          onChange={handleAreaSelect}
+          areas={areas}
+          loading={areasLoading}
+          onRetry={handleRetryAreas}
+        />
 
         <button
           onClick={getUserLocation}
@@ -507,7 +552,6 @@ export default function ConsumerMap({
         </button>
 
         <div className="flex-1" />
-
         <button
           onClick={() => setShowUserRadius((v) => !v)}
           className={`p-2 rounded-lg border transition-all ${
@@ -523,8 +567,9 @@ export default function ConsumerMap({
 
       {/* ── Stats bar ─────────────────────────────────── */}
       <StatsBar
-        stylistCount={stylistsWithCoords.length}
+        stylistCount={areaFilteredStylists.length}
         userLocation={userLocation}
+        selectedArea={selectedArea}
       />
 
       {/* ── Error banner ──────────────────────────────── */}
@@ -553,8 +598,8 @@ export default function ConsumerMap({
       {/* ── Map ────────────────────────────────────────── */}
       <div className="relative" style={{ height: "420px" }}>
         <MapContainer
-          center={userLocation || ACCRA_CENTER}
-          zoom={13}
+          center={userLocation || DEFAULT_CENTER}
+          zoom={userLocation ? 13 : 2}
           style={{ height: "100%", width: "100%" }}
           scrollWheelZoom
           zoomControl={false}
@@ -571,9 +616,7 @@ export default function ConsumerMap({
                 <Popup className="custom-popup">
                   <div className="text-center px-1">
                     <p className="text-sm font-semibold text-gray-900">You</p>
-                    <p className="text-[11px] text-gray-500">
-                      Your current location
-                    </p>
+                    <p className="text-[11px] text-gray-400">Current location</p>
                   </div>
                 </Popup>
               </Marker>
@@ -594,7 +637,7 @@ export default function ConsumerMap({
           )}
 
           {/* ── Stylist markers – no eventHandlers, popup decides ── */}
-          {stylistsWithCoords.map((stylist) => (
+          {areaFilteredStylists.map((stylist) => (
             <Marker
               key={stylist.id}
               position={[stylist.location.lat, stylist.location.lng]}
@@ -636,7 +679,7 @@ export default function ConsumerMap({
             title="Center on my location"
           >
             <Locate size={14} />
-          </button>
+          </button> 
         </div>
 
         {/* Legend (lower z-index) */}
@@ -648,7 +691,7 @@ export default function ConsumerMap({
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-900" />
-              Stylists
+              Stylists 
             </span>
             {showUserRadius && userLocation && (
               <span className="flex items-center gap-1.5">

@@ -1,37 +1,32 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { getStylists } from "../../../api/stylists";
-import { Heart, ChevronRight, ChevronLeft, Eye, Flame } from "lucide-react";
+import {
+  getTrendingTransformations,
+  trackTrendingEvent,
+  toggleEngagement,
+  type TrendingTransformation,
+} from "../../../api/trending";
+import { useAuth } from "../../../context/authUtils";
+import { API_SERVER_URL } from "../../../api/axios";
+import {
+  Heart,
+  ChevronRight,
+  ChevronLeft,
+  Eye,
+  Flame,
+  Share2,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
-interface TrendingItem {
-  id: string;
-  stylistId: string;
-  stylistName: string;
-  stylistImage?: string;
-  after: string;
-  likes: number;
-  views: number;
-  serviceName?: string;
+function imgUrl(url: string): string {
+  return url?.startsWith("http") ? url : `${API_SERVER_URL}${url}`;
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
 function formatCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
 }
 
-function deterministicRandom(seed: string, min: number, max: number): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  return (Math.abs(hash) % (max - min + 1)) + min;
-}
-
-// ─── Skeleton Loader ───────────────────────────────────────────────────────────
 function TrendingSkeleton() {
   return (
     <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
@@ -60,22 +55,46 @@ function TrendingSkeleton() {
   );
 }
 
-// ─── Trending Card ─────────────────────────────────────────────────────────────
 function TrendingCard({
   item,
   index,
   onClick,
 }: {
-  item: TrendingItem;
+  item: TrendingTransformation;
   index: number;
   onClick: () => void;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const [liked, setLiked] = useState(() => {
+    const stored = localStorage.getItem("trending_likes");
+    if (stored) {
+      const set = new Set<string>(JSON.parse(stored));
+      return set.has(item.id);
+    }
+    return false;
+  });
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setLiked((prev) => !prev);
+    const nextLiked = !liked;
+    setLiked(nextLiked);
+    const stored = localStorage.getItem("trending_likes");
+    const set = stored ? new Set<string>(JSON.parse(stored)) : new Set<string>();
+    if (nextLiked) {
+      set.add(item.id);
+      Promise.all([
+        trackTrendingEvent(item.id, "like"),
+        isAuthenticated ? toggleEngagement(item.id, "like", true) : Promise.resolve(),
+      ]).catch(() => undefined);
+    } else {
+      set.delete(item.id);
+      Promise.all([
+        trackTrendingEvent(item.id, "unlike"),
+        isAuthenticated ? toggleEngagement(item.id, "like", false) : Promise.resolve(),
+      ]).catch(() => undefined);
+    }
+    localStorage.setItem("trending_likes", JSON.stringify(Array.from(set)));
   };
 
   return (
@@ -86,28 +105,36 @@ function TrendingCard({
       onClick={onClick}
       className="flex-shrink-0 w-[160px] cursor-pointer group"
     >
-      {/* Image container */}
       <div className="relative rounded-xl overflow-hidden aspect-[3/4] bg-gray-100">
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
         )}
 
-        <img
-          src={item.after}
-          alt={`${item.stylistName}'s work`}
-          loading="lazy"
-          onLoad={() => setImageLoaded(true)}
-          className={`
-            w-full h-full object-cover transition-all duration-500
-            ${imageLoaded ? "opacity-100" : "opacity-0"}
-            group-hover:scale-105
-          `}
-        />
+        {item.mediaType === 'video' ? (
+          <video
+            src={imgUrl(item.after)}
+            className="w-full h-full object-cover"
+            controls
+            loop
+            playsInline
+            onCanPlay={() => setImageLoaded(true)}
+          />
+        ) : (
+          <img
+            src={imgUrl(item.after)}
+            alt={`${item.stylistName}'s work`}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            className={`
+              w-full h-full object-cover transition-all duration-500
+              ${imageLoaded ? "opacity-100" : "opacity-0"}
+              group-hover:scale-105
+            `}
+          />
+        )}
 
-        {/* Bottom gradient overlay */}
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-        {/* Rank badge (top-left) */}
         {index < 3 && (
           <div className="absolute top-2.5 left-2.5">
             <div
@@ -123,7 +150,6 @@ function TrendingCard({
           </div>
         )}
 
-        {/* Like button (top-right) */}
         <button
           onClick={handleLike}
           className={`
@@ -145,16 +171,19 @@ function TrendingCard({
           />
         </button>
 
-        {/* Bottom stats overlay */}
         <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 text-[10px] font-medium text-white/90">
               <Heart size={9} fill="currentColor" className="text-red-400" />
-              {formatCount(liked ? item.likes + 1 : item.likes)}
+              {formatCount(item.likes)}
             </span>
             <span className="flex items-center gap-1 text-[10px] text-white/70">
               <Eye size={9} />
               {formatCount(item.views)}
+            </span>
+            <span className="flex items-center gap-1 text-[10px] text-white/70">
+              <Share2 size={9} />
+              {formatCount(item.shares)}
             </span>
           </div>
 
@@ -166,11 +195,10 @@ function TrendingCard({
         </div>
       </div>
 
-      {/* Stylist info */}
       <div className="mt-2.5 flex items-center gap-2">
         {item.stylistImage ? (
           <img
-            src={item.stylistImage}
+            src={imgUrl(item.stylistImage)}
             alt={item.stylistName}
             className="w-6 h-6 rounded-full object-cover ring-1 ring-gray-200"
           />
@@ -196,10 +224,9 @@ function TrendingCard({
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────────
 export default function TrendingPreview() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<TrendingItem[]>([]);
+  const [items, setItems] = useState<TrendingTransformation[]>([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -208,38 +235,17 @@ export default function TrendingPreview() {
   useEffect(() => {
     let cancelled = false;
 
-    getStylists().then((stylists) => {
-      if (cancelled) return;
-
-      const allItems: TrendingItem[] = [];
-      stylists.forEach((stylist) => {
-        if (stylist.beforeAfter && stylist.beforeAfter.length) {
-          stylist.beforeAfter.forEach((ba, idx) => {
-            if (ba.after) {
-              const id = `${stylist.id}_${idx}`;
-              allItems.push({
-                id,
-                stylistId: stylist.id,
-                stylistName: stylist.name,
-                stylistImage: stylist.image,
-                after: ba.after,
-                likes: deterministicRandom(id + "likes", 80, 1200),
-                views: deterministicRandom(id + "views", 200, 5000),
-                serviceName: ba.service,
-              });
-            }
-          });
-        }
+    getTrendingTransformations(10)
+      .then((result) => {
+        if (cancelled) return;
+        setItems(result.items);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
       });
 
-      allItems.sort((a, b) => b.likes - a.likes);
-      setItems(allItems.slice(0, 10));
-      setLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const checkArrows = () => {
@@ -247,9 +253,7 @@ export default function TrendingPreview() {
     if (!el) return;
     const threshold = 8;
     setShowLeftArrow(el.scrollLeft > threshold);
-    setShowRightArrow(
-      el.scrollLeft < el.scrollWidth - el.clientWidth - threshold,
-    );
+    setShowRightArrow(el.scrollLeft < el.scrollWidth - el.clientWidth - threshold);
   };
 
   useEffect(() => {
@@ -273,14 +277,11 @@ export default function TrendingPreview() {
     });
   };
 
-  // ── Click a card → jump to that video ──
-  const handleCardClick = (item: TrendingItem) => {
-    navigate("/app/trending", {
-      state: { highlightId: item.id },
-    });
+  const handleCardClick = (item: TrendingTransformation) => {
+    trackTrendingEvent(item.id, "view").catch(() => undefined);
+    navigate("/app/trending", { state: { highlightId: item.id } });
   };
 
-  // ── See all → feed from the top ──
   const handleSeeAll = () => {
     navigate("/app/trending");
   };

@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Radio,
   Scissors,
-  Clock,
   Users,
   Zap,
   Eye,
@@ -176,10 +175,8 @@ function StatCard({
 
 function ActivityCard({
   activity,
-  index,
 }: {
   activity: Activity;
-  index: number;
 }) {
   const cfg = {
     live: {
@@ -207,8 +204,6 @@ function ActivityCard({
       dotColor: "#1A4E8A",
     },
   }[activity.type];
-  const Icon = cfg.icon;
-
   return (
     <div
       className="relative overflow-hidden rounded-2xl shadow-sm p-3.5 flex items-center gap-3.5"
@@ -340,7 +335,7 @@ function FeedStack({
               "opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease",
           }}
         >
-          <ActivityCard activity={activity} index={idx} />
+          <ActivityCard activity={activity} />
         </div>
       ))}
     </div>
@@ -381,7 +376,7 @@ export default function LiveSection() {
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const advance = useCallback(() => {
     setActiveIndex((prev) => (prev + 1) % ACTIVITIES.length);

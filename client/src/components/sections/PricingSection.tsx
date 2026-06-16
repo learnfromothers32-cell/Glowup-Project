@@ -21,6 +21,7 @@ const PLANS = [
     description: "Get on the platform and start accepting bookings today.",
     cta: "Start for free",
     ctaStyle: "secondary" as const,
+    badge: undefined,
     features: [
       "Standard listing in search",
       "Basic queue management",
@@ -64,6 +65,7 @@ const PLANS = [
     description: "Maximum exposure and zero commission for top performers.",
     cta: "Go Elite",
     ctaStyle: "primary" as const,
+    badge: undefined,
     features: [
       "Everything in Pro",
       "Zero commission up to $500/mo",
@@ -210,52 +212,6 @@ function BillingToggle({
         </span>
       )}
     </div>
-  );
-}
-
-// ─── Feature Check ────────────────────────────────────────────────────────────
-
-function FeatureItem({ text, included }: { text: string; included: boolean }) {
-  return (
-    <li
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-        padding: "3px 0",
-      }}
-    >
-      <div
-        style={{
-          width: 20,
-          height: 20,
-          borderRadius: 6,
-          background: included ? T.greenBg : T.muted,
-          border: `1px solid ${included ? T.greenBorder : T.borderLight}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          marginTop: 1,
-        }}
-      >
-        <Check
-          size={11}
-          color={included ? T.green : T.inkXLight}
-          strokeWidth={2.5}
-        />
-      </div>
-      <span
-        style={{
-          fontSize: 14,
-          fontWeight: 500,
-          color: included ? T.ink : T.inkXLight,
-          lineHeight: 1.5,
-        }}
-      >
-        {text}
-      </span>
-    </li>
   );
 }
 

@@ -1,0 +1,362 @@
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CalendarCheck, CalendarClock, CalendarX, CheckCircle, Search, Calendar, Star, X, RotateCcw, Loader2, Clock } from "lucide-react";
+import { useMyBookings, useCancelBookingMutation, useRescheduleBookingMutation } from "@/domain/booking/booking.hooks";
+import { StatusBadge, fmtDate, fmtTime, fmtISO, initials, todayStr, getLocationString, generateDates, fmtSlot } from "@/domain/booking/components/StatusBadge";
+import { StatCard, EmptyState, FilterPills, Toast } from "@/domain/booking/components/SharedUI";
+import CancelModal from "@/domain/booking/components/CancelModal";
+import BookingDetailModal from "@/domain/booking/components/BookingDetailModal";
+import RescheduleModal from "@/domain/booking/components/RescheduleModal";
+import ReviewModal from "@/domain/booking/components/ReviewModal";
+import { createReview } from "@/api/reviews";
+import { useGamification } from "@/hooks/useGamification";
+import { connectQueue, disconnectQueue, subscribeToQueue, getMyQueueStatus, getQueueSocket, onBookingStatusChanged, offBookingStatusChanged } from "@/services/socket";
+import type { Booking } from "@/domain/booking/booking.types";
+
+type FilterKey = "all" | "today" | "upcoming" | "past" | "cancelled";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "today", label: "Today" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "past", label: "Past" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
+function BookingRow({
+  booking,
+  filterKey,
+  queueData,
+  onCancel,
+  onReschedule,
+  onReview,
+  onView,
+  actionLoading,
+}: {
+  booking: Booking;
+  filterKey: FilterKey;
+  queueData?: { position: number; estimatedServiceMins: number } | null;
+  onCancel: () => void;
+  onReschedule: () => void;
+  onReview: () => void;
+  onView: () => void;
+  actionLoading: string | null;
+}) {
+  const isBusy = actionLoading === booking._id;
+  const isCancelled = booking.status === "cancelled";
+  const dateStr = new Date(booking.startTime).toISOString().split("T")[0];
+  const isPast = filterKey === "past" || (booking.status === "confirmed" && dateStr < todayStr());
+  const showReview = isPast && filterKey !== "cancelled" && booking.status === "completed";
+  const showActions = !isCancelled && !isPast;
+  const stylistName = typeof booking.stylistId === "object" ? (booking.stylistId as any).name || "Stylist" : "Stylist";
+  const stylistImage = typeof booking.stylistId === "object" ? (booking.stylistId as any).image : undefined;
+  const serviceName = typeof booking.serviceId === "object" ? (booking.serviceId as any).name || "Service" : "Service";
+
+  return (
+    <motion.div
+      onClick={onView}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`group bg-white rounded-xl border border-gray-100 overflow-hidden cursor-pointer hover:border-gray-200 hover:shadow-md transition-all duration-200 ${isCancelled ? "opacity-60" : ""}`}
+    >
+      <div className="flex items-center gap-4 p-4">
+        <div className="shrink-0 w-16 text-center">
+          <p className="text-sm font-bold text-gray-900 tabular-nums">{fmtTime(fmtISO(booking.startTime)).split(" ")[0]}</p>
+          <p className="text-[10px] text-gray-400 font-medium">{fmtTime(fmtISO(booking.startTime)).split(" ")[1]}</p>
+        </div>
+
+        <div className={`w-px h-10 shrink-0 ${isCancelled ? "bg-red-200" : fmtDate(new Date(booking.startTime)) === "Today" ? "bg-green-300" : "bg-gray-200"}`} />
+
+        <div className="shrink-0">
+          {stylistImage ? (
+            <img src={stylistImage} alt={stylistName} className={`w-11 h-11 rounded-xl object-cover ring-1 ring-gray-100 ${isCancelled ? "grayscale" : ""}`} />
+          ) : (
+            <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
+              <span className="text-xs font-bold text-gray-400">{initials(stylistName)}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <p className={`text-sm font-semibold truncate ${isCancelled ? "text-gray-400 line-through" : "text-gray-900"}`}>{stylistName}</p>
+            <StatusBadge status={booking.status} date={dateStr} />
+          </div>
+          <p className="text-xs text-gray-500 truncate">{serviceName}</p>
+          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400">
+            <span className="flex items-center gap-1"><Calendar size={10} />{fmtDate(new Date(booking.startTime))}</span>
+          </div>
+        </div>
+
+        <div className="shrink-0 flex flex-col items-end gap-2">
+          {booking.totalPrice > 0 && (
+            <p className={`text-sm font-bold ${isCancelled ? "text-gray-300" : "text-gray-900"}`}>${booking.totalPrice}</p>
+          )}
+
+          {queueData && !isCancelled && (
+            <div className={`flex flex-col items-center px-2 py-1 rounded-lg border ${queueData.position === 1 ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+              <span className={`text-[8px] font-bold uppercase tracking-wider ${queueData.position === 1 ? "text-green-600" : "text-amber-600"}`}>Queue</span>
+              <span className={`text-sm font-black tabular-nums leading-none ${queueData.position === 1 ? "text-green-700" : "text-amber-700"}`}>#{queueData.position}</span>
+            </div>
+          )}
+
+          {showActions && (
+            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={(e) => { e.stopPropagation(); onReschedule(); }} disabled={isBusy}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-[11px] font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-all">
+                <RotateCcw size={10} /> Reschedule
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); onCancel(); }} disabled={isBusy}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 text-[11px] font-semibold text-gray-400 hover:border-red-200 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-all">
+                {isBusy ? <Loader2 size={10} className="animate-spin" /> : <X size={10} />} Cancel
+              </button>
+            </div>
+          )}
+
+          {showReview && (
+            <button onClick={(e) => { e.stopPropagation(); onReview(); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-[11px] font-semibold hover:bg-gray-800 shadow-sm transition-all">
+              <Star size={10} /> Review
+            </button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function MyBookings() {
+  const { data: bookings = [], isLoading, error: queryError, refetch } = useMyBookings();
+  const cancelMutation = useCancelBookingMutation();
+  const rescheduleMutation = useRescheduleBookingMutation();
+  const { addPoints, incrementAction } = useGamification();
+
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [search, setSearch] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Booking | null>(null);
+  const [reschedule, setReschedule] = useState<Booking | null>(null);
+  const [review, setReview] = useState<Booking | null>(null);
+  const [cancel, setCancel] = useState<Booking | null>(null);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [toast, setToast] = useState({ message: "", visible: false });
+  const [queues, setQueues] = useState<Record<string, any>>({});
+
+  const today = todayStr();
+
+  const flash = (msg: string) => {
+    setToast({ message: msg, visible: true });
+    setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+  };
+
+  useEffect(() => {
+    if (bookings.length === 0) return;
+    connectQueue();
+    bookings.forEach((b) => {
+      const sid = typeof b.stylistId === "object" ? (b.stylistId as any)._id : b.stylistId;
+      if (sid) { subscribeToQueue(sid); getMyQueueStatus(sid); }
+    });
+    return () => { disconnectQueue(); };
+  }, [bookings]);
+
+  useEffect(() => {
+    const sock = getQueueSocket();
+    const handleUpdate = (data: any) => setQueues((prev) => ({ ...prev, [data.stylistId]: data }));
+    const handleStatus = (data: { queue: any | null }) => { if (data.queue) setQueues((prev) => ({ ...prev, [data.queue.stylistId]: data.queue })); };
+    const handleBookingStatus = (data: { bookingId: string; status: string; stylistId: string }) => {
+      const statusLabels: Record<string, string> = {
+        "in-progress": "Stylist is now working on your service",
+        completed: "Service completed",
+        confirmed: "Booking confirmed",
+        cancelled: "Booking was cancelled",
+      };
+      const msg = statusLabels[data.status];
+      if (msg) flash(msg);
+      refetch();
+    };
+    sock.on("queue:update", handleUpdate);
+    sock.on("queue:status", handleStatus);
+    onBookingStatusChanged(handleBookingStatus);
+    return () => {
+      sock.off("queue:update", handleUpdate);
+      sock.off("queue:status", handleStatus);
+      offBookingStatusChanged(handleBookingStatus);
+    };
+  }, [refetch]);
+
+  const counts = useMemo(() => ({
+    all: bookings.length,
+    today: bookings.filter((b) => (b.status === "pending" || b.status === "confirmed") && new Date(b.startTime).toISOString().split("T")[0] === today).length,
+    upcoming: bookings.filter((b) => (b.status === "pending" || b.status === "confirmed") && new Date(b.startTime).toISOString().split("T")[0] > today).length,
+    past: bookings.filter((b) => (b.status === "confirmed" || b.status === "completed") && new Date(b.startTime).toISOString().split("T")[0] < today).length,
+    cancelled: bookings.filter((b) => b.status === "cancelled").length,
+  }), [bookings, today]);
+
+  const filtered = useMemo(() => {
+    let list = [...bookings];
+    if (filter === "today") list = list.filter((b) => (b.status === "pending" || b.status === "confirmed") && new Date(b.startTime).toISOString().split("T")[0] === today);
+    else if (filter === "upcoming") list = list.filter((b) => (b.status === "pending" || b.status === "confirmed") && new Date(b.startTime).toISOString().split("T")[0] > today);
+    else if (filter === "past") list = list.filter((b) => (b.status === "confirmed" || b.status === "completed") && new Date(b.startTime).toISOString().split("T")[0] < today);
+    else if (filter === "cancelled") list = list.filter((b) => b.status === "cancelled");
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((b) => {
+        const name = typeof b.stylistId === "object" ? (b.stylistId as any).name || "" : "";
+        const svcName = typeof b.serviceId === "object" ? (b.serviceId as any).name || "" : "";
+        return svcName.toLowerCase().includes(q) || name.toLowerCase().includes(q) || b.startTime?.includes(q);
+      });
+    }
+    list.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    return list;
+  }, [bookings, filter, search, today]);
+
+  const handleCancel = useCallback(async () => {
+    if (!cancel) return;
+    setActionLoading(cancel._id);
+    try {
+      await cancelMutation.mutateAsync(cancel._id);
+      setCancel(null);
+      flash("Booking cancelled");
+    } catch { flash("Failed to cancel"); }
+    finally { setActionLoading(null); }
+  }, [cancel, cancelMutation]);
+
+  const handleReschedule = useCallback(async () => {
+    if (!reschedule || !newDate || !newTime) return;
+    setActionLoading(reschedule._id);
+    try {
+      const startDateTime = new Date(`${newDate}T${newTime}:00`);
+      await rescheduleMutation.mutateAsync({ id: reschedule._id, startTime: startDateTime.toISOString() });
+      setReschedule(null);
+      flash("Booking rescheduled");
+    } catch { flash("Failed to reschedule"); }
+    finally { setActionLoading(null); }
+  }, [reschedule, newDate, newTime, rescheduleMutation]);
+
+  const handleReview = useCallback(async () => {
+    if (!review) return;
+    setActionLoading(review._id);
+    try {
+      await createReview({ bookingId: review._id, rating, comment });
+      addPoints(20);
+      incrementAction("reviews");
+      await refetch();
+      setReview(null);
+      flash("Review submitted · +20 pts");
+    } catch { flash("Failed to submit review"); }
+    finally { setActionLoading(null); }
+  }, [review, rating, comment, addPoints, incrementAction, refetch]);
+
+  const grouped = useMemo(() => {
+    const groups: Record<string, Booking[]> = {};
+    filtered.forEach((b) => {
+      const key = fmtDate(new Date(b.startTime));
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(b);
+    });
+    return Object.entries(groups);
+  }, [filtered]);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-3xl mx-auto px-4 pb-20">
+        <div className="pt-14 pb-6">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-1">My Bookings</h1>
+          <p className="text-sm text-gray-400">Manage your appointments and schedule</p>
+        </div>
+
+        <div className="mb-4">
+          {queryError && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-100 mb-4">
+              <p className="text-sm text-red-700">Failed to load bookings</p>
+              <button onClick={() => refetch()} className="text-xs font-medium text-red-600 hover:text-red-800 underline mt-1">Try again</button>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <StatCard label="Today" value={counts.today} icon={CalendarCheck} color={{ bg: "bg-green-50", text: "text-green-700", icon: "text-green-500" }} />
+          <StatCard label="Upcoming" value={counts.upcoming} icon={CalendarClock} color={{ bg: "bg-blue-50", text: "text-blue-700", icon: "text-blue-500" }} />
+          <StatCard label="Completed" value={counts.past} icon={CheckCircle} color={{ bg: "bg-gray-50", text: "text-gray-700", icon: "text-gray-500" }} />
+          <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-red-50", text: "text-red-600", icon: "text-red-400" }} />
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+          <div className="flex-1 min-w-0">
+            <FilterPills filters={FILTERS} active={filter} onChange={(f) => setFilter(f as FilterKey)} counts={counts} />
+          </div>
+          <div className="relative shrink-0">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…"
+              className="w-full sm:w-48 pl-9 pr-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-gray-900 placeholder:text-gray-400 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all" />
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => <div key={i} className="h-20 rounded-xl bg-white border border-gray-100 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState icon={Calendar} title="No bookings yet" sub="Your appointments will appear here once you book a stylist." />
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div key={`${filter}-${search}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+              {grouped.map(([dateLabel, items]) => (
+                <div key={dateLabel} className="mb-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">{dateLabel}</h3>
+                    <div className="flex-1 h-px bg-gray-100" />
+                    <span className="text-[10px] font-bold text-gray-300">{items.length}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {items.map((b) => {
+                      const sid = typeof b.stylistId === "object" ? (b.stylistId as any)._id : b.stylistId;
+                      const q = queues[sid];
+                      const queueEntry = q?.entries?.find((e: any) => e.userId === (typeof b.clientId === "object" ? (b.clientId as any)?._id : b.clientId));
+                      return (
+                        <BookingRow key={b._id} booking={b} filterKey={filter} queueData={queueEntry || null}
+                          onCancel={() => setCancel(b)} onReschedule={() => { setReschedule(b); setNewDate(new Date(b.startTime).toISOString().split("T")[0]); setNewTime(fmtISO(b.startTime)); }}
+                          onReview={() => { setReview(b); setRating(5); setComment(""); }} onView={() => setDetail(b)} actionLoading={actionLoading} />
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {reschedule && (
+          <RescheduleModal booking={reschedule} stylistName={typeof reschedule.stylistId === "object" ? (reschedule.stylistId as any).name : undefined}
+            newDate={newDate} newTime={newTime} onDateChange={setNewDate} onTimeChange={setNewTime}
+            onConfirm={handleReschedule} onClose={() => setReschedule(null)} loading={actionLoading === reschedule._id} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {review && (
+          <ReviewModal stylistName={typeof review.stylistId === "object" ? (review.stylistId as any).name : undefined}
+            bookingDate={review.startTime} onRatingChange={setRating} onCommentChange={setComment}
+            onSubmit={handleReview} onClose={() => setReview(null)} loading={actionLoading === review._id} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {cancel && (
+          <CancelModal booking={cancel} stylistImage={typeof cancel.stylistId === "object" ? (cancel.stylistId as any).image : undefined}
+            stylistName={typeof cancel.stylistId === "object" ? (cancel.stylistId as any).name : undefined}
+            onConfirm={handleCancel} onClose={() => setCancel(null)} loading={actionLoading === cancel._id} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {detail && <BookingDetailModal booking={detail} stylistImage={typeof detail.stylistId === "object" ? (detail.stylistId as any).image : undefined} onClose={() => setDetail(null)} />}
+      </AnimatePresence>
+
+      <Toast message={toast.message} visible={toast.visible} />
+    </div>
+  );
+}

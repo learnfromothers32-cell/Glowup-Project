@@ -1,28 +1,56 @@
-// src/domain/booking/booking.types.ts
-
 export type BookingStatus =
   | "pending"
   | "confirmed"
-  | "cancelled"
-  | "completed";
+  | "in-progress"
+  | "completed"
+  | "cancelled";
 
-export type Booking = {
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type PaymentMethod = "card" | "mobile-money" | "cash";
+
+export interface BookingStylist {
+  _id: string;
+  name: string;
+  image?: string;
+  category?: string;
+}
+
+export interface BookingService {
+  _id: string;
+  name: string;
+  duration: number;
+  price: number;
+}
+
+export interface BookingClient {
+  _id: string;
+  name: string;
+  email?: string;
+  avatar?: string;
+}
+
+export interface Booking {
+  _id: string;
   id: string;
+  clientId: BookingClient | string;
+  stylistId: BookingStylist | string;
+  serviceId: BookingService | string;
+  startTime: string;
+  endTime: string;
+  status: BookingStatus;
+  totalPrice: number;
+  notes?: string;
+  paymentId?: string;
+  paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod;
+  createdAt: string;
+  updatedAt: string;
+}
 
-  // relationships
-  userId: string;
+export interface CreateBookingData {
   stylistId: string;
   serviceId: string;
-
-  // scheduling
-  scheduledAt: string; // ISO datetime
-
-  // financial snapshot (VERY IMPORTANT)
-  priceAtBooking: number;
-
-  // state
-  status: BookingStatus;
-
-  // metadata
-  createdAt: string;
-};
+  startTime: string;
+  notes?: string;
+  paymentMethod?: PaymentMethod;
+}

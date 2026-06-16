@@ -3,12 +3,13 @@ import React, {
   useReducer,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import type { UserRole, User } from "../types/auth";
 import * as authApi from "../api/auth";
 import { setAccessToken } from "../api/axios";
 import { signInWithPopup, signOut } from "firebase/auth";
-import { auth, googleProvider } from "../config/firebase";
+import { getFirebaseAuth, getGoogleProvider, getGithubProvider } from "../config/firebase";
 
 interface AuthState {
   user: User | null;
@@ -20,7 +21,8 @@ type AuthAction =
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "LOGIN_SUCCESS"; payload: { user: User } }
   | { type: "LOGOUT" }
-  | { type: "RESTORE_SESSION"; payload: { user: User } };
+  | { type: "RESTORE_SESSION"; payload: { user: User } }
+  | { type: "SESSION_VALIDATED"; payload: { user: User } };
 
 export interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<User>;
@@ -60,6 +62,12 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     case "RESTORE_SESSION":
       return {
         user: action.payload.user,
+        isLoading: true,
+        isAuthenticated: true,
+      };
+    case "SESSION_VALIDATED":
+      return {
+        user: action.payload.user,
         isLoading: false,
         isAuthenticated: true,
       };
@@ -77,61 +85,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     isAuthenticated: false,
   });
 
-  const saveUser = useCallback((user: User) => {
-    localStorage.setItem("auth_user", JSON.stringify(user));
-  }, []);
+  // Restore session on mount: validate with server
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const clearStored = useCallback(() => {
-    localStorage.removeItem("auth_user");
-    setAccessToken(null);
-  }, []);
-
-  // Restore session on mount: use cached user instantly, then validate with server
   useEffect(() => {
-    const cached = localStorage.getItem("auth_user");
-    if (cached) {
-      try {
-        const parsed: User = JSON.parse(cached);
-        if (parsed && typeof parsed === "object" && "role" in parsed) {
-          dispatch({
-            type: "RESTORE_SESSION",
-            payload: { user: parsed },
-          });
-        }
-      } catch {
-        // Invalid cache, ignore
-      }
-    }
-
-    // Silently validate the stored session in background.
-    // Never force-logout on failure — let the axios interceptor handle 401s
-    // when actual API calls are made.
-    const validate = async () => {
+    debounceRef.current = setTimeout(async () => {
       try {
         const res = await authApi.getMe();
-        const user = res.data.user;
-        saveUser(user);
-        dispatch({ type: "RESTORE_SESSION", payload: { user } });
+        dispatch({ type: "SESSION_VALIDATED", payload: { user: res.data.user } });
       } catch {
-        try {
-          const res = await authApi.refreshToken();
-          setAccessToken(res.data.accessToken);
-          saveUser(res.data.user);
-          dispatch({
-            type: "RESTORE_SESSION",
-            payload: { user: res.data.user },
-          });
-        } catch {
-          // Tokens invalid — keep the cached session anyway.
-          // The axios interceptor will attempt refresh on the first real 401.
-        }
+        // Don't cascade into refreshToken here — the axios 401 interceptor handles that
+        // on subsequent requests. This keeps the mount-time request count minimal.
+        dispatch({ type: "LOGOUT" });
       }
-      dispatch({ type: "SET_LOADING", payload: false });
-    };
+    }, 100);
 
-    if (cached) validate();
-    else dispatch({ type: "SET_LOADING", payload: false });
-  }, [clearStored, saveUser]);
+    return () => clearTimeout(debounceRef.current);
+  }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     dispatch({ type: "SET_LOADING", payload: true });
@@ -139,14 +109,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const res = await authApi.login(email, password);
       const { accessToken, user } = res.data;
       setAccessToken(accessToken);
-      saveUser(user);
       dispatch({ type: "LOGIN_SUCCESS", payload: { user } });
       return user;
     } catch (err: any) {
       dispatch({ type: "SET_LOADING", payload: false });
       throw new Error(err.response?.data?.message || "Invalid email or password");
     }
-  }, [saveUser]);
+  }, []);
 
   const register = useCallback(
     async (name: string, email: string, password: string, role: UserRole) => {
@@ -155,7 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const res = await authApi.register(name, email, password, role);
         const { accessToken, user } = res.data;
         setAccessToken(accessToken);
-        saveUser(user);
         dispatch({ type: "LOGIN_SUCCESS", payload: { user } });
         return user;
       } catch (err: any) {
@@ -163,31 +131,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(err.response?.data?.message || "Registration failed");
       }
     },
-    [saveUser],
+    [],
   );
 
   const socialLogin = useCallback(
     async (provider: "google" | "apple" | "instagram", role: UserRole = "client") => {
+      let firebaseProvider;
+      if (provider === "github") {
+        firebaseProvider = getGithubProvider();
+      } else {
+        firebaseProvider = getGoogleProvider();
+      }
+      const result = await signInWithPopup(getFirebaseAuth(), firebaseProvider).catch(
+        (err) => {
+          console.error("Social Login Error:", err);
+          throw new Error("Social login failed");
+        },
+      );
       dispatch({ type: "SET_LOADING", payload: true });
       try {
-        let firebaseProvider = googleProvider;
-        const result = await signInWithPopup(auth, firebaseProvider);
         const idToken = await result.user.getIdToken();
 
         const res = await authApi.socialLogin(idToken, role);
         const { accessToken, user } = res.data;
 
         setAccessToken(accessToken);
-        saveUser(user);
         dispatch({ type: "LOGIN_SUCCESS", payload: { user } });
         return user;
       } catch (err: any) {
         dispatch({ type: "SET_LOADING", payload: false });
-        console.error("Social Login Error:", err);
         throw new Error(err.response?.data?.message || "Social login failed");
       }
     },
-    [saveUser],
+    [],
   );
 
   const logout = useCallback(async () => {
@@ -196,10 +172,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch {
       // Proceed with client-side cleanup
     }
-    await signOut(auth).catch(() => {});
-    clearStored();
+    const fbAuth = getFirebaseAuth();
+    await signOut(fbAuth).catch(() => {});
+    setAccessToken(null);
     dispatch({ type: "LOGOUT" });
-  }, [clearStored]);
+  }, []);
 
   return (
     <AuthContext.Provider

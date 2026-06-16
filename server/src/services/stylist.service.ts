@@ -6,6 +6,7 @@ export interface StylistFilters {
   search?: string;
   isLive?: boolean;
   isVerified?: boolean;
+  area?: string;
 }
 
 const formatPrice = (price: number) => `$${price}`;
@@ -36,25 +37,40 @@ export const toStylistServiceItem = (service: IService) => ({
   popular: service.popular
 });
 
+const normalizePortfolioImages = (images: unknown[]): Array<{ url: string; type: 'image' | 'video' }> =>
+  (images || []).map((item: any) =>
+    typeof item === 'string' ? { url: item, type: 'image' as const } : item
+  );
+
 export const toPublicStylist = (stylist: IStylist, services: IService[] = []) => ({
   id: stylist.id,
   name: stylist.name,
   bio: stylist.bio,
+  phone: stylist.phone,
+  instagram: stylist.instagram,
+  twitter: stylist.twitter,
+  tiktok: stylist.tiktok,
+  website: stylist.website,
   category: stylist.category,
   location: stylist.location,
   rating: stylist.rating,
   reviewCount: stylist.reviewCount,
   isLive: stylist.isLive,
+  liveTitle: stylist.liveTitle,
+  viewerCount: stylist.viewerCount,
   isVerified: stylist.isVerified,
   createdAt: stylist.createdAt,
   image: stylist.image,
   services: services.map(toStylistServiceItem),
   price: stylist.price,
   priceRange: stylist.priceRange,
-  portfolioImages: stylist.portfolioImages,
+  followerCount: stylist.followerCount || 0,
+  portfolioImages: normalizePortfolioImages(stylist.portfolioImages as unknown[]),
   beforeAfter: stylist.beforeAfter,
   queuePosition: stylist.queuePosition,
-  estimatedWaitMinutes: stylist.estimatedWaitMinutes
+  estimatedWaitMinutes: stylist.estimatedWaitMinutes,
+  distance: (stylist as any).distance,
+  favoriteCount: 0
 });
 
 export const buildStylistFilter = (filters: StylistFilters) => {
@@ -76,11 +92,18 @@ export const buildStylistFilter = (filters: StylistFilters) => {
     query.$text = { $search: filters.search };
   }
 
+  if (filters.area) {
+    const escaped = filters.area.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    query['location.area'] = new RegExp(escaped, 'i');
+  }
+
   return query;
 };
 
 export const getStylistsWithServices = async (filters: StylistFilters) => {
-  const stylists = await Stylist.find(buildStylistFilter(filters)).sort({
+  const query = buildStylistFilter(filters);
+
+  const stylists = await Stylist.find(query).sort({
     isLive: -1,
     isVerified: -1,
     rating: -1,

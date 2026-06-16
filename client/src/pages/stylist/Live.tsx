@@ -1,49 +1,319 @@
-// src/pages/stylist/Live.tsx
-import { motion } from "framer-motion";
-import { Video, Users, MessageSquare } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { logger } from "../../utils/logger";
+import { useLiveStream } from "../../hooks/useLiveStream";
+import LiveCreatorPanel from "../../features/live/components/LiveCreatorPanel";
+import ModerationPanel from "../../features/live/components/ModerationPanel";
+import { useLiveStore } from "../../features/live/store/liveStore";
+import { Shield, Sparkles } from "lucide-react";
 
-const T = {
-  canvas: "#FFFFFF",
-  ink: "#0A1424",
-  inkSoft: "#5A6E8A",
-  shadowCard: "0 2px 12px rgba(10,20,40,0.06), 0 0 0 1px rgba(10,20,40,0.04)",
-  navy: "#0B1A33",
-  green: "#059669",
-};
+export default function StylistLive() {
+  const {
+    isLive, viewerCount, totalLikes, totalGifts, totalCoins, chatMessages, giftNotifications, loading,
+    socket, stylistId, goLive, endLive, sendChat,
+  } = useLiveStream();
 
-export default function Live() {
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const [isMuted, setIsMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [cameraDenied, setCameraDenied] = useState(false);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [showModeration, setShowModeration] = useState(false);
+  const [recentGift, setRecentGift] = useState<typeof giftNotifications[0] | null>(null);
+  const [webrtcConnected, setWebrtcConnected] = useState(false);
+
+  const [streamTitle, setStreamTitle] = useState("");
+  const [streamDescription, setStreamDescription] = useState("");
+  const [streamCategory, setStreamCategory] = useState("wellness");
+
+  const [activeViewers, setActiveViewers] = useState<Set<string>>(new Set());
+  const [goLiveError, setGoLiveError] = useState("");
+
+  const { mutedUsers, addMutedUser, removeMutedUser, blockedUsers, addBlockedUser, removeBlockedUser } = useLiveStore();
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
+    if (isLive) {
+      timer = setInterval(() => setDuration(d => d + 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isLive]);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (giftNotifications.length === 0) return;
+    const latest = giftNotifications[giftNotifications.length - 1];
+    setRecentGift(latest);
+    const timer = setTimeout(() => setRecentGift(null), 4000);
+    return () => clearTimeout(timer);
+  }, [giftNotifications]);
+
+  // WebRTC publisher
+  useEffect(() => {
+    if (!isLive || !socket || !stylistId) return;
+
+    const pcs = new Map<string, RTCPeerConnection>();
+    const ICE_SERVERS = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+    const getStream = async () => {
+      while (!streamRef.current) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      return streamRef.current;
+    };
+
+    const handleUserJoined = async (data: { userId: string; userRole: string; socketId: string }) => {
+      if (data.userRole === 'stylist') return;
+      if (pcs.has(data.socketId)) return;
+
+      setActiveViewers(prev => new Set(prev).add(data.userId));
+
+      const stream = await getStream();
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      pcs.set(data.socketId, pc);
+
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('live:webrtc-ice-candidate', {
+            stylistId, candidate: event.candidate.toJSON(), targetSocketId: data.socketId,
+          });
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        if (pc.iceConnectionState === 'connected') {
+          setWebrtcConnected(true);
+        }
+        if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+          pc.close();
+          pcs.delete(data.socketId);
+          setActiveViewers(prev => { const n = new Set(prev); n.delete(data.userId); return n; });
+        }
+      };
+
+      try {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('live:webrtc-offer', {
+          stylistId, offer: pc.localDescription, targetSocketId: data.socketId,
+        });
+      } catch (err) {
+        logger.error('[WebRTC] createOffer error:', err);
+        pc.close();
+        pcs.delete(data.socketId);
+      }
+    };
+
+    const handleUserLeft = (data: { socketId: string }) => {
+      const pc = pcs.get(data.socketId);
+      if (pc) {
+        pc.close();
+        pcs.delete(data.socketId);
+      }
+    };
+
+    const handleAnswer = (data: { answer: RTCSessionDescriptionInit; senderSocketId: string }) => {
+      const pc = pcs.get(data.senderSocketId);
+      if (pc && !pc.currentRemoteDescription) {
+        pc.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(console.error);
+      }
+    };
+
+    const handleIceCandidate = (data: { candidate: RTCIceCandidateInit; senderSocketId: string }) => {
+      const pc = pcs.get(data.senderSocketId);
+      if (pc) {
+        pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(console.error);
+      }
+    };
+
+    socket.on('live:user-joined', handleUserJoined);
+    socket.on('live:user-left', handleUserLeft);
+    socket.on('live:webrtc-answer', handleAnswer);
+    socket.on('live:webrtc-ice-candidate', handleIceCandidate);
+
+    return () => {
+      socket.off('live:user-joined', handleUserJoined);
+      socket.off('live:user-left', handleUserLeft);
+      socket.off('live:webrtc-answer', handleAnswer);
+      socket.off('live:webrtc-ice-candidate', handleIceCandidate);
+      pcs.forEach(pc => pc.close());
+      pcs.clear();
+      setWebrtcConnected(false);
+    };
+  }, [isLive, socket, stylistId]);
+
+  const startCamera = useCallback(async () => {
+    if (streamRef.current) return true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 1280 } },
+        audio: true,
+      });
+      streamRef.current = stream;
+      setLocalStream(stream);
+      setCameraDenied(false);
+      return true;
+    } catch {
+      setCameraDenied(true);
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    startCamera();
+  }, [startCamera]);
+
+  const handleGoLive = async (title: string) => {
+    setGoLiveError("");
+    const camOk = await startCamera();
+    if (!camOk) {
+      setGoLiveError("Camera access is required to go live. Click 'Grant access' to enable your camera.");
+      return;
+    }
+    const ok = await goLive(title);
+    if (!ok) {
+      setGoLiveError("Failed to start the stream. Check your connection and try again.");
+    }
+  };
+
+  const handleEndLive = async () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    setLocalStream(null);
+    setIsMuted(false);
+    setIsVideoOff(false);
+    setDuration(0);
+    setWebrtcConnected(false);
+    await endLive();
+  };
+
+  const toggleMic = () => {
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach(t => (t.enabled = isMuted));
+    }
+    setIsMuted(!isMuted);
+  };
+
+  const toggleVideo = () => {
+    if (streamRef.current) {
+      streamRef.current.getVideoTracks().forEach(t => (t.enabled = isVideoOff));
+    }
+    setIsVideoOff(!isVideoOff);
+  };
+
+  const handleModerationMute = (userId: string) => {
+    if (mutedUsers.includes(userId)) removeMutedUser(userId);
+    else addMutedUser(userId);
+  };
+
+  const handleModerationBlock = (userId: string) => {
+    if (blockedUsers.includes(userId)) removeBlockedUser(userId);
+    else addBlockedUser(userId);
+  };
+
+  const moderatedUsers = chatMessages
+    .filter((m) => m.userRole !== "stylist")
+    .reduce<Map<string, { id: string; name: string; messageCount: number }>>((acc, m) => {
+      if (!acc.has(m.userId)) {
+        acc.set(m.userId, { id: m.userId, name: m.userName, messageCount: 0 });
+      }
+      acc.get(m.userId)!.messageCount++;
+      return acc;
+    }, new Map());
+
+  const moderationUsers = Array.from(moderatedUsers.values()).map((u) => ({
+    ...u,
+    isMuted: mutedUsers.includes(u.id),
+    isBlocked: blockedUsers.includes(u.id),
+    isModerator: false,
+  }));
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold" style={{ color: T.ink, fontFamily: "'Playfair Display', serif" }}>
-        Go Live
-      </h1>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Stream Preview */}
-        <div className="lg:col-span-2 rounded-2xl overflow-hidden"
-          style={{ background: T.canvas, boxShadow: T.shadowCard, minHeight: "400px" }}>
-          <div className="flex items-center justify-center h-full text-sm" style={{ color: T.inkSoft }}>
-            <Video size={48} />
-            <p className="ml-3">Camera preview will appear here</p>
-          </div>
+    <div className="flex-1 bg-black flex flex-col overflow-hidden">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-3 sm:px-5 py-2 sm:py-3 bg-neutral-900/50 border-b border-white/5 shrink-0 min-h-[44px] sm:min-h-0">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <h1 className="hidden sm:inline text-base font-bold text-white font-display">Live Studio</h1>
+          {isLive && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-red-500/10 border border-red-500/20">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-[9px] sm:text-[10px] font-semibold text-red-400 uppercase tracking-wider">Live</span>
+            </div>
+          )}
         </div>
-
-        {/* Live Chat / Controls */}
-        <div className="rounded-2xl p-5" style={{ background: T.canvas, boxShadow: T.shadowCard }}>
-          <h2 className="text-lg font-bold mb-4" style={{ color: T.ink }}>Live Chat</h2>
-          <div className="h-64 flex items-center justify-center text-xs" style={{ color: T.inkSoft }}>
-            <MessageSquare size={32} className="mr-2" /> No messages yet
-          </div>
-          <button
-            className="w-full mt-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.98]"
-            style={{ background: T.green, color: "white", boxShadow: "0 4px 20px rgba(5, 150, 105, 0.3)" }}
-          >
-            Start Streaming
-          </button>
-          <div className="flex items-center justify-center gap-1 mt-3 text-xs" style={{ color: T.inkSoft }}>
-            <Users size={12} /> 0 viewers
-          </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {isLive && (
+            <>
+              <div className="hidden sm:inline text-xs text-neutral-500 font-mono">
+                {String(Math.floor(duration / 60)).padStart(2, "0")}:{String(duration % 60).padStart(2, "0")}
+              </div>
+              <div className="text-[10px] sm:text-xs text-neutral-400">{activeViewers.size} viewer{activeViewers.size !== 1 ? "s" : ""}</div>
+              <button onClick={() => setShowModeration(true)} className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white transition-all">
+                <Shield size={12} className="sm:size-[13px]" />
+                <span className="hidden sm:inline">Moderation</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Main content */}
+      <div className="flex-1 min-h-0 relative">
+        <LiveCreatorPanel
+          isLive={isLive} loading={loading} viewerCount={viewerCount}
+          totalLikes={totalLikes} totalGifts={totalGifts} totalCoins={totalCoins}
+          chatMessages={chatMessages}
+          onGoLive={handleGoLive} onEndLive={handleEndLive} onSendChat={sendChat}
+          onToggleMic={toggleMic} onToggleVideo={toggleVideo}
+          onSwitchCamera={() => {}} onToggleBeauty={() => {}} onShare={() => {}} onInviteGuest={() => {}}
+          isMuted={isMuted} isVideoOff={isVideoOff} duration={duration}
+          cameraDenied={cameraDenied} onRetryCamera={startCamera} stream={localStream}
+          streamTitle={streamTitle} streamDescription={streamDescription} streamCategory={streamCategory}
+          onTitleChange={setStreamTitle} onDescriptionChange={setStreamDescription} onCategoryChange={setStreamCategory}
+          goLiveError={goLiveError}
+        />
+      </div>
+
+      {/* Gift toast */}
+      <AnimatePresence>
+        {recentGift && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            className="fixed bottom-6 left-1/2 z-50"
+          >
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full backdrop-blur-md shadow-lg" style={{ background: "rgba(0,0,0,0.85)" }}>
+              <Sparkles size={14} className="text-yellow-400" />
+              <span className="text-white text-sm font-medium">{recentGift.giftIcon}</span>
+              <span className="text-white text-sm">{recentGift.userName}</span>
+              <span className="text-white/50 text-xs">sent</span>
+              <span className="text-white text-sm font-bold">{recentGift.giftName}</span>
+              <span className="text-yellow-400 text-xs font-bold">+{recentGift.coinAmount}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <ModerationPanel
+        isOpen={showModeration} onClose={() => setShowModeration(false)}
+        users={moderationUsers}
+        onMuteUser={handleModerationMute} onBlockUser={handleModerationBlock}
+      />
     </div>
   );
 }

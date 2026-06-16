@@ -54,7 +54,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[10001] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md p-6 relative shadow-2xl">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
           <X size={20} />
@@ -96,15 +96,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             </svg>
             <span className="text-sm font-medium">Continue with Apple</span>
           </button>
-          <button
-            onClick={() => handleSocialLogin("facebook")}
-            className="w-full flex items-center justify-center gap-3 py-2.5 bg-[#1877F2] text-white rounded-xl hover:bg-[#1466d6] transition"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z" />
-            </svg>
-            <span className="text-sm font-medium">Continue with Facebook</span>
-          </button>
+
         </div>
 
         <div className="relative my-4">

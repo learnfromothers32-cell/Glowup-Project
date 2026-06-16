@@ -4,20 +4,26 @@ import {
   createBooking,
   getMyBookings,
   getStylistBookings,
+  getBookingById,
   rescheduleBooking,
-  updateBookingStatus
+  updateBookingStatus,
+  getAvailableSlots
 } from '../controllers/booking.controller';
 import { protect, requireRole } from '../middleware/auth.middleware';
+import { generalLimiter } from '../middleware/rateLimiter';
+import { validate, createBookingSchema, updateBookingStatusSchema, rescheduleBookingSchema } from '../middleware/validate';
 
 const router = Router();
 
 router.use(protect);
 
-router.post('/', requireRole('client'), createBooking);
+router.post('/', generalLimiter, requireRole('client'), validate(createBookingSchema), createBooking);
 router.get('/my', requireRole('client'), getMyBookings);
 router.get('/stylist', requireRole('stylist'), getStylistBookings);
-router.patch('/:id/status', requireRole('stylist', 'admin'), updateBookingStatus);
-router.patch('/:id/cancel', cancelBooking);
-router.patch('/:id/reschedule', requireRole('client'), rescheduleBooking);
+router.get('/stylists/:stylistId/available-slots', requireRole('client', 'stylist'), getAvailableSlots);
+router.get('/:id', getBookingById);
+router.patch('/:id/status', requireRole('stylist', 'admin'), validate(updateBookingStatusSchema), updateBookingStatus);
+router.patch('/:id/cancel', requireRole('client', 'stylist', 'admin'), generalLimiter, cancelBooking);
+router.patch('/:id/reschedule', requireRole('client'), validate(rescheduleBookingSchema), rescheduleBooking);
 
 export default router;

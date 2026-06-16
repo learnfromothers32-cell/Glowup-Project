@@ -1,0 +1,89 @@
+{
+  "app": {
+    "name": "Hairstyle Studio",
+    "tagline": "AI try-on"
+  },
+  "hero": {
+    "title": "AI Hairstyle Generator",
+    "subtitle": "Upload your photo and try on different hairstyles virtually. See which look matches your face best, from short and long cuts to curls, bangs, and more."
+  },
+  "upload": {
+    "drop": "Drop image here to upload",
+    "browse": "or click to browse",
+    "maxSize": "JPEG, PNG, WebP · Max 10MB",
+    "cta": "Try On with Your Photo",
+    "sample": "Or try with an example",
+    "change": "Change photo",
+    "remove": "Remove photo"
+  },
+  "studio": {
+    "hairstyles": "Hairstyles",
+    "viewAll": "View all",
+    "yourPhoto": "Your photo",
+    "original": "Original",
+    "compare": "Compare",
+    "showResult": "Show result",
+    "download": "Download",
+    "save": "Save",
+    "saved": "Saved",
+    "newPhoto": "New photo",
+    "generating": "Generating preview...",
+    "savedLooks": "Saved Looks",
+    "noSaved": "No saved looks yet",
+    "noSavedHint": "Generated hairstyles will appear here"
+  },
+  "categories": {
+    "all": "All",
+    "men": "Men",
+    "women": "Women",
+    "unisex": "Unisex"
+  },
+  "face": {
+    "analysis": "Face Analysis",
+    "analyzing": "Analyzing face...",
+    "detected": "Face detected",
+    "detecting": "Detecting face",
+    "shape": "Face Shape",
+    "confidence": "Confidence"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "step1": "Upload Your Photo",
+    "step1desc": "Take a selfie or upload a clear photo of your face",
+    "step2": "Choose a Hairstyle",
+    "step2desc": "Browse 150+ hairstyles and pick your favorite",
+    "step3": "Try On Instantly",
+    "step3desc": "See the result in seconds with our AI technology"
+  },
+  "features": {
+    "title": "Why Hairstyle Studio",
+    "compare": "Compare Looks",
+    "compareDesc": "Toggle between before and after to see the difference",
+    "realistic": "Realistic Previews",
+    "realisticDesc": "AI-powered previews that look natural on your photo",
+    "faceShape": "Face Shape Analysis",
+    "faceShapeDesc": "Get personalized recommendations based on your face shape",
+    "free": "Free to Try",
+    "freeDesc": "No credit card required. Start with 5 free credits."
+  },
+  "credits": {
+    "title": "Credits",
+    "balance": "Balance",
+    "purchase": "Buy Credits",
+    "free": "Free",
+    "freeHint": "New users receive 5 free credits",
+    "noCredits": "Not enough credits",
+    "noCreditsDesc": "Purchase more credits to continue using the hairstyle generator"
+  },
+  "footer": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact"
+  },
+  "common": {
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "close": "Close"
+  }
+}

@@ -1,10 +1,18 @@
 import { Document, Schema, Types, model } from 'mongoose';
 
+export interface PortfolioItem {
+  url: string;
+  type: 'image' | 'video';
+}
+
 export interface BeforeAfterItem {
-  before: string;
+  _id?: Types.ObjectId;
+  before?: string;
   after: string;
   caption?: string;
   service?: string;
+  mediaType?: 'image' | 'video';
+  createdAt?: Date;
 }
 
 export interface IStylist extends Document {
@@ -12,6 +20,11 @@ export interface IStylist extends Document {
   userId?: Types.ObjectId;
   name: string;
   bio: string;
+  phone?: string;
+  instagram?: string;
+  twitter?: string;
+  tiktok?: string;
+  website?: string;
   category: string;
   location: {
     area: string;
@@ -21,12 +34,15 @@ export interface IStylist extends Document {
   rating: number;
   reviewCount: number;
   isLive: boolean;
+  liveTitle?: string;
+  viewerCount?: number;
   isVerified: boolean;
   image?: string;
   price?: string;
   priceRange?: string;
-  portfolioImages: string[];
+  portfolioImages: PortfolioItem[];
   beforeAfter: BeforeAfterItem[];
+  followerCount: number;
   queuePosition?: number;
   estimatedWaitMinutes?: number;
   createdAt: Date;
@@ -35,12 +51,14 @@ export interface IStylist extends Document {
 
 const beforeAfterSchema = new Schema<BeforeAfterItem>(
   {
-    before: { type: String, required: true },
+    before: { type: String },
     after: { type: String, required: true },
     caption: { type: String },
-    service: { type: String }
+    service: { type: String },
+    mediaType: { type: String, enum: ['image', 'video'], default: 'image' },
+    createdAt: { type: Date, default: Date.now }
   },
-  { _id: false }
+  { _id: true }
 );
 
 const stylistSchema = new Schema<IStylist>(
@@ -57,6 +75,26 @@ const stylistSchema = new Schema<IStylist>(
     bio: {
       type: String,
       required: true,
+      trim: true
+    },
+    phone: {
+      type: String,
+      trim: true
+    },
+    instagram: {
+      type: String,
+      trim: true
+    },
+    twitter: {
+      type: String,
+      trim: true
+    },
+    tiktok: {
+      type: String,
+      trim: true
+    },
+    website: {
+      type: String,
       trim: true
     },
     category: {
@@ -85,9 +123,15 @@ const stylistSchema = new Schema<IStylist>(
       default: false,
       index: true
     },
+    liveTitle: { type: String, trim: true, maxlength: 100 },
+    viewerCount: { type: Number, default: 0 },
     isVerified: {
       type: Boolean,
       default: false
+    },
+    followerCount: {
+      type: Number,
+      default: 0
     },
     image: {
       type: String
@@ -99,7 +143,7 @@ const stylistSchema = new Schema<IStylist>(
       type: String
     },
     portfolioImages: {
-      type: [String],
+      type: [{ url: { type: String, required: true }, type: { type: String, enum: ['image', 'video'], default: 'image' } }],
       default: []
     },
     beforeAfter: {
@@ -117,5 +161,6 @@ const stylistSchema = new Schema<IStylist>(
 );
 
 stylistSchema.index({ name: 'text', bio: 'text', category: 'text', 'location.area': 'text' });
+stylistSchema.index({ rating: -1, reviewCount: -1, isLive: -1, createdAt: -1 });
 
 export const Stylist = model<IStylist>('Stylist', stylistSchema);

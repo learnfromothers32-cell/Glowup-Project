@@ -1,0 +1,13 @@
+{
+  "app": { "name": "AIヘアスタイルスタジオ", "tagline": "AIバーチャル試着" },
+  "hero": { "title": "AIヘアスタイルジェネレーター", "subtitle": "写真をアップロードして、さまざまなヘアスタイルをバーチャルでお試しください。ショートカットからロングヘア、カール、前髪まで、あなたの顔に一番似合うスタイルを見つけましょう。" },
+  "upload": { "drop": "画像をドロップしてアップロード", "browse": "またはクリックして選択", "maxSize": "JPEG、PNG、WebP · 最大10MB", "cta": "写真で試着する", "sample": "サンプルで試す", "change": "写真を変更", "remove": "削除" },
+  "studio": { "hairstyles": "ヘアスタイル", "viewAll": "すべて表示", "yourPhoto": "あなたの写真", "original": "加工前", "compare": "比較", "showResult": "結果を表示", "download": "ダウンロード", "save": "保存", "saved": "保存済み", "newPhoto": "新しい写真", "generating": "プレビュー生成中...", "savedLooks": "保存したスタイル", "noSaved": "保存したスタイルはまだありません", "noSavedHint": "生成されたヘアスタイルがここに表示されます" },
+  "categories": { "all": "すべて", "men": "メンズ", "women": "ウィメンズ", "unisex": "ユニセックス" },
+  "face": { "analysis": "顔分析", "analyzing": "顔を分析中...", "detected": "顔を検出しました", "detecting": "顔を検出中", "shape": "顔の形", "confidence": "確信度" },
+  "howItWorks": { "title": "使い方", "step1": "写真をアップロード", "step1desc": "自撮り写真または鮮明な顔写真をアップロード", "step2": "ヘアスタイルを選択", "step2desc": "150以上のスタイルからお気に入りを選択", "step3": "即時試着", "step3desc": "AI技術で数秒で結果を確認" },
+  "features": { "title": "AIヘアスタイルスタジオの特徴", "compare": "比較機能", "compareDesc": "前後を切り替えて違いを確認", "realistic": "リアルなプレビュー", "realisticDesc": "自然な仕上がりのAIプレビュー", "faceShape": "顔型分析", "faceShapeDesc": "顔の形に基づいたパーソナライズ提案", "free": "無料お試し", "freeDesc": "クレジットカード不要。5回無料でお試しいただけます。" },
+  "credits": { "title": "クレジット", "balance": "残高", "purchase": "クレジットを購入", "free": "無料", "freeHint": "新規ユーザーに5クレジットをプレゼント", "noCredits": "クレジット不足", "noCreditsDesc": "クレジットを購入して引き続きご利用いただけます" },
+  "footer": { "privacy": "プライバシーポリシー", "terms": "利用規約", "contact": "お問い合わせ" },
+  "common": { "loading": "読み込み中…", "error": "エラーが発生しました", "retry": "再試行", "close": "閉じる" }
+}

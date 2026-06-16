@@ -35,7 +35,14 @@ export function mapToUIStylist(stylist: any): Stylist {
         ? stylist.reviewCount
         : reviews.length,
     isLive: Boolean(stylist.isLive),
+    liveTitle: stylist.liveTitle,
+    viewerCount: Number(stylist.viewerCount || 0),
     isVerified: Boolean(stylist.isVerified),
+    phone: stylist.phone,
+    instagram: stylist.instagram,
+    twitter: stylist.twitter,
+    tiktok: stylist.tiktok,
+    website: stylist.website,
     createdAt: String(stylist.createdAt || new Date().toISOString()),
 
     image: stylist.image,
@@ -46,6 +53,10 @@ export function mapToUIStylist(stylist: any): Stylist {
     portfolioImages: stylist.portfolioImages,
     beforeAfter: stylist.beforeAfter || [],
     reviews,
+    followerCount: Number(stylist.followerCount || 0),
+    totalLikes: Number(stylist.totalLikes || 0),
+    totalViews: Number(stylist.totalViews || 0),
+    isFollowing: Boolean(stylist.isFollowing),
     queuePosition: stylist.queuePosition,
     estimatedWaitMinutes: stylist.estimatedWaitMinutes,
   };

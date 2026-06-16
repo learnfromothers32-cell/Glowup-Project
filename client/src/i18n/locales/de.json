@@ -1,0 +1,13 @@
+{
+  "app": { "name": "KI-Frisurenstudio", "tagline": "KI-Anprobe" },
+  "hero": { "title": "KI-Frisurengenerator", "subtitle": "Laden Sie Ihr Foto hoch und probieren Sie verschiedene Frisuren virtuell an. Finden Sie den Look, der am besten zu Ihrem Gesicht passt." },
+  "upload": { "drop": "Bild hier ablegen", "browse": "oder klicken zum Durchsuchen", "maxSize": "JPEG, PNG, WebP · Max 10 MB", "cta": "Mit meinem Foto anprobieren", "sample": "Oder mit einem Beispiel versuchen", "change": "Foto ändern", "remove": "Entfernen" },
+  "studio": { "hairstyles": "Frisuren", "viewAll": "Alle anzeigen", "yourPhoto": "Ihr Foto", "original": "Original", "compare": "Vergleichen", "showResult": "Ergebnis anzeigen", "download": "Herunterladen", "save": "Speichern", "saved": "Gespeichert", "newPhoto": "Neues Foto", "generating": "Vorschau wird generiert...", "savedLooks": "Gespeicherte Looks", "noSaved": "Noch keine gespeicherten Looks", "noSavedHint": "Generierte Frisuren erscheinen hier" },
+  "categories": { "all": "Alle", "men": "Männer", "women": "Frauen", "unisex": "Unisex" },
+  "face": { "analysis": "Gesichtsanalyse", "analyzing": "Gesicht wird analysiert...", "detected": "Gesicht erkannt", "detecting": "Gesicht wird erkannt", "shape": "Gesichtsform", "confidence": "Genauigkeit" },
+  "howItWorks": { "title": "So funktioniert's", "step1": "Foto hochladen", "step1desc": "Machen Sie ein Selfie oder laden Sie ein klares Foto hoch", "step2": "Frisur auswählen", "step2desc": "Durchsuchen Sie 150+ Frisuren und wählen Sie Ihre Favoriten", "step3": "Sofort anprobieren", "step3desc": "Sehen Sie das Ergebnis in Sekunden mit unserer KI" },
+  "features": { "title": "Warum Frisurenstudio", "compare": "Looks vergleichen", "compareDesc": "Zwischen Vorher und Nachher wechseln", "realistic": "Realistische Vorschauen", "realisticDesc": "KI-gestützte natürliche Vorschauen", "faceShape": "Gesichtsformanalyse", "faceShapeDesc": "Personalisierte Empfehlungen basierend auf Ihrer Gesichtsform", "free": "Kostenlos testen", "freeDesc": "Keine Kreditkarte nötig. 5 kostenlose Credits." },
+  "credits": { "title": "Credits", "balance": "Guthaben", "purchase": "Credits kaufen", "free": "Kostenlos", "freeHint": "Neue Benutzer erhalten 5 Gratis-Credits", "noCredits": "Nicht genug Credits", "noCreditsDesc": "Kaufen Sie mehr Credits, um fortzufahren" },
+  "footer": { "privacy": "Datenschutz", "terms": "Nutzungsbedingungen", "contact": "Kontakt" },
+  "common": { "loading": "Laden…", "error": "Ein Fehler ist aufgetreten", "retry": "Erneut versuchen", "close": "Schließen" }
+}

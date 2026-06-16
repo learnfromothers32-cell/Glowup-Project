@@ -14,6 +14,11 @@ export interface IBooking extends Document {
   notes?: string;
   paymentId?: string;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  paymentMethod?: 'card' | 'mobile-money' | 'cash';
+  cancellationReason?: string;
+  rescheduleCount: number;
+  confirmedAt?: Date;
+  completedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,7 +41,6 @@ const bookingSchema = new Schema<IBooking>(
       type: Schema.Types.ObjectId,
       ref: 'Service',
       required: true
-    
     },
     startTime: {
       type: Date,
@@ -69,12 +73,41 @@ const bookingSchema = new Schema<IBooking>(
       type: String,
       enum: ['pending', 'paid', 'failed', 'refunded'],
       default: 'pending'
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['card', 'mobile-money', 'cash']
+    },
+    cancellationReason: {
+      type: String,
+      trim: true
+    },
+    rescheduleCount: {
+      type: Number,
+      default: 0
+    },
+    confirmedAt: {
+      type: Date
+    },
+    completedAt: {
+      type: Date
     }
   },
   { timestamps: true }
 );
 
-// Index for checking availability/conflicts
+// Indexes for performance
 bookingSchema.index({ stylistId: 1, startTime: 1, endTime: 1 });
+bookingSchema.index({ stylistId: 1, status: 1, startTime: -1 });
+bookingSchema.index({ clientId: 1, status: 1, startTime: -1 });
+
+// Atomic duplicate prevention: unique index on stylistId + startTime for non-cancelled bookings
+bookingSchema.index(
+  { stylistId: 1, startTime: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: { $in: ['pending', 'confirmed', 'in-progress', 'completed'] } },
+  }
+);
 
 export const Booking = model<IBooking>('Booking', bookingSchema);

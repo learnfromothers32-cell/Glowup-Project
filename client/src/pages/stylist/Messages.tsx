@@ -1,204 +1,219 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Search, Send, Phone, MoreVertical, Loader2, MessageSquare } from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Search, Send, Loader2, MessageSquare, ChevronLeft, Phone } from 'lucide-react';
+import { logger } from '../../utils/logger';
+import { getMyConversations, getConversationMessages, sendMessage, getSocketConversationUrl } from '../../api/conversations';
+import { getAccessToken } from '../../api/axios';
+import { io, Socket } from 'socket.io-client';
 
-const T = {
-  navy: "#0B1A33",
-  ink: "#0A1424",
-  inkSoft: "#5A6E8A",
-  shadowCard: "0 2px 12px rgba(10,20,40,0.06), 0 0 0 1px rgba(10,20,40,0.04)",
-};
+interface Conversation {
+  _id: string;
+  clientId: { _id: string; name: string; avatar?: string };
+  lastMessage?: { content: string; senderId: string; createdAt: string };
+  unreadStylist: number;
+  updatedAt: string;
+}
 
-type Conversation = {
-  id: string;
-  name: string;
-  avatar: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-};
+interface MessageItem {
+  _id: string;
+  conversationId: string;
+  senderId: { _id: string; name: string; avatar?: string };
+  senderRole: string;
+  content: string;
+  createdAt: string;
+  read: boolean;
+}
 
-type Message = {
-  id: string;
-  sender: "me" | "them";
-  text: string;
-  time: string;
-};
-
-const initialConversations: Conversation[] = [
-  { id: "1", name: "Abena Mensah", avatar: "AM", lastMessage: "See you tomorrow at 2pm!", time: "5m ago", unread: 2 },
-  { id: "2", name: "Kojo Asante", avatar: "KA", lastMessage: "Can I reschedule my appointment?", time: "2h ago", unread: 0 },
-  { id: "3", name: "Esi Boateng", avatar: "EB", lastMessage: "Thank you, it looks amazing!", time: "1d ago", unread: 0 },
-];
-
-const threadMessages: Record<string, Message[]> = {
-  "1": [
-    { id: "m1", sender: "them", text: "Hi! I have a booking tomorrow at 2pm.", time: "3:45 PM" },
-    { id: "m2", sender: "me", text: "Perfect, I'll see you then! 😊", time: "3:46 PM" },
-    { id: "m3", sender: "them", text: "See you tomorrow at 2pm!", time: "3:47 PM" },
-  ],
-  "2": [
-    { id: "m4", sender: "them", text: "Hi, I have an appointment next week but I need to move it.", time: "1:20 PM" },
-    { id: "m5", sender: "them", text: "Can I reschedule my appointment?", time: "1:21 PM" },
-  ],
-  "3": [
-    { id: "m6", sender: "them", text: "Just finished my appointment. I love the new style!", time: "5:00 PM" },
-    { id: "m7", sender: "me", text: "So glad you love it! 💇‍♀️", time: "5:02 PM" },
-    { id: "m8", sender: "them", text: "Thank you, it looks amazing!", time: "5:05 PM" },
-  ],
-};
-
-export default function StylistMessages() {
-  const [conversations] = useState(initialConversations);
+export default function Messages() {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [search, setSearch] = useState("");
+  const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [search, setSearch] = useState('');
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const token = getAccessToken();
 
-  const openChat = (id: string) => {
+  useEffect(() => { loadConversations(); }, []);
+
+  useEffect(() => {
+    if (activeChat) {
+      const s = io(getSocketConversationUrl(), { auth: { token } });
+      setSocket(s);
+      s.on('connect', () => s.emit('conversation:join', activeChat));
+      s.on('message:new', (msg: MessageItem) => setMessages(prev => [...prev, msg]));
+      return () => { s.emit('conversation:leave', activeChat); s.disconnect(); };
+    }
+  }, [activeChat, token]);
+
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const loadConversations = async () => {
+    try { setConversations(await getMyConversations()); }
+    catch { logger.error('Failed to load conversations'); }
+    finally { setLoading(false); }
+  };
+
+  const openChat = async (id: string) => {
     setActiveChat(id);
-    setMessages(threadMessages[id] || []);
+    try {
+      const data = await getConversationMessages(id);
+      setMessages(data.messages);
+      loadConversations();
+    } catch { logger.error('Failed to load messages'); }
   };
 
-  const sendMessage = () => {
-    if (!input.trim() || !activeChat) return;
-    const newMsg: Message = {
-      id: `m${Date.now()}`,
-      sender: "me",
-      text: input.trim(),
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-    setMessages((prev) => [...prev, newMsg]);
-    setInput("");
+  const handleSend = async () => {
+    if (!input.trim() || !activeChat || sending) return;
+    setSending(true);
+    try {
+      const msg = await sendMessage(activeChat, input.trim());
+      setMessages(prev => [...prev, msg]);
+      setInput('');
+      loadConversations();
+    } catch { logger.error('Failed to send'); }
+    finally { setSending(false); }
   };
 
-  const filtered = conversations.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  };
+
+  const filteredConversations = conversations.filter(c =>
+    c.clientId?.name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold" style={{ color: T.ink, fontFamily: "'Playfair Display', serif" }}>
-        Messages
-      </h1>
+  const activeConv = conversations.find(c => c._id === activeChat);
 
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden" style={{ boxShadow: T.shadowCard }}>
-        <div className="flex h-[600px]">
-          {/* Sidebar */}
-          <div className="w-80 border-r border-gray-100 flex flex-col">
-            <div className="p-4 border-b border-gray-100">
-              <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search conversations..."
-                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {filtered.map((conv) => (
-                <button
-                  key={conv.id}
-                  onClick={() => openChat(conv.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 transition hover:bg-gray-50 ${
-                    activeChat === conv.id ? "bg-blue-50" : ""
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
-                    {conv.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-900">{conv.name}</span>
-                      <span className="text-[10px] text-gray-400">{conv.time}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{conv.lastMessage}</p>
-                  </div>
-                  {conv.unread > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold shrink-0">
-                      {conv.unread}
-                    </span>
-                  )}
-                </button>
-              ))}
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[calc(100vh-8rem)]">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 font-display text-text-primary dark:text-text-dark-primary">Messages</h1>
+
+      <div className="flex h-[calc(100%-4rem)] rounded-2xl overflow-hidden bg-white dark:bg-surface-dark-secondary shadow-md border border-gray-100 dark:border-gray-700/50">
+        {/* ── Conversation List ── */}
+        <div className={`w-80 flex flex-col border-r border-gray-100 dark:border-gray-700/50 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="p-3 border-b border-gray-100 dark:border-gray-700/50">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted dark:text-text-dark-muted" />
+              <input type="text" placeholder="Search conversations..." value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 transition-all border border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-surface-dark-secondary text-text-primary dark:text-text-dark-primary caret-brand-500"
+              />
             </div>
           </div>
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center h-32"><Loader2 className="w-6 h-6 animate-spin text-text-muted dark:text-text-dark-muted" /></div>
+            ) : filteredConversations.length === 0 ? (
+              <div className="text-center py-12 text-sm text-text-muted dark:text-text-dark-muted">
+                <MessageSquare className="w-8 h-8 mx-auto mb-2 text-text-muted dark:text-text-dark-muted" />
+                No conversations yet
+              </div>
+            ) : (
+              filteredConversations.map(conv => (
+                <button key={conv._id} onClick={() => openChat(conv._id)}
+                  className={`w-full text-left p-3 transition-colors border-b border-gray-100 dark:border-gray-700/50 ${activeChat === conv._id ? 'bg-blue-50 dark:bg-blue-950/20' : 'bg-transparent'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0 bg-gradient-to-br from-brand-700 to-brand-900">
+                      {conv.clientId?.name?.charAt(0) || '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold truncate text-text-primary dark:text-text-dark-primary">{conv.clientId?.name}</p>
+                        {conv.lastMessage && (
+                          <span className="text-xs shrink-0 text-text-muted dark:text-text-dark-muted">
+                            {new Date(conv.lastMessage.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-xs truncate mt-0.5 ${conv.unreadStylist > 0 ? 'text-gray-700 dark:text-gray-300' : 'text-text-muted dark:text-text-dark-muted'}`}>
+                        {conv.lastMessage?.content || 'No messages yet'}
+                      </p>
+                    </div>
+                    {conv.unreadStylist > 0 && (
+                      <span className="w-5 h-5 text-white text-xs rounded-full flex items-center justify-center shrink-0 font-bold bg-gradient-to-br from-brand-700 to-brand-900">
+                        {conv.unreadStylist}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
 
-          {/* Chat Area */}
-          {activeChat ? (
-            <div className="flex-1 flex flex-col">
-              {/* Chat header */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500">
-                    {conversations.find((c) => c.id === activeChat)?.avatar}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {conversations.find((c) => c.id === activeChat)?.name}
-                    </p>
-                    <p className="text-[10px] text-green-500">Online</p>
-                  </div>
+        {/* ── Chat Area ── */}
+        <div className={`flex-1 flex flex-col ${!activeChat ? 'hidden lg:flex' : 'flex'}`}>
+          {!activeChat ? (
+            <div className="flex-1 flex items-center justify-center text-text-muted dark:text-text-dark-muted">
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-gray-50 dark:bg-surface-dark-secondary">
+                  <MessageSquare className="w-7 h-7 text-text-muted dark:text-text-dark-muted" />
                 </div>
-                <button className="p-2 rounded-lg hover:bg-gray-100">
-                  <MoreVertical size={16} className="text-gray-400" />
+                <p className="text-sm font-medium text-text-secondary dark:text-text-dark-secondary">Select a conversation</p>
+                <p className="text-xs mt-1 text-text-muted dark:text-text-dark-muted">Choose a conversation from the left to start chatting</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Chat Header */}
+              <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-100 dark:border-gray-700/50 bg-white dark:bg-surface-dark-secondary">
+                <button onClick={() => setActiveChat(null)} className="lg:hidden p-1 rounded-lg hover:bg-gray-100 transition-colors text-text-secondary dark:text-text-dark-secondary">
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0 bg-gradient-to-br from-brand-700 to-brand-900">
+                  {activeConv?.clientId?.name?.charAt(0) || '?'}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-text-primary dark:text-text-dark-primary">{activeConv?.clientId?.name}</p>
+                  <p className="text-xs text-success dark:text-success">Online</p>
+                </div>
+                <button onClick={() => { const p = (activeConv as any)?.clientId?.phone; if (p) window.open(`tel:${p}`); else alert('No phone number available'); }} className="p-2 rounded-xl transition-colors text-text-secondary dark:text-text-dark-secondary bg-gray-50 dark:bg-surface-dark-secondary">
+                  <Phone size={15} />
                 </button>
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
-                        msg.sender === "me"
-                          ? "bg-gray-900 text-white rounded-br-md"
-                          : "bg-gray-100 text-gray-900 rounded-bl-md"
-                      }`}
-                    >
-                      <p>{msg.text}</p>
-                      <p className={`text-[10px] mt-1 ${msg.sender === "me" ? "text-gray-400" : "text-gray-400"}`}>
-                        {msg.time}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 bg-gray-50 dark:bg-surface-dark">
+                {messages.map(msg => {
+                  const isMe = msg.senderRole === 'stylist';
+                  return (
+                    <motion.div key={msg._id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${isMe
+                        ? 'rounded-br-md bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-md'
+                        : 'rounded-bl-md bg-white dark:bg-surface-dark-secondary text-text-primary dark:text-text-dark-primary shadow-sm'
+                      }`}>
+                        <p className="text-sm leading-relaxed">{msg.content}</p>
+                        <p className={`text-[10px] mt-1.5 font-medium ${isMe ? 'opacity-60' : 'text-text-muted dark:text-text-dark-muted'}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Input */}
-              <div className="border-t border-gray-100 p-4">
+              <div className="px-5 py-3.5 border-t border-gray-100 dark:border-gray-700/50 bg-white dark:bg-surface-dark-secondary">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                    placeholder="Type a message..."
-                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
+                    placeholder="Type a message..." rows={1}
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 transition-all border border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-surface-dark-secondary text-text-primary dark:text-text-dark-primary caret-brand-500"
                   />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!input.trim()}
-                    className="p-2.5 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition disabled:opacity-50"
-                  >
-                    <Send size={16} />
+                  <button onClick={handleSend} disabled={!input.trim() || sending}
+                    className="p-2.5 rounded-xl text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-br from-brand-700 to-brand-900 shadow-md">
+                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageSquare size={40} className="mx-auto text-gray-300 mb-3" />
-                <p className="text-sm text-gray-400">Select a conversation to start chatting</p>
-              </div>
-            </div>
+            </>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

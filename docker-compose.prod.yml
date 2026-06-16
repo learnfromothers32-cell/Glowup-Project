@@ -26,7 +26,7 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.prod
     container_name: startup_server
     restart: unless-stopped
     ports:
@@ -38,7 +38,7 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      CLIENT_URL: http://localhost
+      CLIENT_URL: ${CLIENT_URL:-http://localhost}
     depends_on:
       - mongo
       - redis
@@ -46,14 +46,17 @@ services:
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: /api
+        VITE_SOCKET_URL: ""
+        VITE_PAYSTACK_PUBLIC_KEY: ${VITE_PAYSTACK_PUBLIC_KEY}
     container_name: startup_client
     restart: unless-stopped
     ports:
       - "80:80"
     environment:
-      VITE_API_URL: http://server:5000/api/v1
-      VITE_SOCKET_URL: http://server:5000
+      VITE_PAYSTACK_PUBLIC_KEY: ${VITE_PAYSTACK_PUBLIC_KEY}
     depends_on:
       - server
 

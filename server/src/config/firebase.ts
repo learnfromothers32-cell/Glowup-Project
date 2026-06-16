@@ -1,24 +1,33 @@
 import admin from 'firebase-admin';
-import { appConfig } from './app';
+import logger from '../utils/logger';
 
 const initializeFirebase = () => {
   if (admin.apps.length > 0) return;
 
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : undefined;
+  const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-  if (serviceAccount) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
-    console.log('Firebase Admin initialized (service account)');
+  if (rawServiceAccount) {
+    try {
+      const serviceAccount = JSON.parse(rawServiceAccount);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      logger.info('Firebase Admin initialized (service account)');
+    } catch (error) {
+      logger.error('Failed to parse FIREBASE_SERVICE_ACCOUNT JSON', {
+        error: (error as Error).message,
+      });
+      throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT format');
+    }
   } else {
-    // Dev fallback: init with project ID so verifyIdToken works
-    // using Firebase's public key endpoints
     const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'startup-16d5b';
     admin.initializeApp({ projectId });
-    console.log('Firebase Admin initialized (dev mode - project ID only)');
+    logger.warn([
+      'Firebase Admin initialized WITHOUT service account.',
+      'Social login will use fallback HTTP verification (slower, ~1.4s latency).',
+      'Set FIREBASE_SERVICE_ACCOUNT in .env for production performance.',
+      `See: https://console.firebase.google.com/project/${projectId}/settings/serviceaccounts/adminsdk`,
+    ].join(' '));
   }
 };
 

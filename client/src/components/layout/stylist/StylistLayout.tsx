@@ -1,24 +1,28 @@
 // src/components/layout/stylist/StylistLayout.tsx
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import StylistNavbar from "./StylistNavbar";
 import MobileNav from "./MobileNav";
 import Sidebar from "./Sidebar";
 
 export default function StylistLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+  const isLivePage = location.pathname === "/stylist/live";
 
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] flex">
+    <div className="min-h-screen bg-[#F4F7FC] dark:bg-surface-dark flex">
       {/* ── Desktop Sidebar (always visible on lg screens) ── */}
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
+      {!isLivePage && (
+        <div className="hidden lg:block">
+          <Sidebar />
+        </div>
+      )}
 
       {/* ── Mobile Sidebar Drawer (overlay) ── */}
-      {sidebarOpen && (
+      {sidebarOpen && !isLivePage && (
         <div className="fixed inset-0 z-50 lg:hidden">
           {/* backdrop */}
           <div
@@ -26,7 +30,7 @@ export default function StylistLayout() {
             onClick={closeSidebar}
           />
           {/* sidebar panel */}
-          <nav className="absolute left-0 top-0 h-full w-72 bg-white shadow-2xl border-r border-gray-100 overflow-y-auto">
+          <nav className="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-white dark:bg-surface-dark-secondary shadow-2xl border-r border-gray-100 dark:border-gray-700 overflow-y-auto">
             <Sidebar onClose={closeSidebar} />
           </nav>
         </div>
@@ -34,18 +38,33 @@ export default function StylistLayout() {
 
       {/* ── Main Content Area ── */}
       <div className="flex-1 flex flex-col min-h-screen">
-        {/* Top navbar (visible on all screens) */}
-        <StylistNavbar onMenuToggle={() => setSidebarOpen(true)} />
+        {/* Top navbar (hidden on live page - it has its own UI) */}
+        {!isLivePage && (
+          <StylistNavbar onMenuToggle={() => setSidebarOpen(true)} />
+        )}
 
-        {/* Page content */}
-        <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-6">
+        {/* Page content - no padding on live page */}
+        <main
+          className={
+            isLivePage
+              ? "flex-1 flex flex-col overflow-hidden"
+              : "flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-6"
+          }
+          style={
+            !isLivePage
+              ? { paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }
+              : undefined
+          }
+        >
           <Outlet />
         </main>
 
-        {/* Mobile bottom navigation (hidden on large screens where sidebar is visible) */}
-        <div className="lg:hidden">
-          <MobileNav onOpenMenu={() => setSidebarOpen(true)} />
-        </div>
+        {/* Mobile bottom navigation (hidden on live page - it has its own controls) */}
+        {!isLivePage && (
+          <div className="lg:hidden">
+            <MobileNav onOpenMenu={() => setSidebarOpen(true)} />
+          </div>
+        )}
       </div>
     </div>
   );

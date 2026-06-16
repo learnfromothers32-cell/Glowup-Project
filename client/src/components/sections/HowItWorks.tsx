@@ -101,8 +101,6 @@ const T = {
 
 function StepProgress({ total, active }: { total: number; active: number }) {
   const step = steps[active];
-  const pct = ((active + 1) / total) * 100;
-
   return (
     <div
       style={{
@@ -582,7 +580,7 @@ export default function HowItWorks() {
   const navigate = useNavigate();
   const [active, setActive] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const step = steps[active];
 
   // Auto-play (pauses on hover/touch)

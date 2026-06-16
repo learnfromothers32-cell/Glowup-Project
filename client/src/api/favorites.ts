@@ -5,6 +5,11 @@ export const getFavorites = async () => {
   return res.data.data.favorites;
 };
 
+export const checkFavorite = async (stylistId: string) => {
+  const res = await api.get(`/favorites/check/${stylistId}`);
+  return res.data.data.isFollowing;
+};
+
 export const addFavorite = async (stylistId: string) => {
   const res = await api.post("/favorites", { stylistId });
   return res.data.data.favorites;

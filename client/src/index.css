@@ -2,6 +2,86 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  * { @apply border-gray-200 dark:border-gray-700; }
+  body {
+    @apply bg-gray-50 text-text-primary antialiased dark:bg-surface-dark dark:text-text-dark-primary;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl border border-gray-100 shadow-soft
+           dark:bg-surface-dark-secondary dark:border-gray-700/50 dark:shadow-none;
+  }
+  .card-hover {
+    @apply card transition-all duration-200 hover:shadow-card hover:border-gray-200
+           dark:hover:border-gray-600/50 dark:hover:bg-surface-dark-tertiary;
+  }
+  .card-elevated {
+    @apply bg-white rounded-xl shadow-card border border-gray-50
+           dark:bg-surface-dark-secondary dark:border-gray-700/30;
+  }
+  .input-field {
+    @apply w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm
+           text-text-primary placeholder:text-text-muted
+           focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 focus:outline-none
+           transition-all duration-200
+           dark:bg-surface-dark-secondary dark:border-gray-600
+           dark:text-text-dark-primary dark:placeholder:text-text-dark-muted
+           dark:focus:border-brand-500 dark:focus:ring-brand-400/20;
+  }
+  .input-error {
+    @apply border-error focus:border-error focus:ring-error/20;
+  }
+  .label {
+    @apply text-sm font-medium text-text-primary dark:text-text-dark-primary;
+  }
+  .label-secondary {
+    @apply text-label text-text-secondary dark:text-text-dark-secondary;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium
+           transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           active:scale-[0.97];
+  }
+  .btn-primary {
+    @apply btn bg-brand-500 text-white hover:bg-brand-600
+           focus:ring-brand-500 dark:focus:ring-offset-surface-dark;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-text-primary border border-gray-200
+           hover:bg-gray-50 hover:border-gray-300
+           focus:ring-brand-500 dark:bg-surface-dark-secondary
+           dark:text-text-dark-primary dark:border-gray-600
+           dark:hover:bg-surface-dark-tertiary dark:focus:ring-offset-surface-dark;
+  }
+  .btn-ghost {
+    @apply btn text-text-secondary hover:text-text-primary hover:bg-gray-100
+           dark:text-text-dark-secondary dark:hover:text-text-dark-primary
+           dark:hover:bg-surface-dark-tertiary;
+  }
+  .btn-danger {
+    @apply btn bg-error text-white hover:bg-red-600
+           focus:ring-error dark:focus:ring-offset-surface-dark;
+  }
+  .btn-sm { @apply px-3 py-1.5 text-sm; }
+  .btn-md { @apply px-4 py-2 text-sm; }
+  .btn-lg { @apply px-6 py-3 text-base; }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .badge-success { @apply badge bg-success/10 text-success-dark dark:text-success; }
+  .badge-warning { @apply badge bg-warning/10 text-warning-dark dark:text-warning; }
+  .badge-error { @apply badge bg-error/10 text-error-dark dark:text-error; }
+  .badge-info { @apply badge bg-info/10 text-info-dark dark:text-info; }
+  .skeleton {
+    @apply animate-pulse rounded bg-gray-200 dark:bg-gray-700;
+  }
+}
+
 @keyframes scroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
@@ -12,28 +92,28 @@
 
 :root {
   --color-surface: #ffffff;
-  --color-bg: #f9fafb;
-  --color-bg-secondary: #f3f4f6;
-  --color-bg-tertiary: #e5e7eb;
-  --color-text: #111827;
+  --color-bg: #f8f9fa;
+  --color-bg-secondary: #f1f3f5;
+  --color-bg-tertiary: #e9ecef;
+  --color-text: #1a1a2e;
   --color-text-secondary: #6b7280;
   --color-text-muted: #9ca3af;
-  --color-border: #f3f4f6;
-  --color-border-strong: #e5e7eb;
-  --color-border-active: #d1d5db;
+  --color-border: #e9ecef;
+  --color-border-strong: #d1d5db;
+  --color-border-active: #b0b8c4;
 }
 
 .dark {
-  --color-surface: #1a1a2e;
-  --color-bg: #0b0b14;
-  --color-bg-secondary: #22223a;
-  --color-bg-tertiary: #2e2e4a;
-  --color-text: #f0f0f8;
-  --color-text-secondary: #c8c8dc;
-  --color-text-muted: #9696b0;
-  --color-border: #2a2a44;
-  --color-border-strong: #3c3c5a;
-  --color-border-active: #54547a;
+  --color-surface: #18181b;
+  --color-bg: #09090b;
+  --color-bg-secondary: #18181b;
+  --color-bg-tertiary: #27272a;
+  --color-text: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-border: #27272a;
+  --color-border-strong: #3f3f46;
+  --color-border-active: #52525b;
 }
 
 .dark,
@@ -46,6 +126,7 @@
 .dark .bg-gray-50 { background-color: var(--color-bg); }
 .dark .bg-gray-100 { background-color: var(--color-bg-secondary); }
 .dark .bg-gray-200 { background-color: var(--color-bg-tertiary); }
+.dark .bg-gray-300 { background-color: var(--color-bg-tertiary); }
 
 .dark .text-gray-900 { color: var(--color-text); }
 .dark .text-gray-800 { color: var(--color-text); }
@@ -54,6 +135,7 @@
 .dark .text-gray-500 { color: var(--color-text-secondary); }
 .dark .text-gray-400 { color: var(--color-text-muted); }
 .dark .text-gray-300 { color: var(--color-text-muted); }
+.dark .text-gray-200 { color: var(--color-text-muted); }
 
 .dark .border-gray-50 { border-color: var(--color-border); }
 .dark .border-gray-100 { border-color: var(--color-border); }
@@ -68,3 +150,5 @@
 .dark .placeholder-gray-300::placeholder { color: var(--color-text-muted); }
 .dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.4); }
 .dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); }
+.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.4); }
+.dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.4); }

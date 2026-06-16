@@ -39,6 +39,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT}   # added for backend token verification
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY}
     volumes:
       - ./server:/app
       - /app/node_modules
@@ -55,8 +56,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: http://server:5000/api/v1
-      VITE_SOCKET_URL: http://server:5000
+      VITE_API_PROXY_TARGET: http://server:5000
       # Firebase web config (for social login popup)
       VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
       VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}

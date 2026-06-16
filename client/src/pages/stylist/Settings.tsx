@@ -1,124 +1,129 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Save, Bell, Shield, Palette, Globe, Sun, Moon, Monitor } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Save, Bell, Shield, Palette, Sun, Moon, Monitor, Loader2, AlertCircle, X } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { logger } from '../../utils/logger';
+import { getMyStylistSettings, updateMyStylistSettings } from '../../api/settings';
 
-const T = {
-  navy: "#0B1A33",
-  ink: "#0A1424",
-  inkSoft: "#5A6E8A",
-  shadowCard: "0 2px 12px rgba(10,20,40,0.06), 0 0 0 1px rgba(10,20,40,0.04)",
-};
-
-export default function StylistSettings() {
-  const [saved, setSaved] = useState(false);
+export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const [notifications, setNotifications] = useState({
+    newBooking: true, cancellationAlert: true, reviewNotify: true, marketingEmails: false, reminderEmails: true
+  });
+  const [privacy, setPrivacy] = useState({
+    showInSearch: true, showEmailToClients: false, showPhoneToClients: false
+  });
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => { loadSettings(); }, []);
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const data = await getMyStylistSettings();
+      setNotifications(data.notifications || notifications);
+      setPrivacy(data.privacy || privacy);
+    } catch {
+      logger.error('Could not load settings');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await updateMyStylistSettings({ notifications, privacy });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#7A7168]" /></div>;
+  }
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold" style={{ color: T.ink, fontFamily: "'Playfair Display', serif" }}>
-        Settings
-      </h1>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl">
+      <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary font-display mb-1">Settings</h1>
+      <p className="text-[#7A7168] text-sm mb-6">Manage your account preferences</p>
 
-      {/* Notifications */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6" style={{ boxShadow: T.shadowCard }}>
-        <div className="flex items-center gap-3 mb-4">
-          <Bell size={18} className="text-gray-500" />
-          <h2 className="text-sm font-bold text-gray-900">Notifications</h2>
+      {error && (
+        <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 text-red-700 rounded-lg text-sm">
+          <AlertCircle className="w-4 h-4" /> {error}
+          <button onClick={() => setError('')} className="ml-auto"><X className="w-4 h-4" /></button>
         </div>
-        <div className="space-y-3">
-          {[
-            { label: "New booking alerts", key: "booking" },
-            { label: "Cancellation alerts", key: "cancel" },
-            { label: "Review notifications", key: "review" },
-            { label: "Marketing emails", key: "marketing" },
-          ].map(({ label, key }) => (
-            <label key={key} className="flex items-center justify-between py-1">
-              <span className="text-sm text-gray-700">{label}</span>
-              <input type="checkbox" defaultChecked className="accent-[#0B1A33] rounded" />
-            </label>
-          ))}
+      )}
+
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] p-4 sm:p-5">
+          <h3 className="font-medium text-[#1A1A1A] flex items-center gap-2 mb-4"><Bell className="w-4 h-4" /> Notifications</h3>
+          <div className="space-y-3">
+            {[
+              { key: 'newBooking', label: 'New booking alerts' },
+              { key: 'cancellationAlert', label: 'Cancellation alerts' },
+              { key: 'reviewNotify', label: 'Review notifications' },
+              { key: 'marketingEmails', label: 'Marketing emails' },
+              { key: 'reminderEmails', label: 'Appointment reminder emails' },
+            ].map(item => (
+              <label key={item.key} className="flex items-center justify-between gap-3 min-h-[44px]">
+                <span className="text-sm text-[#1A1A1A]">{item.label}</span>
+                <input type="checkbox" checked={(notifications as any)[item.key]}
+                  onChange={e => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                  className="rounded border-gray-300 text-[#8B7355] focus:ring-[#8B7355] shrink-0" />
+              </label>
+            ))}
+          </div>
         </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] p-4 sm:p-5">
+          <h3 className="font-medium text-[#1A1A1A] flex items-center gap-2 mb-4"><Shield className="w-4 h-4" /> Privacy</h3>
+          <div className="space-y-3">
+            {[
+              { key: 'showInSearch', label: 'Show profile in search results' },
+              { key: 'showEmailToClients', label: 'Show email to clients' },
+              { key: 'showPhoneToClients', label: 'Show phone to clients' },
+            ].map(item => (
+              <label key={item.key} className="flex items-center justify-between gap-3 min-h-[44px]">
+                <span className="text-sm text-[#1A1A1A]">{item.label}</span>
+                <input type="checkbox" checked={(privacy as any)[item.key]}
+                  onChange={e => setPrivacy({ ...privacy, [item.key]: e.target.checked })}
+                  className="rounded border-gray-300 text-[#8B7355] focus:ring-[#8B7355] shrink-0" />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] p-4 sm:p-5">
+          <h3 className="font-medium text-[#1A1A1A] flex items-center gap-2 mb-4"><Palette className="w-4 h-4" /> Appearance</h3>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {[
+              { key: 'light', icon: Sun, label: 'Light' },
+              { key: 'dark', icon: Moon, label: 'Dark' },
+              { key: 'system', icon: Monitor, label: 'System' },
+            ].map(option => (
+              <button key={option.key} onClick={() => setTheme(option.key as any)}
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-3 rounded-lg border text-xs sm:text-sm transition-colors min-h-[44px] ${theme === option.key ? 'border-[#8B7355] bg-[#FAF8F4] text-[#8B7355]' : 'border-[#E8E0D8] text-gray-500 hover:border-gray-300'}`}>
+                <option.icon className="w-4 h-4 shrink-0" /> <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={handleSave} disabled={saving}
+          className="w-full bg-[#1A1A1A] text-white py-3 sm:py-2.5 rounded-lg text-sm hover:bg-[#333] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}
+        </button>
       </div>
-
-      {/* Privacy */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6" style={{ boxShadow: T.shadowCard }}>
-        <div className="flex items-center gap-3 mb-4">
-          <Shield size={18} className="text-gray-500" />
-          <h2 className="text-sm font-bold text-gray-900">Privacy</h2>
-        </div>
-        <div className="space-y-3">
-          {[
-            { label: "Show profile in search", key: "searchable" },
-            { label: "Show email to clients", key: "showEmail" },
-            { label: "Show phone to clients", key: "showPhone" },
-          ].map(({ label, key }) => (
-            <label key={key} className="flex items-center justify-between py-1">
-              <span className="text-sm text-gray-700">{label}</span>
-              <input type="checkbox" defaultChecked className="accent-[#0B1A33] rounded" />
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Theme */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6" style={{ boxShadow: T.shadowCard }}>
-        <div className="flex items-center gap-3 mb-4">
-          <Palette size={18} className="text-gray-500" />
-          <h2 className="text-sm font-bold text-gray-900">Appearance</h2>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            onClick={() => setTheme("light")}
-            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-              theme === "light"
-                ? "border-gray-900 bg-gray-50 text-gray-900"
-                : "border-gray-100 text-gray-500 hover:border-gray-200"
-            }`}
-          >
-            <Sun size={20} />
-            <span className="text-xs font-medium">Light</span>
-          </button>
-          <button
-            onClick={() => setTheme("dark")}
-            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-              theme === "dark"
-                ? "border-gray-900 bg-gray-50 text-gray-900"
-                : "border-gray-100 text-gray-500 hover:border-gray-200"
-            }`}
-          >
-            <Moon size={20} />
-            <span className="text-xs font-medium">Dark</span>
-          </button>
-          <button
-            onClick={() => setTheme("system")}
-            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${
-              theme === "system"
-                ? "border-gray-900 bg-gray-50 text-gray-900"
-                : "border-gray-100 text-gray-500 hover:border-gray-200"
-            }`}
-          >
-            <Monitor size={20} />
-            <span className="text-xs font-medium">System</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Save Button */}
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={handleSave}
-        className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white"
-        style={{ background: T.navy }}
-      >
-        <Save size={16} />
-        {saved ? "Saved!" : "Save Settings"}
-      </motion.button>
-    </div>
+    </motion.div>
   );
 }

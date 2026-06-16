@@ -1,18 +1,28 @@
 import { io, Socket } from "socket.io-client";
 import { getAccessToken } from "../api/axios";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
+export function getSocketUrl(namespace: string) {
+  const raw = import.meta.env.VITE_SOCKET_URL?.trim() || "";
+  return raw ? `${raw.replace(/\/$/, "")}/${namespace}` : `/${namespace}`;
+}
 
 let queueSocket: Socket | null = null;
 
 export function getQueueSocket(): Socket {
   if (!queueSocket) {
-    queueSocket = io(`${SOCKET_URL}/queue`, {
+    queueSocket = io(getSocketUrl("queue"), {
       auth: { token: getAccessToken() },
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 2000,
+    });
+
+    queueSocket.on("connect", () => {
+      const token = getAccessToken();
+      if (token && queueSocket?.auth?.token !== token) {
+        queueSocket.auth = { token };
+      }
     });
   }
   return queueSocket;
@@ -62,4 +72,38 @@ export function getMyQueueStatus(stylistId: string) {
   const s = getQueueSocket();
   if (!s.connected) connectQueue();
   s.emit("queue:status", { stylistId });
+}
+
+// ── Notification events (realtime push) ──
+
+export function onNewNotification(
+  callback: (data: { _id: string; type: string; title: string; message: string; link: string; read: boolean; createdAt: string }) => void,
+) {
+  const s = getQueueSocket();
+  if (!s.connected) connectQueue();
+  s.on("notification:new", callback);
+}
+
+export function offNewNotification(
+  callback: (data: { _id: string; type: string; title: string; message: string; link: string; read: boolean; createdAt: string }) => void,
+) {
+  const s = getQueueSocket();
+  s.off("notification:new", callback);
+}
+
+// ── Booking status events (realtime from stylist actions) ──
+
+export function onBookingStatusChanged(
+  callback: (data: { bookingId: string; status: string; stylistId: string; clientId: string }) => void,
+) {
+  const s = getQueueSocket();
+  if (!s.connected) connectQueue();
+  s.on("booking:status-changed", callback);
+}
+
+export function offBookingStatusChanged(
+  callback: (data: { bookingId: string; status: string; stylistId: string; clientId: string }) => void,
+) {
+  const s = getQueueSocket();
+  s.off("booking:status-changed", callback);
 }

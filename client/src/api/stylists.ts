@@ -37,7 +37,7 @@ export const getMyStylistProfile = async (): Promise<Stylist> => {
 };
 
 export const saveOnboarding = async (payload: {
-  profile: { phone: string; location: string; bio: string };
+  profile: { phone: string; location: { area: string; lat: number; lng: number } | string; bio: string };
   services: { name: string; duration: string; price: string }[];
   schedule: Record<string, { enabled: boolean; start: string; end: string }>;
 }): Promise<any> => {
@@ -52,6 +52,10 @@ export const updateMyProfile = async (payload: {
   location?: { area: string; lat?: number; lng?: number };
   phone?: string;
   image?: string;
+  instagram?: string;
+  twitter?: string;
+  tiktok?: string;
+  website?: string;
 }): Promise<Stylist> => {
   const { data } = await api.put<StylistDetailResponse>('/stylists/me', payload);
   return mapToUIStylist(data.data.stylist);
@@ -83,4 +87,49 @@ export const updateMyService = async (
 
 export const deleteMyService = async (id: string): Promise<void> => {
   await api.delete(`/stylists/services/${id}`);
+};
+
+export const uploadPortfolioImage = async (formData: FormData): Promise<any> => {
+  const { data } = await api.post('/stylists/portfolio', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.data;
+};
+
+export const savePortfolioMedia = async (formData: FormData): Promise<any> => {
+  const { data } = await api.post('/stylists/portfolio/batch', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.data;
+};
+
+export const uploadProfileImage = async (formData: FormData): Promise<any> => {
+  const { data } = await api.post('/stylists/me/image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.data;
+};
+
+export const removePortfolioImage = async (url: string): Promise<void> => {
+  await api.delete('/stylists/portfolio', { data: { url } });
+};
+
+export const addBeforeAfter = async (formData: FormData): Promise<any> => {
+  const { data } = await api.post('/stylists/before-after', formData);
+  return data.data;
+};
+
+export const addTransformation = async (formData: FormData): Promise<any> => {
+  const { data } = await api.post('/stylists/before-after', formData);
+  return data.data;
+};
+
+export const removeBeforeAfter = async (id: string): Promise<any> => {
+  const { data } = await api.delete(`/stylists/before-after/${id}`);
+  return data.data;
+};
+
+export const getMyTrendingStats = async (): Promise<any[]> => {
+  const { data } = await api.get('/stylists/me/trending');
+  return data.data.engagements || [];
 };

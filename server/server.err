@@ -1,0 +1,8 @@
+(node:9100) [MONGOOSE] Warning: Duplicate schema index on {"slug":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at start (C:\Users\learn\Desktop\startup\server\src\server.ts:33:10)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)

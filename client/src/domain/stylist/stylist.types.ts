@@ -34,7 +34,14 @@ export interface Stylist {
   rating: number;
   reviewCount: number;
   isLive: boolean;
+  liveTitle?: string;
+  viewerCount?: number;
   isVerified: boolean;
+  phone?: string;
+  instagram?: string;
+  twitter?: string;
+  tiktok?: string;
+  website?: string;
   createdAt: string;
 
   image?: string;
@@ -44,14 +51,25 @@ export interface Stylist {
   price?: string;
   distance?: string;
   priceRange?: string;
-  portfolioImages?: string[];
+  portfolioImages?: Array<{ url: string; type: 'image' | 'video' }>;
   beforeAfter?: Array<{
+    _id?: string;
     before: string;
     after: string;
     caption?: string;
     service?: string;
+    mediaType?: 'image' | 'video';
+    likes?: number;
+    views?: number;
+    createdAt?: string;
   }>;
   reviews?: StylistReview[];
+
+  // Social fields
+  followerCount?: number;
+  totalLikes?: number;
+  totalViews?: number;
+  isFollowing?: boolean;
 
   // Quick‑action fields (optional)
   queuePosition?: number;

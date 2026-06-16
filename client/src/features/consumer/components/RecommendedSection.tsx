@@ -27,7 +27,9 @@ type SortOption = "recommended" | "rating" | "distance" | "price" | "reviews";
 interface RecommendedSectionProps {
   stylists: Stylist[];
   onBook: (stylist: Stylist) => void;
-}
+  onFavorite: (stylist: Stylist) => void;
+  isFavorited: (stylistId: string) => boolean;
+} 
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -199,20 +201,24 @@ function CompactRow({
   index,
   onBook,
   onNavigate,
+  onFavorite,
+  isFavorited,
 }: {
   stylist: Stylist;
   index: number;
   onBook: () => void;
   onNavigate: () => void;
+  onFavorite: (stylist: Stylist) => void;
+  isFavorited: (stylistId: string) => boolean;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(() => isFavorited(stylist.id));
 
   const distanceNum = getDistanceNum(stylist);
-  const isLive = Boolean((stylist as Record<string, unknown>).isLive);
-  const isVerified = Boolean((stylist as Record<string, unknown>).isVerified);
-  const priceRange = (stylist as Record<string, unknown>).priceRange as string | undefined;
-  const reviewCount = (stylist as Record<string, unknown>).reviewCount as number | undefined;
+  const isLive = Boolean((stylist as unknown as Record<string, unknown>).isLive);
+  const isVerified = Boolean((stylist as unknown as Record<string, unknown>).isVerified);
+  const priceRange = (stylist as unknown as Record<string, unknown>).priceRange as string | undefined;
+  const reviewCount = (stylist as unknown as Record<string, unknown>).reviewCount as number | undefined;
 
   const initials = stylist.name
     .split(" ")
@@ -313,7 +319,7 @@ function CompactRow({
               ))}
               {stylist.services.length > 2 && (
                 <span className="shrink-0 text-[10px] text-gray-300">
-                  +{stylist.services.length - 2}
+                  +{stylist.services.length - 2} 
                 </span>
               )}
             </div>
@@ -345,6 +351,7 @@ function CompactRow({
             onClick={(e) => {
               e.stopPropagation();
               setLiked(!liked);
+              onFavorite(stylist);
             }}
             className={`
               w-7 h-7 rounded-lg flex items-center justify-center transition-all
@@ -380,19 +387,23 @@ function GridCard({
   index,
   onBook,
   onNavigate,
+  onFavorite,
+  isFavorited,
 }: {
   stylist: Stylist;
   index: number;
   onBook: () => void;
   onNavigate: () => void;
+  onFavorite: (stylist: Stylist) => void;
+  isFavorited: (stylistId: string) => boolean;
 }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(() => isFavorited(stylist.id));
 
-  const isLive = Boolean((stylist as Record<string, unknown>).isLive);
-  const isVerified = Boolean((stylist as Record<string, unknown>).isVerified);
-  const priceRange = (stylist as Record<string, unknown>).priceRange as string | undefined;
-  const reviewCount = (stylist as Record<string, unknown>).reviewCount as number | undefined;
+  const isLive = Boolean((stylist as unknown as Record<string, unknown>).isLive);
+  const isVerified = Boolean((stylist as unknown as Record<string, unknown>).isVerified);
+  const priceRange = (stylist as unknown as Record<string, unknown>).priceRange as string | undefined;
+  const reviewCount = (stylist as unknown as Record<string, unknown>).reviewCount as number | undefined;
 
   const initials = stylist.name
     .split(" ")
@@ -441,6 +452,7 @@ function GridCard({
               onClick={(e) => {
                 e.stopPropagation();
                 setLiked(!liked);
+                onFavorite(stylist);
               }}
               className={`
                 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm transition-all
@@ -550,6 +562,8 @@ function SkeletonRow() {
 export default function RecommendedSection({
   stylists,
   onBook,
+  onFavorite,
+  isFavorited,
 }: RecommendedSectionProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
@@ -580,16 +594,16 @@ export default function RecommendedSection({
         break;
       }
       case "price": {
-        const priceMin = (s: Stylist) => {
-          const p = (s as Record<string, unknown>).priceMin;
-          return typeof p === "number" ? p : 0;
+        const parsePrice = (s: Stylist) => {
+          const raw = (s.price || "").replace(/[^0-9.]/g, "");
+          return parseFloat(raw) || 0;
         };
-        result.sort((a, b) => priceMin(a) - priceMin(b));
+        result.sort((a, b) => parsePrice(a) - parsePrice(b));
         break;
       }
       case "reviews": {
         const reviews = (s: Stylist) => {
-          const r = (s as Record<string, unknown>).reviewCount;
+          const r = (s as unknown as Record<string, unknown>).reviewCount;
           return typeof r === "number" ? r : 0;
         };
         result.sort((a, b) => reviews(b) - reviews(a));
@@ -603,7 +617,7 @@ export default function RecommendedSection({
   }, [stylists, category, sortBy]);
 
   const getStylistPath = (stylist: Stylist) => {
-    const isLive = Boolean((stylist as Record<string, unknown>).isLive);
+    const isLive = Boolean((stylist as unknown as Record<string, unknown>).isLive);
     return isLive ? `/app/live/${stylist.id}` : `/app/stylist/${stylist.id}`;
   };
 
@@ -631,6 +645,8 @@ export default function RecommendedSection({
               )}
             </div>
           </div>
+
+
 
           <div className="flex items-center gap-1 shrink-0">
             <SortDropdown value={sortBy} onChange={setSortBy} />
@@ -664,6 +680,8 @@ export default function RecommendedSection({
           </div>
         </div>
 
+        
+
         <CategoryTabs active={category} onChange={setCategory} />
       </div>
 
@@ -687,6 +705,8 @@ export default function RecommendedSection({
               index={i}
               onBook={() => onBook(stylist)}
               onNavigate={() => navigate(getStylistPath(stylist))}
+              onFavorite={onFavorite}
+              isFavorited={isFavorited}
             />
           ))}
         </div>
@@ -699,6 +719,8 @@ export default function RecommendedSection({
               index={i}
               onBook={() => onBook(stylist)}
               onNavigate={() => navigate(getStylistPath(stylist))}
+              onFavorite={onFavorite}
+              isFavorited={isFavorited}
             />
           ))}
         </div>

@@ -5,7 +5,6 @@ import {
   Heart,
   Mail,
   Phone,
-  ArrowRight,
   Check,
   MapPin,
   Send,

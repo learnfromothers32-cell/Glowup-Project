@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Search,
   Bell,
+  MessageSquare,
   Sparkles,
   Zap,
   Home,
@@ -17,31 +18,42 @@ import {
   Check,
   Bookmark,
   HelpCircle,
+  Radio,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import GlobalSearchModal from "../../../features/consumer/components/GlobalSearchModal";
 import { useAuth } from "../../../context/authUtils";
-
-// ─── Types ──────────────────────────────────────────────
-interface Notification {
-  id: number;
-  text: string;
-  read: boolean;
-  link: string;
-  time: string;
-  icon: "booking" | "stylist" | "badge" | "promo";
-}
+import { useNotifications } from "../../../hooks/useNotifications";
 
 // ─── Helper ─────────────────────────────────────────────
-const notifIconMap = {
+const notifIconMap: Record<string, string> = {
   booking: "📅",
   stylist: "✂️",
   badge: "🏆",
   promo: "🎁",
+  reminder: "⏰",
+  live: "🔴",
 };
+
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const date = new Date(dateStr).getTime();
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 const navLinks = [
   { to: "/app", label: "Home", icon: Home },
+  { to: "/app/live", label: "Live", icon: Radio },
   { to: "/app/my-bookings", label: "Bookings", icon: Calendar },
   { to: "/app/rewards", label: "Rewards", icon: Trophy },
 ];
@@ -59,42 +71,15 @@ export default function ConsumerNavbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      text: "Your booking with Ama is confirmed!",
-      read: false,
-      link: "/app/my-bookings",
-      time: "2 min ago",
-      icon: "booking",
-    },
-    {
-      id: 2,
-      text: "New stylist added: Braids Hub",
-      read: false,
-      link: "/app/stylist/9",
-      time: "1 hour ago",
-      icon: "stylist",
-    },
-    {
-      id: 3,
-      text: "You earned a new badge: First Step",
-      read: true,
-      link: "/app/rewards",
-      time: "Yesterday",
-      icon: "badge",
-    },
-    {
-      id: 4,
-      text: "20% off your next booking this weekend!",
-      read: true,
-      link: "/app",
-      time: "2 days ago",
-      icon: "promo",
-    },
-  ]);
+  const [expandedNotifId, setExpandedNotifId] = useState<string | null>(null);
 
   const { user, logout } = useAuth();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -110,13 +95,12 @@ export default function ConsumerNavbar() {
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-
   // ── Close dropdowns on outside click ──
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setNotificationsOpen(false);
+        setExpandedNotifId(null);
       }
       if (
         profileRef.current &&
@@ -159,16 +143,19 @@ export default function ConsumerNavbar() {
     return location.pathname.startsWith(path);
   };
 
-  const markAsRead = (id: number, link: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
+  const handleNotificationClick = (id: string) => {
+    markAsRead(id);
+    setExpandedNotifId((prev) => (prev === id ? null : id));
+  };
+
+  const handleNotificationNavigate = (link: string) => {
     setNotificationsOpen(false);
+    setExpandedNotifId(null);
     navigate(link);
   };
 
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const handleMarkAllRead = () => {
+    markAllAsRead();
   };
 
   return (
@@ -181,14 +168,14 @@ export default function ConsumerNavbar() {
       {/* ── Main Header ─────────────────────────────────── */}
       <header className="fixed top-0 inset-x-0 z-50">
         {/* Glassmorphism backdrop */}
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-gray-200/60 dark:bg-gray-950/85 dark:border-gray-800/60" />
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-gray-200/60 dark:bg-surface-dark-secondary/85 dark:border-gray-700/60" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center justify-between gap-3">
             {/* ─── LEFT: Logo + Nav ───────────────────────── */}
             <div className="flex items-center gap-1">
-              <Link
-                to="/app"
+              <button
+                onClick={() => { navigate("/app"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className="flex items-center gap-2 shrink-0 mr-4 group"
               >
                 <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 dark:from-indigo-500 dark:to-violet-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
@@ -197,7 +184,7 @@ export default function ConsumerNavbar() {
                 <span className="text-lg font-bold tracking-tight text-gray-900 hidden sm:inline">
                   GlowUp
                 </span>
-              </Link>
+              </button>
 
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-0.5">
@@ -252,14 +239,14 @@ export default function ConsumerNavbar() {
             <div className="hidden md:flex flex-1 max-w-sm mx-4">
               <button
                 onClick={() => setSearchModalOpen(true)}
-                className="group relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200/80 text-sm text-gray-400 text-left transition-all duration-200 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 dark:bg-gray-800/60 dark:border-gray-700/80 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-800/80 dark:focus:border-gray-500 dark:focus:ring-gray-300/10"
+                className="group relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200/80 dark:border-gray-700/80 text-sm text-gray-400 dark:text-text-dark-muted text-left transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white dark:hover:bg-surface-dark-secondary hover:shadow-sm dark:hover:shadow-sm dark:hover:shadow-black/20 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 dark:focus:border-brand-500"
               >
                 <Search
                   size={16}
-                  className="text-gray-400 group-hover:text-gray-500 transition-colors"
+                  className="text-gray-400 dark:text-text-dark-muted group-hover:text-gray-500 dark:group-hover:text-text-dark-secondary transition-colors"
                 />
                 <span className="flex-1">Search stylists, services…</span>
-                <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-white border border-gray-200 text-[11px] font-medium text-gray-400 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500">
+                <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-[11px] font-medium text-gray-400 dark:text-text-dark-muted shadow-sm">
                   <span className="text-xs">⌘</span>K
                 </kbd>
               </button>
@@ -270,11 +257,20 @@ export default function ConsumerNavbar() {
               {/* Mobile search */}
               <button
                 onClick={() => setSearchModalOpen(true)}
-                className="md:hidden p-2.5 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+                className="md:hidden p-2.5 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all dark:text-text-dark-secondary dark:hover:text-text-dark-primary dark:hover:bg-surface-dark-tertiary"
                 aria-label="Search"
               >
                 <Search size={20} />
               </button>
+
+              {/* ── Messages ──────────────────────────────── */}
+              <Link
+                to="/app/messages"
+                className="relative p-2.5 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
+                aria-label="Messages"
+              >
+                <MessageSquare size={20} />
+              </Link>
 
               {/* ── Notifications ──────────────────────────── */}
               <div ref={notifRef} className="relative">
@@ -312,7 +308,7 @@ export default function ConsumerNavbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.96 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="fixed sm:absolute inset-x-0 sm:inset-x-auto top-16 sm:top-full sm:mt-2 w-full sm:w-[380px] sm:right-0 bg-white rounded-2xl shadow-xl shadow-gray-900/8 border border-gray-200/80 overflow-hidden dark:bg-[#1a1a2e] dark:border-gray-700/80 dark:shadow-2xl dark:shadow-black/40"
+                      className="fixed sm:absolute inset-x-0 sm:inset-x-auto top-16 sm:top-full sm:mt-2 w-full sm:w-[380px] sm:right-0 bg-white rounded-2xl shadow-xl shadow-gray-900/8 border border-gray-200/80 overflow-hidden dark:bg-surface-dark-secondary dark:border-gray-700/80 dark:shadow-2xl dark:shadow-black/40"
                     >
                       {/* Header */}
                       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700/80">
@@ -321,7 +317,7 @@ export default function ConsumerNavbar() {
                         </h3>
                         {unreadCount > 0 && (
                           <button
-                            onClick={markAllRead}
+                            onClick={handleMarkAllRead}
                             className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1 dark:text-gray-400 dark:hover:text-gray-200"
                           >
                             <Check size={12} />
@@ -343,40 +339,61 @@ export default function ConsumerNavbar() {
                             </p>
                           </div>
                         ) : (
-                          notifications.map((n, i) => (
-                            <button
-                              key={n.id}
-                              onClick={() => markAsRead(n.id, n.link)}
+                          notifications.map((n) => (
+                            <div
+                              key={n._id}
                               className={`
-                                w-full text-left flex items-start gap-3 px-5 py-3.5 transition-colors hover:bg-gray-50 border-b border-gray-50 last:border-0 dark:hover:bg-gray-800/50 dark:border-gray-800/60
+                                border-b border-gray-50 last:border-0 dark:border-gray-800/60
                                 ${!n.read ? "bg-blue-50/40 dark:bg-blue-900/20" : ""}
                               `}
                             >
-                              <span className="text-lg mt-0.5 shrink-0">
-                                {notifIconMap[n.icon]}
-                              </span>
-                              <div className="flex-1 min-w-0">
-                                <p
-                                  className={`text-sm leading-snug ${
-                                    !n.read
-                                      ? "text-gray-900 font-medium dark:text-gray-100"
-                                      : "text-gray-600 dark:text-gray-400"
+                              <button
+                                onClick={() => handleNotificationClick(n._id)}
+                                className="w-full text-left flex items-start gap-3 px-5 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                              >
+                                <span className="text-lg mt-0.5 shrink-0">
+                                  {notifIconMap[n.type] || "🔔"}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p
+                                    className={`text-sm leading-snug ${
+                                      !n.read
+                                        ? "text-gray-900 font-medium dark:text-gray-100"
+                                        : "text-gray-600 dark:text-gray-400"
+                                    }`}
+                                  >
+                                    {n.message}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">
+                                    {formatRelativeTime(n.createdAt)}
+                                  </p>
+                                </div>
+                                {!n.read && (
+                                  <span className="mt-2 w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                                )}
+                                <ChevronRight
+                                  size={14}
+                                  className={`mt-1.5 shrink-0 transition-transform duration-200 dark:text-gray-600 ${
+                                    expandedNotifId === n._id
+                                      ? "rotate-90 text-gray-600"
+                                      : "text-gray-300"
                                   }`}
-                                >
-                                  {n.text}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">
-                                  {n.time}
-                                </p>
-                              </div>
-                              {!n.read && (
-                                <span className="mt-2 w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                                />
+                              </button>
+
+                              {expandedNotifId === n._id && (
+                                <div className="px-5 pb-3 pt-0 text-sm text-gray-500 dark:text-gray-400 space-y-2">
+                                  <p className="leading-relaxed">{n.message}</p>
+                                  <button
+                                    onClick={() => handleNotificationNavigate(n.link)}
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                  >
+                                    View details
+                                    <ChevronRight size={12} />
+                                  </button>
+                                </div>
                               )}
-                              <ChevronRight
-                                size={14}
-                                className="mt-1.5 text-gray-300 shrink-0 dark:text-gray-600"
-                              />
-                            </button>
+                            </div>
                           ))
                         )}
                       </div>
@@ -421,7 +438,7 @@ export default function ConsumerNavbar() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.96 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl shadow-gray-900/8 border border-gray-200/80 overflow-hidden dark:bg-[#1a1a2e] dark:border-gray-700/80 dark:shadow-2xl dark:shadow-black/40"
+                      className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl shadow-gray-900/8 border border-gray-200/80 overflow-hidden dark:bg-surface-dark-secondary dark:border-gray-700/80 dark:shadow-2xl dark:shadow-black/40"
                     >
                       {/* User info */}
                       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/80">
@@ -522,18 +539,18 @@ export default function ConsumerNavbar() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed top-0 right-0 bottom-0 z-50 w-[300px] bg-white shadow-2xl md:hidden overflow-y-auto dark:bg-[#12121e] dark:shadow-black/60"
+              className="fixed top-0 right-0 bottom-0 z-50 w-[300px] bg-white shadow-2xl md:hidden overflow-y-auto dark:bg-surface-dark dark:shadow-black/60"
             >
               {/* Close + Logo */}
               <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2">
+                <Link to="/app" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-gray-900 to-gray-700 dark:from-indigo-500 dark:to-violet-600 flex items-center justify-center">
                     <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
                   <span className="text-base font-bold text-gray-900 dark:text-gray-100">
                     GlowUp
                   </span>
-                </div>
+                </Link>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition dark:text-gray-500 dark:hover:text-gray-200 dark:hover:bg-gray-800"

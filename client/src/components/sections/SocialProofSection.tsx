@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Star, TrendingUp, Users, Clock, Heart,
   Quote, ArrowLeft, ArrowRight, Sparkles,
@@ -441,7 +441,7 @@ function CarouselControls({
           <div key={i} style={{
             width: i === active ? 20 : 6,
             height: 6, borderRadius: 3,
-            background: i === active ? T.ink : T.borderMed ?? T.border,
+            background: i === active ? T.ink : T.border,
             transition: "all 0.3s cubic-bezier(0.34,1.5,0.64,1)",
           }} />
         ))}

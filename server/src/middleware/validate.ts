@@ -44,3 +44,71 @@ export const resetPasswordSchema = z.object({
     .regex(/[a-z]/, 'Password must contain a lowercase letter')
     .regex(/[0-9]/, 'Password must contain a number')
 });
+
+export const trendingTrackSchema = z.object({
+  postId: z.string().min(1, 'postId is required'),
+  event: z.enum(['view', 'like', 'unlike', 'share', 'comment', 'bookmark'], {
+    errorMap: () => ({ message: 'Invalid trending event type' }),
+  }),
+});
+
+export const trendingReportSchema = z.object({
+  postId: z.string().min(1, 'postId is required'),
+  stylistId: z.string().min(1, 'stylistId is required'),
+  reason: z.string().min(1, 'reason is required').max(500, 'Reason must be under 500 characters'),
+});
+
+export const createBookingSchema = z.object({
+  stylistId: z.string().min(1, 'stylistId is required'),
+  serviceId: z.string().min(1, 'serviceId is required'),
+  startTime: z.string().min(1, 'startTime is required'),
+  notes: z.string().max(500, 'Notes must be under 500 characters').optional(),
+  paymentMethod: z.string().optional(),
+});
+
+export const rescheduleBookingSchema = z.object({
+  startTime: z.string().min(1, 'startTime is required'),
+});
+
+export const updateBookingStatusSchema = z.object({
+  status: z.enum(['pending', 'confirmed', 'in-progress', 'completed', 'cancelled']),
+});
+
+export const createReviewSchema = z.object({
+  stylistId: z.string().min(1, 'stylistId is required'),
+  bookingId: z.string().min(1, 'bookingId is required'),
+  rating: z.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),
+  comment: z.string().max(1000, 'Comment must be under 1000 characters').optional(),
+});
+
+export const initializePaymentSchema = z.object({
+  bookingId: z.string().min(1, 'bookingId is required'),
+});
+
+export const createConversationSchema = z.object({
+  recipientId: z.string().min(1, 'recipientId is required'),
+  initialMessage: z.string().min(1, 'Message is required').max(2000),
+});
+
+export const sendMessageSchema = z.object({
+  content: z.string().min(1, 'Message is required').max(2000),
+});
+
+export const createCommentSchema = z.object({
+  transformationId: z.string().min(1, 'transformationId is required'),
+  stylistId: z.string().min(1, 'stylistId is required'),
+  text: z.string().min(1, 'Comment is required').max(1000),
+  userName: z.string().optional(),
+  userAvatar: z.string().optional(),
+});
+
+export const reportStreamSchema = z.object({
+  sessionId: z.string().min(1, 'sessionId is required'),
+  reason: z.string().min(1, 'reason is required').max(500),
+});
+
+export const reportCommentSchema = z.object({
+  sessionId: z.string().min(1, 'sessionId is required'),
+  commentId: z.string().min(1, 'commentId is required'),
+  reason: z.string().min(1, 'reason is required').max(500),
+});

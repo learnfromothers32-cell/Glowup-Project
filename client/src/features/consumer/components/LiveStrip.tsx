@@ -4,20 +4,8 @@ import { ChevronLeft, ChevronRight, Eye, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 
-// ─── Types ─────────────────────────────────────────────────────────────────
 interface LiveStripProps {
   liveStylists: Stylist[];
-}
-
-// ─── Helpers (unchanged) ───────────────────────────────────────────────────
-function deterministicRandom(seed: string, min: number, max: number): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  const normalized = Math.abs(hash) / 0x7fffffff;
-  return Math.floor(normalized * (max - min + 1)) + min;
 }
 
 function formatViewers(n: number): string {
@@ -25,25 +13,10 @@ function formatViewers(n: number): string {
   return String(n);
 }
 
-// ─── Live Avatar (responsive) ────────────────────────────────────────────
-function LiveAvatar({
-  stylist,
-  viewers,
-  onClick,
-}: {
-  stylist: Stylist;
-  viewers: number;
-  onClick: () => void;
-}) {
-  const [imageLoaded, setImageLoaded] = useState(false);
+function LiveAvatar({ stylist, viewers, onClick }: { stylist: Stylist; viewers: number; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
 
-  const initials = stylist.name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = stylist.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <button
@@ -52,46 +25,29 @@ function LiveAvatar({
       onMouseLeave={() => setHovered(false)}
       className="flex flex-col items-center gap-1.5 min-w-[64px] sm:min-w-[72px] group focus:outline-none flex-shrink-0"
     >
-      {/* Avatar ring + image */}
       <div className="relative">
         <div className="w-[56px] h-[56px] sm:w-[64px] sm:h-[64px] rounded-full p-[2px] sm:p-[3px] bg-gradient-to-tr from-red-500 via-orange-400 to-amber-400">
           <div className="w-full h-full rounded-full p-[1.5px] sm:p-[2px] bg-white">
             <div className="relative w-full h-full rounded-full overflow-hidden bg-gray-100">
-              {!imageLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                  <span className="text-xs sm:text-sm font-bold text-gray-400">
-                    {initials}
-                  </span>
-                </div>
-              )}
-              {stylist.image && (
+              {stylist.image ? (
                 <img
                   src={stylist.image}
                   alt={stylist.name}
-                  onLoad={() => setImageLoaded(true)}
-                  className={`w-full h-full object-cover transition-all duration-300 ${
-                    imageLoaded ? "opacity-100" : "opacity-0"
-                  } ${hovered ? "scale-110" : "scale-100"}`}
+                  className={`w-full h-full object-cover transition-all duration-300 ${hovered ? "scale-110" : "scale-100"}`}
                 />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                  <span className="text-xs sm:text-sm font-bold text-gray-400">{initials}</span>
+                </div>
               )}
-              <div
-                className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-200 rounded-full ${
-                  hovered ? "opacity-100" : "opacity-0"
-                }`}
-              >
+              <div className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-200 rounded-full ${hovered ? "opacity-100" : "opacity-0"}`}>
                 <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/90 flex items-center justify-center">
-                  <Play
-                    size={10}
-                    className="text-gray-900 ml-0.5"
-                    fill="currentColor"
-                  />
+                  <Play size={10} className="text-gray-900 ml-0.5" fill="currentColor" />
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* LIVE badge */}
         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-10">
           <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full bg-red-500 text-white text-[8px] sm:text-[9px] font-bold uppercase tracking-wider shadow-lg shadow-red-500/30">
             <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
@@ -99,8 +55,6 @@ function LiveAvatar({
           </div>
         </div>
       </div>
-
-      {/* Name + viewers */}
       <div className="text-center space-y-0.5 px-0.5 w-full">
         <p className="text-[11px] sm:text-xs font-semibold text-gray-900 truncate max-w-[60px] sm:max-w-[70px] group-hover:text-gray-700 transition-colors mx-auto">
           {stylist.name.split(" ")[0]}
@@ -114,7 +68,6 @@ function LiveAvatar({
   );
 }
 
-// ─── Empty State (responsive) ─────────────────────────────────────────────
 function EmptyLiveState() {
   return (
     <div className="flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-4 sm:py-6">
@@ -125,18 +78,13 @@ function EmptyLiveState() {
         </div>
       ))}
       <div className="flex-1 min-w-0 pl-1 sm:pl-2">
-        <p className="text-xs sm:text-sm font-medium text-gray-500">
-          No one is live right now
-        </p>
-        <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
-          Stylists go live throughout the day — check back soon
-        </p>
+        <p className="text-xs sm:text-sm font-medium text-gray-500">No one is live right now</p>
+        <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">Stylists go live throughout the day — check back soon</p>
       </div>
     </div>
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────
 export default function LiveStrip({ liveStylists }: LiveStripProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -148,9 +96,7 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
     if (!el) return;
     const threshold = 4;
     setShowLeftArrow(el.scrollLeft > threshold);
-    setShowRightArrow(
-      el.scrollLeft < el.scrollWidth - el.clientWidth - threshold,
-    );
+    setShowRightArrow(el.scrollLeft < el.scrollWidth - el.clientWidth - threshold);
   };
 
   useEffect(() => {
@@ -166,10 +112,7 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
   }, [liveStylists]);
 
   const scroll = (dir: "left" | "right") => {
-    scrollRef.current?.scrollBy({
-      left: dir === "left" ? -200 : 200,
-      behavior: "smooth",
-    });
+    scrollRef.current?.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
   };
 
   const handleSelect = (stylistId: string) => {
@@ -180,25 +123,19 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
-      {/* ── Header (responsive) ────────────────────────── */}
       <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 gap-2">
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <div className="relative flex-shrink-0">
             <div className="w-2 h-2 rounded-full bg-red-500" />
             <div className="absolute inset-0 w-2 h-2 rounded-full bg-red-500 animate-ping opacity-75" />
           </div>
-
-          <h3 className="text-xs sm:text-sm font-semibold text-gray-900 tracking-tight truncate">
-            Live Now
-          </h3>
-
+          <h3 className="text-xs sm:text-sm font-semibold text-gray-900 tracking-tight truncate">Live Now</h3>
           {!isEmpty && (
             <span className="text-[10px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full bg-red-50 text-red-600 tabular-nums flex-shrink-0">
               {liveStylists.length}
             </span>
           )}
         </div>
-
         {!isEmpty && (
           <button
             onClick={() => navigate("/app/live-stylists")}
@@ -210,12 +147,10 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
         )}
       </div>
 
-      {/* ── Content ─────────────────────────────────────── */}
       {isEmpty ? (
         <EmptyLiveState />
       ) : (
         <div className="relative group/scroll">
-          {/* Left arrow */}
           <AnimatePresence>
             {showLeftArrow && (
               <motion.div
@@ -235,7 +170,6 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
             )}
           </AnimatePresence>
 
-          {/* Right arrow */}
           <AnimatePresence>
             {showRightArrow && (
               <motion.div
@@ -255,7 +189,6 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
             )}
           </AnimatePresence>
 
-          {/* Scrollable row */}
           <div
             ref={scrollRef}
             className="flex gap-2 sm:gap-3 overflow-x-auto px-3 sm:px-4 pb-3 sm:pb-4 pt-1"
@@ -270,7 +203,7 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
               >
                 <LiveAvatar
                   stylist={stylist}
-                  viewers={deterministicRandom(stylist.id, 3, 87)}
+                  viewers={stylist.viewerCount || (Math.floor(Math.random() * 84) + 3)}
                   onClick={() => handleSelect(stylist.id)}
                 />
               </motion.div>
@@ -279,7 +212,6 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
         </div>
       )}
 
-      {/* Hide scrollbar */}
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>

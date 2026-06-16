@@ -3,17 +3,13 @@ import {
   Smartphone,
   Monitor,
   Sparkles,
-  Play,
   Calendar,
-  Clock,
   Star,
-  ChevronRight,
   TrendingUp,
   Users,
   Bell,
   Search,
   Heart,
-  Bookmark,
   Zap,
   Scissors,
 } from "lucide-react";
@@ -1084,8 +1080,8 @@ export default function ProductPreviewSection() {
               >
                 <FeatureCallout
                   icon={Sparkles}
-                  title="AI Vibe Matching"
-                  desc="Upload a photo or describe your style. Get matched with the perfect stylist in seconds."
+                  title="AI Vibe Match (Coming Soon)"
+                  desc="Upload a photo and our AI will analyze your face shape to recommend the perfect hairstyles. Arriving in phase two."
                   color="#6366f1"
                   bg="#EEF2FF"
                 />

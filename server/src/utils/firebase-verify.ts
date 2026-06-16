@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import logger from './logger';
 
 let cachedKeys: Record<string, string> | null = null;
 let keysFetchedAt = 0;
@@ -15,6 +16,15 @@ async function getFirebasePublicKeys(): Promise<Record<string, string>> {
   cachedKeys = data;
   keysFetchedAt = Date.now();
   return data;
+}
+
+export async function prewarmFirebaseKeys(): Promise<void> {
+  try {
+    await getFirebasePublicKeys();
+    logger.info('Firebase public keys prewarmed');
+  } catch {
+    logger.warn('Failed to prewarm Firebase public keys — will fetch on first social login');
+  }
 }
 
 export async function verifyFirebaseToken(idToken: string) {

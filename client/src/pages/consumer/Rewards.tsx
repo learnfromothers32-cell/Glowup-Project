@@ -1,11 +1,8 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useGamification } from "../../hooks/useGamification";
 import {
-  Calendar, Star, Award, TrendingUp, Sparkles,
-  Trophy, Flame, CheckCircle, ChevronRight,
-  Gift, Zap, Target, Users, Heart,
-  MessageSquare, Share2, Bookmark, Lock,
+  Calendar, Award, Trophy, Flame, CheckCircle,
+  Zap, Target, Heart, MessageSquare, Share2, Bookmark, Lock,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,30 +33,6 @@ function getNextTier(points: number) {
 }
 
 // ─── Progress Ring ────────────────────────────────────────────────────────────
-function ProgressRing({ progress, size = 80, strokeWidth = 6, color = "#1f2937" }: {
-  progress: number; size?: number; strokeWidth?: number; color?: string;
-}) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (Math.min(progress, 100) / 100) * circumference;
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#f3f4f6" strokeWidth={strokeWidth} />
-        <motion.circle
-          cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          strokeDasharray={circumference}
-        />
-      </svg>
-    </div>
-  );
-}
-
 // ─── Stats Card ───────────────────────────────────────────────────────────────
 function PointsCard({ points, streak, alreadyCheckedIn, onCheckIn }: {
   points: number; streak: number;
@@ -242,12 +215,9 @@ function TierList({ points }: { points: number }) {
 
   return (
     <div className="space-y-2">
-      {TIERS.map((tier, i) => {
+      {TIERS.map((tier) => {
         const isCurrent = tier.name === currentTier.name;
         const isUnlocked = points >= tier.min;
-        const pct = tier.max === Infinity
-          ? 100
-          : Math.min(((points - tier.min) / (tier.max - tier.min)) * 100, 100);
 
         return (
           <div

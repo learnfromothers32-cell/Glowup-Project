@@ -12,7 +12,7 @@ import {
   resetPassword
 } from '../controllers/auth.controller';
 import { protect } from '../middleware/auth.middleware';
-import { authLimiter } from '../middleware/rateLimiter';
+import { authLimiter, generalLimiter } from '../middleware/rateLimiter';
 import { validate, registerSchema, loginSchema, socialLoginSchema, forgotPasswordSchema, resetPasswordSchema } from '../middleware/validate';
 
 const router = Router();
@@ -21,11 +21,11 @@ router.post('/register', authLimiter, validate(registerSchema), register);
 router.post('/login', authLimiter, validate(loginSchema), login);
 router.post('/social-login', authLimiter, validate(socialLoginSchema), socialLogin);
 router.get('/refresh', refresh);
-router.post('/logout', logout);
-router.post('/verify-email', verifyEmail);
+router.post('/logout', generalLimiter, logout);
+router.post('/verify-email', generalLimiter, verifyEmail);
 router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
 router.get('/me', protect, getMe);
-router.put('/profile', protect, updateProfile);
+router.put('/profile', protect, generalLimiter, updateProfile);
 
 export default router;

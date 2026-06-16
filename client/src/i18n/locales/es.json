@@ -1,0 +1,13 @@
+{
+  "app": { "name": "Studio de Peinados IA", "tagline": "Prueba virtual IA" },
+  "hero": { "title": "Generador de Peinados IA", "subtitle": "Sube tu foto y pruébate diferentes peinados virtualmente. Desde cortes cortos hasta largos, rizos, flequillos, encuentra el look que mejor se adapte a tu rostro." },
+  "upload": { "drop": "Arrastra la imagen aquí", "browse": "o haz clic para explorar", "maxSize": "JPEG, PNG, WebP · Máx 10 MB", "cta": "Probar con mi foto", "sample": "O probar con un ejemplo", "change": "Cambiar foto", "remove": "Eliminar" },
+  "studio": { "hairstyles": "Peinados", "viewAll": "Ver todos", "yourPhoto": "Tu foto", "original": "Original", "compare": "Comparar", "showResult": "Mostrar resultado", "download": "Descargar", "save": "Guardar", "saved": "Guardado", "newPhoto": "Nueva foto", "generating": "Generando vista previa...", "savedLooks": "Looks guardados", "noSaved": "No hay looks guardados", "noSavedHint": "Los peinados generados aparecerán aquí" },
+  "categories": { "all": "Todos", "men": "Hombres", "women": "Mujeres", "unisex": "Unisex" },
+  "face": { "analysis": "Análisis Facial", "analyzing": "Analizando rostro...", "detected": "Rostro detectado", "detecting": "Detectando rostro", "shape": "Forma del Rostro", "confidence": "Confianza" },
+  "howItWorks": { "title": "Cómo funciona", "step1": "Sube tu foto", "step1desc": "Tómate una selfie o sube una foto clara", "step2": "Elige un peinado", "step2desc": "Explora más de 150 peinados y elige tu favorito", "step3": "Pruébalo al instante", "step3desc": "Ve el resultado en segundos con nuestra IA" },
+  "features": { "title": "Por qué Studio de Peinados IA", "compare": "Compara looks", "compareDesc": "Alterna entre antes y después para ver la diferencia", "realistic": "Vistas previas realistas", "realisticDesc": "Vistas previas naturales impulsadas por IA", "faceShape": "Análisis de forma facial", "faceShapeDesc": "Recomendaciones personalizadas según tu forma de rostro", "free": "Prueba gratuita", "freeDesc": "Sin tarjeta de crédito. 5 créditos gratis." },
+  "credits": { "title": "Créditos", "balance": "Saldo", "purchase": "Comprar créditos", "free": "Gratis", "freeHint": "Los nuevos usuarios reciben 5 créditos gratis", "noCredits": "Créditos insuficientes", "noCreditsDesc": "Compra más créditos para continuar" },
+  "footer": { "privacy": "Política de privacidad", "terms": "Términos del servicio", "contact": "Contacto" },
+  "common": { "loading": "Cargando…", "error": "Algo salió mal", "retry": "Reintentar", "close": "Cerrar" }
+}

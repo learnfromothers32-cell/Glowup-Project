@@ -8,7 +8,6 @@ import {
   Heart,
   MapPin,
   Mail,
-  Phone,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -54,19 +53,19 @@ const CONSUMER_GROUPS: FooterGroup[] = [
   {
     heading: "Support",
     links: [
-      { label: "Help Center", href: "/app" },
-      { label: "FAQ", href: "/app" },
-      { label: "Contact Us", href: "/app" },
-      { label: "Report a Problem", href: "/app" },
+      { label: "Help Center", href: "/help" },
+      { label: "FAQ", href: "/faq" },
+      { label: "Contact Us", href: "/contact" },
+      { label: "Report a Problem", href: "/report" },
     ],
   },
   {
     heading: "Legal",
     links: [
-      { label: "Terms & Conditions", href: "/" },
-      { label: "Privacy Policy", href: "/" },
-      { label: "Cookie Policy", href: "/" },
-      { label: "Refund Policy", href: "/" },
+      { label: "Terms & Conditions", href: "/terms" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Cookie Policy", href: "/cookies" },
+      { label: "Refund Policy", href: "/refunds" },
     ],
   },
 ];
@@ -77,7 +76,7 @@ const LANDING_GROUPS: FooterGroup[] = [
     links: [
       { label: "Features", href: "/#features" },
       { label: "How It Works", href: "/#how-it-works" },
-      { label: "AI Vibe Match", href: "/signup", badge: "AI" },
+      { label: "AI Vibe Match", href: "#", badge: "Coming Soon" },
       { label: "Live Sessions", href: "/signup" },
       { label: "Pricing", href: "/#pricing" },
     ],
@@ -94,19 +93,19 @@ const LANDING_GROUPS: FooterGroup[] = [
   {
     heading: "Company",
     links: [
-      { label: "About Us", href: "/" },
-      { label: "Blog", href: "/" },
-      { label: "Careers", href: "/", badge: "Hiring" },
-      { label: "Press Kit", href: "/" },
-      { label: "Contact", href: "/" },
+      { label: "About Us", href: "/about" },
+      { label: "Blog", href: "/blog" },
+      { label: "Careers", href: "/careers", badge: "Hiring" },
+      { label: "Press Kit", href: "/press-kit" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
     heading: "Legal",
     links: [
-      { label: "Privacy Policy", href: "/" },
-      { label: "Terms of Service", href: "/" },
-      { label: "Cookie Policy", href: "/" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Cookie Policy", href: "/cookies" },
     ],
   },
 ];
@@ -427,9 +426,9 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
             {/* Center: legal links */}
             <div className="flex items-center gap-5">
               {[
-                { label: "Privacy", href: "/" },
-                { label: "Terms", href: "/" },
-                { label: "Cookies", href: "/" },
+                { label: "Privacy", href: "/privacy" },
+                { label: "Terms", href: "/terms" },
+                { label: "Cookies", href: "/cookies" },
               ].map(({ label, href }) => (
                 <Link
                   key={label}

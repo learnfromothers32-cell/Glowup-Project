@@ -5,6 +5,7 @@ export interface CreateBookingData {
   serviceId: string;
   startTime: string;
   notes?: string;
+  paymentMethod?: string;
 }
 
 export const createBooking = async (bookingData: CreateBookingData) => {
@@ -29,5 +30,10 @@ export const updateBookingStatus = async (id: string, status: string) => {
 
 export const cancelBooking = async (id: string) => {
   const { data } = await api.patch(`/bookings/${id}/cancel`);
+  return data;
+};
+
+export const rescheduleBooking = async (id: string, startTime: string) => {
+  const { data } = await api.patch(`/bookings/${id}/reschedule`, { startTime });
   return data;
 };

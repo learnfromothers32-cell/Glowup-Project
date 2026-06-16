@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { isProduction } from '../config/app';
 import { ApiError } from '../utils/apiError';
+import logger from '../utils/logger';
 
 export const notFound = (req: Request, _res: Response, next: NextFunction) => {
   next(new ApiError(404, `Route not found: ${req.originalUrl}`));
@@ -15,7 +16,14 @@ export const errorHandler = (
   const statusCode = error instanceof ApiError ? error.statusCode : 500;
 
   if (statusCode === 500) {
-    console.error(`[500] ${req.method} ${req.originalUrl}:`, error);
+    logger.error(`[500] ${req.method} ${req.originalUrl}`, {
+      error: error.message,
+      stack: error.stack,
+    });
+  } else if (statusCode >= 400) {
+    logger.warn(`[${statusCode}] ${req.method} ${req.originalUrl}`, {
+      error: error.message,
+    });
   }
 
   const message =

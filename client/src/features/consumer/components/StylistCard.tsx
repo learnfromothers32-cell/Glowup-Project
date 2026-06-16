@@ -4,9 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { useFavorites } from "../../../hooks/useFavorites";
 import { useGamification } from "../../../hooks/useGamification"; // ✅ added
 import type { Stylist } from "@/domain/stylist/stylist.types";
+import type { ReactNode } from "react";
+
+interface StylistCardStylist extends Stylist {
+  nextAvailable?: string;
+}
 
 interface StylistCardProps {
-  stylist: Stylist;
+  stylist: StylistCardStylist;
   onBook: () => void;
 }
 

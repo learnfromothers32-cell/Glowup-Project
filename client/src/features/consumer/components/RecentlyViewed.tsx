@@ -11,10 +11,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import { getLocationString } from "@/utils/location";
+import { logger } from "../../../utils/logger";
 
 interface RecentlyViewedProps {
   stylists: Stylist[];
-  onSelect?: (stylist: Stylist) => void;
 }
 
 // ─── Stylist Card (safe & polished) ────────────────────────────────
@@ -147,7 +147,6 @@ function EmptyState() {
 // ─── Main Component ──────────────────────────────────────────────
 export default function RecentlyViewed({
   stylists,
-  onSelect,
 }: RecentlyViewedProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -259,7 +258,7 @@ export default function RecentlyViewed({
               onClick={() => {
                 // 2. Navigate only if we have a valid ID
                 if (!stylist.id) {
-                  console.warn("Stylist missing id", stylist);
+                  logger.warn("Stylist missing id", stylist);
                   return;
                 }
 

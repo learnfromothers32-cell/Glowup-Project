@@ -1,0 +1,13 @@
+{
+  "app": { "name": "Estúdio de Penteados IA", "tagline": "Experimente virtualmente" },
+  "hero": { "title": "Gerador de Penteados IA", "subtitle": "Carregue sua foto e experimente diferentes penteados virtualmente. De cortes curtos a longos, cacheados, franjas, encontre o visual que melhor combina com seu rosto." },
+  "upload": { "drop": "Arraste a imagem aqui", "browse": "ou clique para procurar", "maxSize": "JPEG, PNG, WebP · Máx 10 MB", "cta": "Experimentar com minha foto", "sample": "Ou testar com um exemplo", "change": "Alterar foto", "remove": "Remover" },
+  "studio": { "hairstyles": "Penteados", "viewAll": "Ver todos", "yourPhoto": "Sua foto", "original": "Original", "compare": "Comparar", "showResult": "Mostrar resultado", "download": "Baixar", "save": "Salvar", "saved": "Salvo", "newPhoto": "Nova foto", "generating": "Gerando prévia...", "savedLooks": "Looks salvos", "noSaved": "Nenhum look salvo", "noSavedHint": "Penteados gerados aparecerão aqui" },
+  "categories": { "all": "Todos", "men": "Masculino", "women": "Feminino", "unisex": "Unissex" },
+  "face": { "analysis": "Análise Facial", "analyzing": "Analisando rosto...", "detected": "Rosto detectado", "detecting": "Detectando rosto", "shape": "Formato do Rosto", "confidence": "Confiança" },
+  "howItWorks": { "title": "Como funciona", "step1": "Carregue sua foto", "step1desc": "Tire uma selfie ou carregue uma foto clara", "step2": "Escolha um penteado", "step2desc": "Explore mais de 150 penteados e escolha seu favorito", "step3": "Experimente agora", "step3desc": "Veja o resultado em segundos com nossa IA" },
+  "features": { "title": "Por que Estúdio de Penteados IA", "compare": "Compare looks", "compareDesc": "Alterne entre antes e depois para ver a diferença", "realistic": "Prévias realistas", "realisticDesc": "Prévias naturais com tecnologia IA", "faceShape": "Análise de formato facial", "faceShapeDesc": "Recomendações personalizadas baseadas no seu rosto", "free": "Grátis para testar", "freeDesc": "Sem cartão de crédito. 5 créditos grátis." },
+  "credits": { "title": "Créditos", "balance": "Saldo", "purchase": "Comprar créditos", "free": "Grátis", "freeHint": "Novos usuários recebem 5 créditos grátis", "noCredits": "Créditos insuficientes", "noCreditsDesc": "Compre mais créditos para continuar" },
+  "footer": { "privacy": "Política de Privacidade", "terms": "Termos de Serviço", "contact": "Contato" },
+  "common": { "loading": "Carregando…", "error": "Algo deu errado", "retry": "Tentar novamente", "close": "Fechar" }
+}

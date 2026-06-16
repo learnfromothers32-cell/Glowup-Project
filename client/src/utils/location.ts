@@ -2,12 +2,6 @@
  * Utility functions for location data handling
  */
 
-interface LocationObject {
-  area?: string;
-  lat?: number;
-  lng?: number;
-}
-
 /**
  * Convert any location shape to a plain string for display
  * Handles both string locations and location objects with area/lat/lng

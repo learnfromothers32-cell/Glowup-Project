@@ -1,0 +1,13 @@
+{
+  "app": { "name": "AI 发型工作室", "tagline": "AI 虚拟试戴" },
+  "hero": { "title": "AI 发型生成器", "subtitle": "上传您的照片，虚拟试戴各种发型。从短发到长发，从卷发到刘海，找到最适合您脸型的造型。" },
+  "upload": { "drop": "拖拽图片至此上传", "browse": "或点击浏览", "maxSize": "JPEG、PNG、WebP · 最大 10MB", "cta": "使用我的照片试戴", "sample": "或使用示例图片", "change": "更换照片", "remove": "移除照片" },
+  "studio": { "hairstyles": "发型选择", "viewAll": "查看全部", "yourPhoto": "您的照片", "original": "原始", "compare": "对比", "showResult": "显示结果", "download": "下载", "save": "收藏", "saved": "已收藏", "newPhoto": "新照片", "generating": "正在生成预览...", "savedLooks": "已收藏的造型", "noSaved": "还没有收藏的造型", "noSavedHint": "生成的发型将会显示在这里" },
+  "categories": { "all": "全部", "men": "男士", "women": "女士", "unisex": "中性" },
+  "face": { "analysis": "脸型分析", "analyzing": "正在分析脸型...", "detected": "已检测到脸部", "detecting": "正在检测脸部", "shape": "脸型", "confidence": "置信度" },
+  "howItWorks": { "title": "使用方式", "step1": "上传照片", "step1desc": "拍摄自拍照或上传清晰脸部照片", "step2": "选择发型", "step2desc": "浏览 150+ 种发型，挑选您喜欢的", "step3": "立即试戴", "step3desc": "通过 AI 技术，秒看效果" },
+  "features": { "title": "为什么选择 AI 发型工作室", "compare": "对比造型", "compareDesc": "前后对比，查看差异", "realistic": "逼真预览", "realisticDesc": "AI 驱动的自然预览效果", "faceShape": "脸型分析", "faceShapeDesc": "根据脸型获得个性化建议", "free": "免费试用", "freeDesc": "无需信用卡。提供 5 次免费体验。" },
+  "credits": { "title": "体验次数", "balance": "余额", "purchase": "购买次数", "free": "免费", "freeHint": "新用户可获得 5 次免费体验", "noCredits": "次数不足", "noCreditsDesc": "购买更多次数以继续使用 AI 发型生成器" },
+  "footer": { "privacy": "隐私政策", "terms": "服务条款", "contact": "联系我们" },
+  "common": { "loading": "加载中…", "error": "发生错误", "retry": "重试", "close": "关闭" }
+}

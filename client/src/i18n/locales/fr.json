@@ -1,0 +1,13 @@
+{
+  "app": { "name": "Studio Coiffure IA", "tagline": "Essai virtuel IA" },
+  "hero": { "title": "Générateur de Coiffure IA", "subtitle": "Téléchargez votre photo et essayez différentes coiffures virtuellement. Des coupes courtes aux longues, boucles, franges, trouvez le look qui correspond le mieux à votre visage." },
+  "upload": { "drop": "Déposez votre image ici", "browse": "ou cliquez pour parcourir", "maxSize": "JPEG, PNG, WebP · Max 10 Mo", "cta": "Essayer avec ma photo", "sample": "Ou essayez avec un exemple", "change": "Changer de photo", "remove": "Supprimer" },
+  "studio": { "hairstyles": "Coiffures", "viewAll": "Voir tout", "yourPhoto": "Votre photo", "original": "Original", "compare": "Comparer", "showResult": "Afficher le résultat", "download": "Télécharger", "save": "Sauvegarder", "saved": "Sauvegardé", "newPhoto": "Nouvelle photo", "generating": "Génération de l'aperçu...", "savedLooks": "Looks sauvegardés", "noSaved": "Aucun look sauvegardé", "noSavedHint": "Les coiffures générées apparaîtront ici" },
+  "categories": { "all": "Tous", "men": "Hommes", "women": "Femmes", "unisex": "Unisexe" },
+  "face": { "analysis": "Analyse du Visage", "analyzing": "Analyse du visage...", "detected": "Visage détecté", "detecting": "Détection du visage", "shape": "Forme du Visage", "confidence": "Confiance" },
+  "howItWorks": { "title": "Comment ça marche", "step1": "Téléchargez votre photo", "step1desc": "Prenez un selfie ou téléchargez une photo claire", "step2": "Choisissez une coiffure", "step2desc": "Parcourez 150+ coiffures et choisissez votre favorite", "step3": "Essayez instantanément", "step3desc": "Voyez le résultat en quelques secondes avec notre IA" },
+  "features": { "title": "Pourquoi Studio Coiffure IA", "compare": "Comparer les looks", "compareDesc": "Basculez entre avant et après pour voir la différence", "realistic": "Aperçus réalistes", "realisticDesc": "Aperçus IA naturels sur votre photo", "faceShape": "Analyse de la forme du visage", "faceShapeDesc": "Recommandations personnalisées selon votre visage", "free": "Gratuit", "freeDesc": "Pas de carte de crédit. 5 crédits gratuits offerts." },
+  "credits": { "title": "Crédits", "balance": "Solde", "purchase": "Acheter des crédits", "free": "Gratuit", "freeHint": "5 crédits offerts aux nouveaux utilisateurs", "noCredits": "Crédits insuffisants", "noCreditsDesc": "Achetez plus de crédits pour continuer" },
+  "footer": { "privacy": "Politique de confidentialité", "terms": "Conditions d'utilisation", "contact": "Contact" },
+  "common": { "loading": "Chargement…", "error": "Une erreur est survenue", "retry": "Réessayer", "close": "Fermer" }
+}

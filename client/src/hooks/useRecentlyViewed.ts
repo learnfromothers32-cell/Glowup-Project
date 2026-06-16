@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 
 const STORAGE_KEY = "glowup_recent_stylists";
@@ -19,7 +19,7 @@ export function useRecentlyViewed() {
   // Lazy initializer – runs only once
   const [recent, setRecent] = useState<Stylist[]>(loadInitialRecentlyViewed);
 
-  const addToRecentlyViewed = (stylist: Stylist) => {
+  const addToRecentlyViewed = useCallback((stylist: Stylist) => {
     setRecent((prev) => {
       // Remove if already exists
       const filtered = prev.filter((s) => s.id !== stylist.id);
@@ -28,7 +28,7 @@ export function useRecentlyViewed() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
-  };
+  }, []);
 
   return { recent, addToRecentlyViewed };
 }

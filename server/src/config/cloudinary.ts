@@ -1,3 +1,4 @@
+import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
 import { appConfig } from './app';
 
@@ -16,3 +17,16 @@ if (hasCloudinaryConfig) {
 
 export { cloudinary };
 export const isCloudinaryConfigured = Boolean(hasCloudinaryConfig);
+
+export const uploadToCloudinary = async (
+  filePath: string,
+  folder: string,
+  options?: Record<string, unknown>
+): Promise<string> => {
+  const result = await cloudinary.uploader.upload(filePath, {
+    folder,
+    ...options,
+  });
+  try { fs.unlinkSync(filePath); } catch { /* ignore */ }
+  return result.secure_url;
+};

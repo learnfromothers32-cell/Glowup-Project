@@ -1,0 +1,13 @@
+{
+  "app": { "name": "AI 헤어스타일 스튜디오", "tagline": "AI 가상 체험" },
+  "hero": { "title": "AI 헤어스타일 생성기", "subtitle": "사진을 업로드하고 다양한 헤어스타일을 가상으로 체험해보세요. 짧은 컷부터 긴 컷, 컬, 앞머리까지 당신의 얼굴에 가장 잘 어울리는 스타일을 찾아보세요." },
+  "upload": { "drop": "이미지를 드래그하여 업로드", "browse": "또는 클릭하여 찾아보기", "maxSize": "JPEG, PNG, WebP · 최대 10MB", "cta": "내 사진으로 체험하기", "sample": "또는 예시로 시도하기", "change": "사진 변경", "remove": "제거" },
+  "studio": { "hairstyles": "헤어스타일", "viewAll": "모두 보기", "yourPhoto": "내 사진", "original": "원본", "compare": "비교", "showResult": "결과 보기", "download": "다운로드", "save": "저장", "saved": "저장됨", "newPhoto": "새 사진", "generating": "미리보기 생성 중...", "savedLooks": "저장된 스타일", "noSaved": "저장된 스타일이 없습니다", "noSavedHint": "생성된 헤어스타일이 여기에 표시됩니다" },
+  "categories": { "all": "전체", "men": "남성", "women": "여성", "unisex": "공용" },
+  "face": { "analysis": "얼굴 분석", "analyzing": "얼굴 분석 중...", "detected": "얼굴 감지됨", "detecting": "얼굴 감지 중", "shape": "얼굴형", "confidence": "신뢰도" },
+  "howItWorks": { "title": "사용 방법", "step1": "사진 업로드", "step1desc": "셀카 또는 선명한 얼굴 사진 업로드", "step2": "헤어스타일 선택", "step2desc": "150개 이상의 스타일 중에서 선택", "step3": "즉시 체험", "step3desc": "AI 기술로 몇 초 만에 결과 확인" },
+  "features": { "title": "AI 헤어스타일 스튜디오의 특징", "compare": "스타일 비교", "compareDesc": "전후를 전환하여 차이점 확인", "realistic": "사실적인 미리보기", "realisticDesc": "자연스러운 AI 미리보기", "faceShape": "얼굴형 분석", "faceShapeDesc": "얼굴형에 기반한 맞춤 추천", "free": "무료 체험", "freeDesc": "신용카드 필요 없음. 5회 무료 체험 제공." },
+  "credits": { "title": "크레딧", "balance": "잔액", "purchase": "크레딧 구매", "free": "무료", "freeHint": "신규 사용자에게 5크레딧 증정", "noCredits": "크레딧 부족", "noCreditsDesc": "크레딧을 구매하여 계속 사용하세요" },
+  "footer": { "privacy": "개인정보처리방침", "terms": "이용약관", "contact": "문의하기" },
+  "common": { "loading": "로딩 중…", "error": "오류가 발생했습니다", "retry": "재시도", "close": "닫기" }
+}

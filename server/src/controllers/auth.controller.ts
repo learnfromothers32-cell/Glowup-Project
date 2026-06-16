@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { Request, Response } from 'express';
 import { User } from '../models/User';
 import { asyncHandler } from '../middleware/asyncHandler';
@@ -6,6 +7,7 @@ import { ApiError } from '../utils/apiError';
 import { sendSuccess } from '../utils/apiResponse';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, hashToken } from '../utils/token';
 import { createUser, findUserForLogin, toPublicUser, findOrCreateSocialUser } from '../services/user.service';
+import { appConfig } from '../config/app';
 import { admin } from '../config/firebase';
 import { verifyFirebaseToken } from '../utils/firebase-verify';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.service';
@@ -124,6 +126,17 @@ export const socialLogin = asyncHandler(async (req: Request, res: Response) => {
 // ---------- Refresh ----------
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
+  // CSRF protection: verify Origin matches the configured client URL
+  const origin = req.headers.origin || req.headers.referer;
+  if (origin) {
+    const allowedOrigins = [appConfig.clientUrl, 'http://localhost:5173', 'http://localhost:5000'];
+    const originOk = allowedOrigins.some((allowed) => origin.startsWith(allowed));
+    if (!originOk) {
+      clearRefreshCookie(res);
+      throw new ApiError(403, 'Cross-origin request blocked');
+    }
+  }
+
   const token = req.cookies?.refreshToken;
   if (!token) {
     throw new ApiError(401, 'Refresh token not found');
@@ -283,7 +296,6 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
     throw new ApiError(400, 'Invalid or expired reset token');
   }
 
-  const bcrypt = await import('bcryptjs');
   user.passwordHash = await bcrypt.hash(password, 12);
   user.resetPasswordToken = undefined;
   user.resetPasswordExpires = undefined;

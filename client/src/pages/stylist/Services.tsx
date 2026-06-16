@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Clock, Trash2, Save, Loader2, AlertCircle, Scissors, DollarSign, RefreshCcw } from "lucide-react";
+import { Plus, Clock, Trash2, Save, Loader2, AlertCircle, Scissors, RefreshCcw, Check } from "lucide-react";
 import { getMyStylistProfile, addMyService, updateMyService, deleteMyService } from "../../api/stylists";
 import { getStylistServices } from "../../api/stylists";
 
@@ -11,6 +11,7 @@ interface ServiceItem {
   duration: number;
   category?: string;
   isActive?: boolean;
+  popular?: boolean;
 }
 
 export default function Services() {
@@ -31,10 +32,11 @@ export default function Services() {
       setServices(svcs.map((s: any) => ({
         id: s.id || s._id,
         name: s.name,
-        price: s.price,
-        duration: s.duration,
+        price: typeof s.price === "number" ? s.price : parseFloat(s.price) || 0,
+        duration: typeof s.duration === "number" ? s.duration : parseInt(s.duration) || 30,
         category: s.category,
-        isActive: s.isActive
+        isActive: s.isActive,
+        popular: s.popular,
       })));
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || "Failed to load services");
@@ -58,14 +60,14 @@ export default function Services() {
         name: "New Service",
         price: 0,
         duration: 30,
-        category: "General"
+        category: "General",
       });
       setServices(prev => [...prev, {
         id: newService.id || newService._id,
         name: newService.name,
         price: newService.price,
         duration: newService.duration,
-        category: newService.category
+        category: newService.category,
       }]);
       showSuccess("Service added");
     } catch (err: any) {
@@ -89,7 +91,7 @@ export default function Services() {
         name: service.name,
         price: Number(service.price),
         duration: Number(service.duration),
-        category: service.category
+        category: service.category,
       });
       showSuccess("Service saved");
     } catch (err: any) {
@@ -114,29 +116,34 @@ export default function Services() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-gray-400" size={24} />
+        <Loader2 className="animate-spin text-text-muted dark:text-text-dark-muted" size={24} />
       </div>
     );
   }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">My Services</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Manage what you offer to clients</p>
+          <h1 className="text-xl font-bold text-text-primary dark:text-text-dark-primary font-display">
+            My Services
+          </h1>
+          <p className="text-xs mt-0.5 text-text-muted dark:text-text-dark-muted">
+            Manage what you offer to clients
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={fetchServices}
-            className="p-2 rounded-xl hover:bg-gray-100 transition-all"
+            className="p-2 rounded-xl transition-all text-text-muted dark:text-text-dark-muted"
             title="Refresh"
           >
-            <RefreshCcw size={15} className="text-gray-400" />
+            <RefreshCcw size={15} />
           </button>
           <button
             onClick={handleAdd}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-semibold shadow-md hover:shadow-lg hover:shadow-indigo-200 transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-md hover:shadow-lg transition-all bg-gradient-to-br from-brand-700 to-brand-900 text-white"
           >
             <Plus size={14} />
             Add Service
@@ -144,29 +151,30 @@ export default function Services() {
         </div>
       </div>
 
+      {/* Error / Success */}
       {error && (
-        <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
-          <AlertCircle size={14} className="text-red-500 flex-shrink-0" />
-          <p className="text-xs font-medium text-red-700">{error}</p>
+        <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-error/10 border border-error/20">
+          <AlertCircle size={14} className="text-error" />
+          <p className="text-xs font-medium text-error">{error}</p>
         </div>
       )}
       {successMsg && (
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2.5">
-          <Scissors size={14} className="text-emerald-500 flex-shrink-0" />
-          <p className="text-xs font-medium text-emerald-700">{successMsg}</p>
+        <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 bg-success/10 border border-success/20">
+          <Check size={14} className="text-success" />
+          <p className="text-xs font-medium text-success">{successMsg}</p>
         </div>
       )}
 
       {services.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-          <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3">
-            <Scissors size={24} className="text-gray-300" />
+        <div className="text-center py-16 rounded-2xl bg-white dark:bg-surface-dark-secondary shadow-card">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-gray-100 dark:bg-surface-dark-tertiary">
+            <Scissors size={24} className="text-text-muted dark:text-text-dark-muted" />
           </div>
-          <p className="text-sm font-semibold text-gray-700 mb-1">No services yet</p>
-          <p className="text-xs text-gray-400 mb-4">Add your first service to start getting booked</p>
+          <p className="text-sm font-semibold mb-1 text-text-primary dark:text-text-dark-primary">No services yet</p>
+          <p className="text-xs mb-5 text-text-muted dark:text-text-dark-muted">Add your first service to start getting booked</p>
           <button
             onClick={handleAdd}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-semibold rounded-xl shadow-md hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md hover:shadow-lg transition-all bg-gradient-to-br from-brand-700 to-brand-900 text-white"
           >
             <Plus size={14} />
             Add Service
@@ -180,72 +188,82 @@ export default function Services() {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.03 }}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:border-gray-200 transition-all"
+              className="rounded-2xl overflow-hidden transition-all bg-white dark:bg-surface-dark-secondary shadow-card"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center flex-shrink-0">
-                  <Scissors size={16} className="text-indigo-500" />
-                </div>
-
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Name</label>
-                    <input
-                      value={svc.name}
-                      onChange={(e) => svc.id && handleUpdate(svc.id, "name", e.target.value)}
-                      className="w-full text-sm font-semibold text-gray-900 bg-transparent outline-none mt-0.5 placeholder-gray-300"
-                      placeholder="Service name"
-                    />
+              {svc.popular && (
+                <div className="h-0.5 bg-gradient-to-r from-amber-400 to-brand-900" />
+              )}
+              <div className="p-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 dark:bg-amber-950/20">
+                    <Scissors size={16} className="text-amber-400" />
                   </div>
-                  <div>
-                    <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Duration</label>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Clock size={12} className="text-gray-300" />
+
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted dark:text-text-dark-muted">
+                        Name
+                      </label>
                       <input
-                        type="number"
-                        value={svc.duration}
-                        onChange={(e) => svc.id && handleUpdate(svc.id, "duration", parseInt(e.target.value) || 0)}
-                        className="w-16 text-sm font-medium text-gray-900 bg-transparent outline-none"
-                        placeholder="30"
+                        value={svc.name}
+                        onChange={(e) => svc.id && handleUpdate(svc.id, "name", e.target.value)}
+                        className="w-full text-sm font-semibold bg-transparent outline-none mt-0.5 text-text-primary dark:text-text-dark-primary"
+                        placeholder="Service name"
                       />
-                      <span className="text-xs text-gray-400">min</span>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted dark:text-text-dark-muted">
+                        Duration
+                      </label>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Clock size={12} className="text-text-muted dark:text-text-dark-muted" />
+                        <input
+                          type="number"
+                          value={svc.duration}
+                          onChange={(e) => svc.id && handleUpdate(svc.id, "duration", parseInt(e.target.value) || 0)}
+                          className="w-16 text-sm font-medium bg-transparent outline-none text-text-primary dark:text-text-dark-primary"
+                          placeholder="30"
+                        />
+                        <span className="text-xs text-text-muted dark:text-text-dark-muted">min</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted dark:text-text-dark-muted">
+                        Price
+                      </label>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-xs font-bold text-text-muted dark:text-text-dark-muted">GH₵</span>
+                        <input
+                          type="number"
+                          value={svc.price}
+                          onChange={(e) => svc.id && handleUpdate(svc.id, "price", parseInt(e.target.value) || 0)}
+                          className="w-20 text-sm font-bold bg-transparent outline-none text-text-primary dark:text-text-dark-primary"
+                          placeholder="0"
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Price</label>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <DollarSign size={12} className="text-gray-300" />
-                      <input
-                        type="number"
-                        value={svc.price}
-                        onChange={(e) => svc.id && handleUpdate(svc.id, "price", parseInt(e.target.value) || 0)}
-                        className="w-20 text-sm font-bold text-gray-900 bg-transparent outline-none"
-                        placeholder="0"
-                      />
-                      <span className="text-xs text-gray-400">GH₵</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => svc.id && handleSave(svc.id)}
-                    disabled={saving === svc.id}
-                    className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-all"
-                    title="Save"
-                  >
-                    {saving === svc.id
-                      ? <Loader2 size={15} className="animate-spin" />
-                      : <Save size={15} />
-                    }
-                  </button>
-                  <button
-                    onClick={() => svc.id && handleDelete(svc.id)}
-                    className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-all"
-                    title="Delete"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => svc.id && handleSave(svc.id)}
+                      disabled={saving === svc.id}
+                      className="p-2 rounded-lg transition-all text-text-muted dark:text-text-dark-muted"
+                      title="Save"
+                    >
+                      {saving === svc.id
+                        ? <Loader2 size={15} className="animate-spin" />
+                        : <Save size={15} />
+                      }
+                    </button>
+                    <button
+                      onClick={() => svc.id && handleDelete(svc.id)}
+                      className="p-2 rounded-lg transition-all text-text-muted dark:text-text-dark-muted"
+                      title="Delete"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>

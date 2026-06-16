@@ -3,46 +3,64 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useStylistDetail } from "../../hooks/useStylistDetail";
+import { useFollow } from "../../context/FollowContext";
 import BookingModal from "../../features/consumer/components/BookingModal";
 import { useGamification } from "../../hooks/useGamification";
+import { useRecentlyViewed } from "../../hooks/useRecentlyViewed";
+import { createConversation, getMyConversations } from "../../api/conversations";
+import { logger } from "../../utils/logger";
+import { joinWaitlist } from "../../api/waitlist";
+import { getStylistProducts } from "../../api/products";
+import { getStylistPackages } from "../../api/packages";
+import { purchasePackage } from "../../api/packages";
+import { subscribeToTier, getStylistTiers } from "../../api/memberships";
+import type { Stylist } from "@/domain/stylist/stylist.types";
+import type { BeforeAfter } from "../../features/stylist/components/StylistDetailParts";
 import {
   Star,
   Check,
   MapPin,
+  Eye,
   Heart,
   Share2,
   ArrowLeft,
   Clock,
-  CheckCircle,
   X,
   ChevronRight,
   Award,
   Zap,
   Calendar,
-  Maximize2,
   ArrowRight,
   MessageSquare,
   BadgeCheck,
   Users,
   ChevronLeft,
   Scissors,
-  Sparkles,
   ImageIcon,
   Phone,
   Camera,
   Shield,
   TrendingUp,
   Globe,
+  AtSign,
   MoreHorizontal,
-  Grid3X3,
-  List,
   ExternalLink,
+  Loader2,
+  ShoppingBag,
+  Gift,
+  Crown,
   ThumbsUp,
-  Eye,
   Lock,
   RefreshCw,
   Wifi,
+  Music,
 } from "lucide-react";
+import { Button } from "../../components/ui/Button";
+import { Badge } from "../../components/ui/Badge";
+import { Avatar } from "../../components/ui/Avatar";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { FollowButton } from "../../components/ui/FollowButton";
+import { API_SERVER_URL } from "../../api/axios";
 
 /* ═══════════════════════════════════════════════════════════
    DESIGN TOKENS
@@ -97,7 +115,9 @@ type TabKey =
   | "portfolio"
   | "services"
   | "reviews"
-  | "transformations";
+  | "products"
+  | "packages"
+  | "memberships";
 
 interface Review {
   user: string;
@@ -105,18 +125,11 @@ interface Review {
   comment: string;
   date: string;
 }
-interface BeforeAfter {
-  before: string;
-  after: string;
-  caption?: string;
-}
-
-interface ExtendedStylist extends Stylist {
+interface ExtendedStylist extends Omit<Stylist, 'bio'> {
   portfolioImages?: string[];
   beforeAfter?: BeforeAfter[];
   bio?: string;
   reviews: Review[];
-  isVerified?: boolean;
 }
 interface ServiceItem {
   name: string;
@@ -131,7 +144,7 @@ interface ServiceItem {
 ═══════════════════════════════════════════════════════════ */
 function safeServices(services: Stylist["services"]): ServiceItem[] {
   if (!services) return [];
-  return services.map((s) =>
+  return services.map((s: NonNullable<Stylist["services"]>[0]) =>
     typeof s === "string"
       ? { name: s, price: "", duration: "" }
       : (s as ServiceItem),
@@ -148,6 +161,8 @@ function getInitials(name: string) {
     .toUpperCase()
     .slice(0, 2);
 }
+const formatCount = (n: number) =>
+  n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "K" : n ? String(n) : "0";
 function getLocationString(loc: any): string {
   if (!loc) return "";
   if (typeof loc === "string") return loc;
@@ -409,10 +424,12 @@ function SectionHeader({
   title,
   subtitle,
   action,
+  icon: Icon,
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  icon?: React.ElementType;
 }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
@@ -424,21 +441,31 @@ function SectionHeader({
       transition={{ duration: 0.4 }}
       className="flex items-end justify-between mb-5"
     >
-      <div>
-        <h2
-          className="text-lg font-bold"
-          style={{ color: T.ink, fontFamily: FONT_DISPLAY }}
-        >
-          {title}
-        </h2>
-        {subtitle && (
-          <p
-            className="text-xs mt-0.5 font-medium"
-            style={{ color: T.inkFaint }}
+      <div className="flex items-center gap-2">
+        {Icon && (
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: T.goldGhost }}
           >
-            {subtitle}
-          </p>
+            <Icon size={15} style={{ color: T.goldMid }} />
+          </div>
         )}
+        <div>
+          <h2
+            className="text-lg font-bold"
+            style={{ color: T.ink, fontFamily: FONT_DISPLAY }}
+          >
+            {title}
+          </h2>
+          {subtitle && (
+            <p
+              className="text-xs mt-0.5 font-medium"
+              style={{ color: T.inkFaint }}
+            >
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>
       {action}
     </motion.div>
@@ -448,15 +475,88 @@ function SectionHeader({
 /* ═══════════════════════════════════════════════════════════
    PORTFOLIO TAB
 ═══════════════════════════════════════════════════════════ */
+const imgSrc = (item: string | { url: string; type?: string }) =>
+  typeof item === 'string' ? item : (item.url.startsWith('http') ? item.url : `${API_SERVER_URL}${item.url}`);
+
+const transformImgSrc = (url: string) =>
+  url.startsWith('http') ? url : `${API_SERVER_URL}${url}`;
+
+/* ─── Video Viewer ─── */
+function VideoViewer({ src, onClose }: { src: string; onClose: () => void }) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[220] flex items-center justify-center bg-black/95"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex items-center justify-center w-full h-full sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/25"
+          aria-label="Close"
+        >
+          <X size={16} className="sm:size-[18]" />
+        </button>
+        <video
+          src={src}
+          controls
+          autoPlay
+          playsInline
+          className="w-full h-full sm:max-w-[90vw] sm:max-h-[85vh] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl object-contain bg-black sm:rounded-xl"
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+function StatItem({ value, label }: { value: number | string; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-lg font-bold" style={{ color: T.ink, fontFamily: FONT_DISPLAY }}>
+        {value}
+      </span>
+      <span className="text-[11px] font-medium" style={{ color: T.inkFaint }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/* ─── TikTok-Style Portfolio Tab ─── */
 function PortfolioTab({
   images,
-  onOpen,
+  beforeAfter,
+  onOpenImage,
+  onPlayVideo,
+  onViewTransform,
 }: {
-  images: string[];
-  onOpen: (i: number) => void;
+  images: Array<{ url: string; type: 'image' | 'video' }>;
+  beforeAfter: BeforeAfter[];
+  onOpenImage: (i: number) => void;
+  onPlayVideo: (url: string) => void;
+  onViewTransform: (i: number) => void;
 }) {
-  const [layout, setLayout] = useState<"masonry" | "grid">("masonry");
-  if (!images?.length)
+  const navigate = useNavigate();
+  const [subTab, setSubTab] = useState<'posts' | 'transforms'>('posts');
+
+  const hasPosts = images?.length > 0;
+  const hasTransforms = beforeAfter?.length > 0;
+
+  if (!hasPosts && !hasTransforms) {
     return (
       <EmptyState
         icon={ImageIcon}
@@ -464,96 +564,249 @@ function PortfolioTab({
         sub="Check back to see this stylist's work"
       />
     );
+  }
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-xs font-medium" style={{ color: T.inkFaint }}>
-          {images.length} photos
-        </p>
-        <div
-          className="flex items-center gap-1 p-1 rounded-lg"
-          style={{ background: T.muted }}
-        >
-          {[
-            { key: "masonry" as const, icon: Grid3X3 },
-            { key: "grid" as const, icon: List },
-          ].map(({ key, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => setLayout(key)}
-              className="p-1.5 rounded-md transition-all"
-              style={{
-                background: layout === key ? T.canvas : "transparent",
-                color: layout === key ? T.ink : T.inkFaint,
-                boxShadow: layout === key ? T.shadowSm : "none",
-              }}
-            >
-              <Icon size={13} />
-            </button>
-          ))}
-        </div>
+      {/* Stats bar */}
+      <div
+        className="flex items-center justify-around py-4 px-2 mb-5 rounded-2xl"
+        style={{ background: T.canvas, boxShadow: T.shadowSm }}
+      >
+        <StatItem value={images.length} label="Posts" />
+        <StatItem value={beforeAfter.length} label="Transforms" />
+        <StatItem value={formatCount(beforeAfter.reduce((s, i) => s + ((i as any).views || 0), 0))} label="Views" />
       </div>
-      {layout === "masonry" ? (
-        <div className="columns-2 sm:columns-3 gap-2.5">
-          {images.map((img, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-              onClick={() => onOpen(i)}
-              className="group relative break-inside-avoid rounded-xl overflow-hidden cursor-pointer mb-2.5"
-              style={{ background: T.muted }}
-            >
-              <img
-                src={img}
-                alt=""
-                loading="lazy"
-                className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
+
+      {/* Sub-tabs */}
+      <div className="flex items-center justify-center gap-6 mb-4 border-b" style={{ borderColor: T.line }}>
+        {[
+          { key: 'posts' as const, label: 'Posts', active: true },
+          { key: 'transforms' as const, label: 'Transforms', active: hasTransforms },
+        ].filter(t => t.active).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setSubTab(key)}
+            className="relative pb-2.5 text-xs font-semibold tracking-wide transition-colors"
+            style={{ color: subTab === key ? T.ink : T.inkFaint }}
+          >
+            {label}
+            <span className="ml-1 text-[10px]" style={{ color: T.inkFaint }}>
+              ({key === 'posts' ? images.length : beforeAfter.length})
+            </span>
+            {subTab === key && (
+              <motion.div
+                layoutId="portfolioSub"
+                className="absolute bottom-0 inset-x-0 h-0.5 rounded-full"
+                style={{ background: T.goldMid }}
+                transition={{ type: "spring", stiffness: 420, damping: 36 }}
               />
-              <div
-                className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
-                style={{ background: "rgba(11,20,40,0.45)" }}
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Content grid (TikTok 3-column) */}
+      {subTab === 'posts' ? (
+        <div className="grid grid-cols-3 gap-1">
+          {images.map((item, i) => {
+            const imgIndex = images.filter(x => x.type === 'image').length > 0
+              ? images.slice(0, i).filter(x => x.type === 'image').length
+              : i;
+            return (
+              <motion.button
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.03 }}
+                onClick={() => item.type === 'video' ? onPlayVideo(imgSrc(item)) : onOpenImage(imgIndex)}
+                className="group relative aspect-square overflow-hidden cursor-pointer"
+                style={{ background: T.muted }}
               >
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{ background: T.goldMid }}
-                >
-                  <Maximize2 size={14} color="#fff" />
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                {item.type === 'video' ? (
+                  <>
+                    <video src={imgSrc(item)} className="absolute inset-0 w-full h-full object-cover" muted playsInline preload="metadata" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm shadow-lg ring-1 ring-white/20">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20" /></svg>
+                      </div>
+                    </div>
+                    <div className="absolute top-1.5 left-1.5">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold text-white bg-black/60 backdrop-blur-sm">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21" /></svg>
+                        Video
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <img src={imgSrc(item)} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                )}
+              </motion.button>
+            );
+          })}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-2">
-          {images.map((img, i) => (
-            <motion.div
+        <div className="grid grid-cols-3 gap-1">
+          {beforeAfter.map((item, i) => (
+            <motion.button
               key={i}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.03 }}
-              onClick={() => onOpen(i)}
-              className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer"
+              onClick={() => onViewTransform(i)}
+              className="group relative aspect-square overflow-hidden cursor-pointer"
               style={{ background: T.muted }}
             >
-              <img
-                src={img}
-                alt=""
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div
-                className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
-                style={{ background: "rgba(11,20,40,0.45)" }}
-              >
-                <Eye size={16} color="#fff" />
+              {item.mediaType === 'video' ? (
+                <>
+                  <video
+                    src={transformImgSrc(item.after)}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm shadow-lg ring-1 ring-white/20">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20" /></svg>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <img
+                  src={transformImgSrc(item.after)}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm">
+                <Eye size={9} className="text-white" />
+                <span className="text-[10px] font-semibold text-white">{(item as any).views ?? 0}</span>
               </div>
-            </motion.div>
+            </motion.button>
           ))}
         </div>
       )}
+      {subTab === 'transforms' && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => navigate('/app/trending')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all hover:scale-105 active:scale-95"
+            style={{ background: T.goldMid, color: '#fff' }}
+          >
+            <TrendingUp size={14} />
+            View trending transformations
+          </button>
+        </div>
+      )}
     </div>
+  );
+}
+
+function TransformDetail({
+  items,
+  initialIndex,
+  onClose,
+}: {
+  items: BeforeAfter[];
+  initialIndex: number;
+  onClose: () => void;
+}) {
+  const [index, setIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") setIndex(i => (i > 0 ? i - 1 : items.length - 1));
+      if (e.key === "ArrowRight") setIndex(i => (i < items.length - 1 ? i + 1 : 0));
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [items.length, onClose]);
+
+  const item = items[index];
+  if (!item) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex items-center justify-center w-full h-full sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 inline-flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/25"
+          aria-label="Close"
+        >
+          <X size={16} className="sm:size-[18]" />
+        </button>
+
+        {item.mediaType === 'video' ? (
+          <video
+            src={transformImgSrc(item.after)}
+            controls
+            autoPlay
+            playsInline
+            className="w-full h-full sm:max-w-[90vw] sm:max-h-[85vh] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl object-contain bg-black sm:rounded-xl"
+          />
+        ) : (
+          <img
+            src={transformImgSrc(item.after)}
+            alt=""
+            className="w-full h-full sm:max-w-[90vw] sm:max-h-[85vh] md:max-w-3xl lg:max-w-4xl xl:max-w-5xl object-contain bg-black sm:rounded-xl"
+          />
+        )}
+      </div>
+
+      {item.caption && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 text-center px-4 pointer-events-none">
+          <p className="text-sm font-medium text-white/80">{item.caption}</p>
+          {item.service && (
+            <p className="text-xs mt-1 text-white/50">{item.service}</p>
+          )}
+        </div>
+      )}
+
+      {items.length > 1 && (
+        <>
+          {index > 0 && (
+            <button
+              onClick={() => setIndex(i => i - 1)}
+              className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/25 z-10"
+              aria-label="Previous"
+            >
+              <ChevronLeft size={17} />
+            </button>
+          )}
+          {index < items.length - 1 && (
+            <button
+              onClick={() => setIndex(i => i + 1)}
+              className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/25 z-10"
+              aria-label="Next"
+            >
+              <ChevronRight size={17} />
+            </button>
+          )}
+        </>
+      )}
+
+      {items.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+          <span className="text-xs tabular-nums text-white/40">
+            {index + 1} / {items.length}
+          </span>
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -563,7 +816,6 @@ function PortfolioTab({
 function ServicesTab({
   services,
   onBook,
-  stylistId,
 }: {
   services: ServiceItem[];
   onBook: (s: ServiceItem) => void;
@@ -663,13 +915,13 @@ function ServicesTab({
                     >
                       {svc.price || "—"}
                     </span>
-                    <button
+                    <Button
+                      size="sm"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         onBook(svc);
                       }}
-                      className="px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 active:scale-95 flex items-center gap-1"
                       style={{ background: T.navy, color: T.white }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.background = T.goldMid)
@@ -679,13 +931,13 @@ function ServicesTab({
                       }
                     >
                       Book <ArrowRight size={10} />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
             </motion.div>
           ))}
-      </div>
+        </div>
     </div>
   );
 }
@@ -827,16 +1079,8 @@ function ReviewsTab({ stylist }: { stylist: ExtendedStylist }) {
               style={{ background: T.canvas }}
             >
               <div className="p-5">
-                <div className="flex items-start gap-3.5">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${T.navy}, ${T.navyLight})`,
-                      color: T.white,
-                    }}
-                  >
-                    {rev.user[0].toUpperCase()}
-                  </div>
+                  <div className="flex items-start gap-3.5">
+                   <Avatar name={rev.user} size="sm" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1.5">
                       <div>
@@ -912,72 +1156,18 @@ function ReviewsTab({ stylist }: { stylist: ExtendedStylist }) {
 /* ═══════════════════════════════════════════════════════════
    TRANSFORMATIONS TAB
 ═══════════════════════════════════════════════════════════ */
-function TransformationsTab({ items }: { items: BeforeAfter[] }) {
-  if (!items?.length)
-    return (
-      <EmptyState
-        icon={Sparkles}
-        title="No transformations yet"
-        sub="Check back for incredible makeovers"
-      />
-    );
-  return (
-    <div className="grid gap-5 sm:grid-cols-2">
-      {items.map((item, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.1 }}
-          className="rounded-2xl overflow-hidden shadow-card"
-          style={{ background: T.canvas }}
-        >
-          {/* Before/After slider simplified */}
-          <div className="relative aspect-[4/3] overflow-hidden">
-            <img
-              src={item.after}
-              alt="After"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              {item.caption && (
-                <p className="text-white text-xs font-semibold">
-                  {item.caption}
-                </p>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
 
-/* ═══════════════════════════════════════════════════════════
-   SKELETON
-═══════════════════════════════════════════════════════════ */
-function Skeleton() {
+function StylistSkeleton() {
   return (
     <div className="min-h-screen" style={{ background: T.bg }}>
-      <div
-        className="h-64 sm:h-[520px] animate-pulse"
-        style={{ background: T.muted }}
-      />
+      <Skeleton className="h-64 sm:h-[520px] rounded-none" style={{ background: T.muted }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid lg:grid-cols-[1fr_380px] gap-8">
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className="h-28 rounded-2xl animate-pulse"
-              style={{ background: T.muted }}
-            />
+            <Skeleton key={n} className="h-28 rounded-2xl" style={{ background: T.muted }} />
           ))}
         </div>
-        <div
-          className="h-[520px] rounded-2xl animate-pulse"
-          style={{ background: T.muted }}
-        />
+        <Skeleton className="h-[520px] rounded-2xl" style={{ background: T.muted }} />
       </div>
     </div>
   );
@@ -991,11 +1181,23 @@ function BookingCard({
   services,
   minPrice,
   onBook,
+  onMessage,
+  onCall,
+  onJoinWaitlist,
+  onFollow,
+  joiningWaitlist = false,
+  waitlistJoined = false,
 }: {
   stylist: ExtendedStylist;
   services: ServiceItem[];
   minPrice: number;
   onBook: (svc?: ServiceItem) => void;
+  onMessage?: () => void;
+  onCall?: () => void;
+  onJoinWaitlist?: () => void;
+  onFollow?: (stylistId: string, following: boolean) => void;
+  joiningWaitlist?: boolean;
+  waitlistJoined?: boolean;
 }) {
   return (
     <div
@@ -1034,7 +1236,7 @@ function BookingCard({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-sm font-bold truncate" style={{ color: T.ink }}>
               {stylist.name}
             </p>
@@ -1045,6 +1247,11 @@ function BookingCard({
                 className="shrink-0"
               />
             )}
+            <FollowButton
+              stylistId={stylist.id}
+              isFollowing={stylist.isFollowing ?? false}
+              onFollowChange={onFollow ?? (() => {})}
+            />
           </div>
           <p
             className="text-xs flex items-center gap-1 mt-0.5"
@@ -1181,18 +1388,21 @@ function BookingCard({
             {
               icon: MessageSquare,
               label: "Message",
+              onClick: onMessage,
               hoverBg: T.navyGhost,
               hoverColor: T.navy,
             },
             {
               icon: Phone,
               label: "Call",
+              onClick: onCall,
               hoverBg: T.goldGhost,
               hoverColor: T.gold,
             },
-          ].map(({ icon: Icon, label, hoverBg, hoverColor }) => (
+          ].map(({ icon: Icon, label, onClick, hoverBg, hoverColor }) => (
             <button
               key={label}
+              onClick={onClick}
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
               style={{ background: T.raised, color: T.inkSoft }}
               onMouseEnter={(e) => {
@@ -1208,6 +1418,22 @@ function BookingCard({
             </button>
           ))}
         </div>
+        <button
+          onClick={onJoinWaitlist}
+          disabled={joiningWaitlist}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
+          style={{
+            background: waitlistJoined ? T.greenLight : T.goldGhost,
+            color: waitlistJoined ? T.green : T.gold,
+          }}
+        >
+          {joiningWaitlist ? (
+            <Loader2 size={13} className="animate-spin" />
+          ) : waitlistJoined ? (
+            <Check size={13} />
+          ) : null}
+          {waitlistJoined ? 'Joined waitlist!' : 'Join Waitlist'}
+        </button>
       </div>
       <div
         className="mx-5 mt-4 mb-5 rounded-xl overflow-hidden"
@@ -1254,7 +1480,44 @@ function BookingCard({
 /* ═══════════════════════════════════════════════════════════
    CONNECT CARD
 ═══════════════════════════════════════════════════════════ */
-function ConnectCard() {
+function ConnectCard({ stylist }: { stylist?: any }) {
+  const socialLinks = [
+    stylist?.instagram && {
+      icon: Camera,
+      label: "Instagram",
+      sub: `@${stylist.instagram}`,
+      url: `https://instagram.com/${stylist.instagram}`,
+      color: "#E1306C",
+      bg: "#FFF0F5",
+    },
+    stylist?.twitter && {
+      icon: AtSign,
+      label: "Twitter / X",
+      sub: `@${stylist.twitter}`,
+      url: `https://x.com/${stylist.twitter}`,
+      color: "#1DA1F2",
+      bg: "#F0F7FF",
+    },
+    stylist?.tiktok && {
+      icon: Music,
+      label: "TikTok",
+      sub: `@${stylist.tiktok}`,
+      url: `https://tiktok.com/@${stylist.tiktok}`,
+      color: "#000000",
+      bg: "#F5F5F5",
+    },
+    stylist?.website && {
+      icon: Globe,
+      label: "Website",
+      sub: stylist.website,
+      url: stylist.website.startsWith('http') ? stylist.website : `https://${stylist.website}`,
+      color: T.navy,
+      bg: T.navyGhost,
+    },
+  ].filter(Boolean) as { icon: any; label: string; sub: string; url: string; color: string; bg: string }[];
+
+  if (socialLinks.length === 0) return null;
+
   return (
     <div
       className="rounded-xl overflow-hidden shadow-md"
@@ -1273,26 +1536,14 @@ function ConnectCard() {
         </h3>
       </div>
       <div className="p-3 space-y-2">
-        {[
-          {
-            icon: Camera,
-            label: "Instagram",
-            sub: "@stylist.handle",
-            color: "#E1306C",
-            bg: "#FFF0F5",
-          },
-          {
-            icon: Globe,
-            label: "Website",
-            sub: "www.mystylist.com",
-            color: T.navy,
-            bg: T.navyGhost,
-          },
-        ].map(({ icon: SIcon, label, sub, color, bg }) => (
-          <button
+        {socialLinks.map(({ icon: SIcon, label, sub, url, color, bg }) => (
+          <a
             key={label}
-            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all duration-200"
-            style={{ background: T.raised }}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all duration-200 no-underline"
+            style={{ background: T.raised, display: 'flex' }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.background = bg;
             }}
@@ -1315,7 +1566,7 @@ function ConnectCard() {
               </p>
             </div>
             <ExternalLink size={12} style={{ color: T.inkFaint }} />
-          </button>
+          </a>
         ))}
       </div>
     </div>
@@ -1329,18 +1580,47 @@ export default function StylistDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addPoints, incrementAction } = useGamification();
+  const { addToRecentlyViewed } = useRecentlyViewed();
 
-  const { stylist, loading } = useStylistDetail(id);
+  const { stylist, setStylist, loading } = useStylistDetail(id);
+  const followCtx = useFollow();
   const [activeTab, setActiveTab] = useState<TabKey>("about");
   const [saved, setSaved] = useState(false);
   const [lightbox, setLightbox] = useState({ open: false, index: 0 });
+  const [transformViewer, setTransformViewer] = useState<{ open: boolean; index: number }>({ open: false, index: 0 });
+  const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [bookingModal, setBookingModal] = useState<{
     open: boolean;
     service: ServiceItem | null;
   }>({ open: false, service: null });
   const [toast, setToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
   const [copied, setCopied] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [tiers, setTiers] = useState<any[]>([]);
+  const [joiningWaitlist, setJoiningWaitlist] = useState(false);
+  const [waitlistJoined, setWaitlistJoined] = useState(false);
+  const [buyingPackage, setBuyingPackage] = useState<string | null>(null);
+  const [subscribingTier, setSubscribingTier] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!stylist?.id) return;
+    getStylistProducts(stylist.id).then(setProducts).catch(() => {});
+    getStylistPackages(stylist.id).then(setPackages).catch(() => {});
+    getStylistTiers(stylist.id).then(setTiers).catch(() => {});
+  }, [stylist?.id]);
+
+  useEffect(() => {
+    if (!stylist) return;
+    addToRecentlyViewed(stylist);
+  }, [stylist, addToRecentlyViewed]);
+
+  useEffect(() => {
+    if (!stylist?.id) return;
+    setSaved(followCtx.isFollowing(stylist.id));
+  }, [stylist?.id, followCtx]);
 
   const handleShare = useCallback(async () => {
     try {
@@ -1350,9 +1630,29 @@ export default function StylistDetail() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
   }, [addPoints, incrementAction]);
+
+  const handleFollow = useCallback(
+    async (stylistId: string, following: boolean) => {
+      setStylist((prev: any) =>
+        prev && prev.id === stylistId
+          ? {
+              ...prev,
+              isFollowing: following,
+              followerCount: Math.max(0, (prev.followerCount ?? 0) + (following ? 1 : -1)),
+            }
+          : prev,
+      );
+      if (following) {
+        await followCtx.follow(stylistId);
+      } else {
+        await followCtx.unfollow(stylistId);
+      }
+    },
+    [followCtx, setStylist],
+  );
 
   const handleBook = useCallback(
     (svc?: ServiceItem) =>
@@ -1360,13 +1660,88 @@ export default function StylistDetail() {
     [],
   );
 
+  const handleMessage = useCallback(async () => {
+    if (!stylist?.id) return;
+    try {
+      const conv = await createConversation({ stylistId: stylist.id });
+      navigate("/app/messages", { state: { conversationId: conv._id } });
+    } catch {
+      try {
+        const convs = await getMyConversations();
+        const existing = convs.find((c: any) => c.stylistId?._id === stylist.id);
+        if (existing) {
+          navigate("/app/messages", { state: { conversationId: existing._id } });
+        } else {
+          navigate("/app/messages");
+        }
+      } catch {
+        navigate("/app/messages");
+      }
+    }
+  }, [stylist?.id, navigate]);
+
+  const handleCall = useCallback(() => {
+    if (!stylist?.phone) {
+      setToastMsg('No phone number available for this stylist');
+      setToast(true);
+      setTimeout(() => setToast(false), 3000);
+      return;
+    }
+    window.open(`tel:${stylist.phone}`);
+  }, [stylist?.phone]);
+
+  const handleJoinWaitlist = useCallback(async () => {
+    if (!stylist?.id || joiningWaitlist) return;
+    setJoiningWaitlist(true);
+    try {
+      await joinWaitlist({
+        stylistId: stylist.id,
+        serviceId: '',
+        preferredDate: new Date().toISOString(),
+      });
+      setWaitlistJoined(true);
+      setTimeout(() => setWaitlistJoined(false), 3000);
+    } catch { /* ignore */ }
+    setJoiningWaitlist(false);
+  }, [stylist?.id, joiningWaitlist]);
+
+  const handleBuyPackage = useCallback(async (packageId: string) => {
+    setBuyingPackage(packageId);
+    try {
+      await purchasePackage(packageId);
+      setToastMsg('Package purchased!');
+      setToast(true);
+      setTimeout(() => setToast(false), 3000);
+    } catch (e: any) {
+      setToastMsg(e?.response?.data?.message || 'Purchase failed');
+      setToast(true);
+      setTimeout(() => setToast(false), 3000);
+    }
+    setBuyingPackage(null);
+  }, []);
+
+  const handleSubscribe = useCallback(async (tierId: string) => {
+    setSubscribingTier(tierId);
+    try {
+      await subscribeToTier(tierId);
+      setToastMsg('Subscribed!');
+      setToast(true);
+      setTimeout(() => setToast(false), 3000);
+    } catch (e: any) {
+      setToastMsg(e?.response?.data?.message || 'Subscription failed');
+      setToast(true);
+      setTimeout(() => setToast(false), 3000);
+    }
+    setSubscribingTier(null);
+  }, []);
+
   const handleBookingSuccess = useCallback(() => {
     setBookingModal({ open: false, service: null });
     setToast(true);
     setTimeout(() => setToast(false), 3500);
   }, []);
 
-  if (loading) return <Skeleton />;
+  if (loading) return <StylistSkeleton />;
   if (!stylist)
     return (
       <div
@@ -1378,13 +1753,9 @@ export default function StylistDetail() {
           title="Stylist not found"
           sub="This profile doesn't exist or has been removed."
         />
-        <button
-          onClick={() => navigate("/app")}
-          className="px-7 py-3 rounded-xl text-sm font-bold active:scale-95 transition-all"
-          style={{ background: T.navy, color: T.white }}
-        >
+        <Button onClick={() => navigate("/app")} style={{ background: T.navy, color: T.white }}>
           Browse Stylists
-        </button>
+        </Button>
       </div>
     );
 
@@ -1417,12 +1788,9 @@ export default function StylistDetail() {
       icon: Star,
       count: stylist.reviews?.length,
     },
-    {
-      key: "transformations",
-      label: "Transformations",
-      icon: Sparkles,
-      count: stylist.beforeAfter?.length,
-    },
+    { key: "products", label: "Shop", icon: ShoppingBag, count: products.length },
+    { key: "packages", label: "Packages", icon: Gift, count: packages.length },
+    { key: "memberships", label: "Memberships", icon: Crown, count: tiers.length },
   ];
 
   const goTo = (key: TabKey) => {
@@ -1440,28 +1808,84 @@ export default function StylistDetail() {
         className="relative overflow-hidden"
         style={{ height: "clamp(360px, 58vh, 580px)" }}
       >
+        {/* Mobile image (full bleed) */}
         {stylist.image ? (
           <img
             src={stylist.image}
             alt={stylist.name}
-            className="absolute inset-0 w-full h-full object-cover object-top"
+            className="lg:hidden absolute inset-0 w-full h-full object-cover object-top"
           />
         ) : (
           <div
-            className="absolute inset-0"
+            className="lg:hidden absolute inset-0"
             style={{
               background: `linear-gradient(135deg,${T.navy},${T.navyLight})`,
             }}
           />
         )}
         <div
-          className="absolute inset-0"
+          className="lg:hidden absolute inset-0"
           style={{
             background:
               "linear-gradient(to bottom,rgba(11,20,40,.28) 0%,rgba(11,20,40,.12) 38%,rgba(11,20,40,.72) 78%,rgba(11,20,40,.94) 100%)",
           }}
         />
 
+        {/* Desktop hero background */}
+        <div
+          className="hidden lg:flex absolute inset-0 flex-col items-center justify-center px-6"
+          style={{
+            background: `linear-gradient(135deg,${T.navy},${T.navyLight})`,
+          }}
+        >
+          {stylist.image && (
+            <>
+              <img
+                src={stylist.image}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover object-center opacity-10 blur-3xl"
+              />
+              <div className="absolute inset-0" style={{ background: `linear-gradient(135deg,${T.navy}80,${T.navyLight}80)` }} />
+            </>
+          )}
+          <div className="relative z-10 flex flex-col items-center gap-4 text-center max-w-2xl mx-auto">
+            {stylist.image ? (
+              <div className="w-32 h-32 rounded-full ring-4 ring-white/20 overflow-hidden shadow-2xl">
+                <img src={stylist.image} alt={stylist.name} className="w-full h-full object-cover object-center" />
+              </div>
+            ) : (
+              <div className="w-32 h-32 rounded-full ring-4 ring-white/20 flex items-center justify-center text-4xl font-bold" style={{ background: `linear-gradient(135deg,${T.navyLight},${T.navy})`, color: T.white }}>
+                {getInitials(stylist.name)}
+              </div>
+            )}
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <h1 className="text-3xl font-bold text-white" style={{ fontFamily: FONT_DISPLAY }}>{stylist.name}</h1>
+                {stylist.isVerified && <BadgeCheck size={22} style={{ color: T.goldMid }} />}
+              </div>
+              <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>{getLocationString(stylist.location)}</p>
+            </div>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="text-center">
+                <p className="text-lg font-bold text-white">{formatCount(stylist.followerCount ?? 0)}</p>
+                <p className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>Followers</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-white">{formatCount(stylist.totalLikes ?? 0)}</p>
+                <p className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>Likes</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-white">{stylist.reviews.length}</p>
+                <p className="text-[11px] font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>Reviews</p>
+              </div>
+            </div>
+            {stylist.bio && (
+              <p className="text-sm leading-relaxed max-w-lg mt-1" style={{ color: "rgba(255,255,255,0.7)" }}>{stylist.bio}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Shared top bar */}
         <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-4 sm:px-6 lg:px-8 pt-5">
           <button
             onClick={() => navigate(-1)}
@@ -1507,11 +1931,16 @@ export default function StylistDetail() {
               </AnimatePresence>
             </button>
             <button
-              onClick={() => {
-                setSaved((v) => !v);
-                if (!saved) {
+              onClick={async () => {
+                if (!stylist?.id) return;
+                const next = !saved;
+                setSaved(next);
+                if (next) {
                   addPoints(2);
                   incrementAction("bookmarks");
+                  await followCtx.follow(stylist.id);
+                } else {
+                  await followCtx.unfollow(stylist.id);
                 }
               }}
               className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300"
@@ -1536,7 +1965,8 @@ export default function StylistDetail() {
           </div>
         </div>
 
-        <div className="absolute bottom-0 inset-x-0 px-4 sm:px-6 lg:px-8 pb-6 sm:pb-7">
+        {/* Mobile bottom content */}
+        <div className="lg:hidden absolute bottom-0 inset-x-0 px-4 sm:px-6 lg:px-8 pb-6 sm:pb-7">
           <div className="max-w-7xl mx-auto">
             {stylist.isLive && (
               <div className="mb-2.5">
@@ -1551,7 +1981,7 @@ export default function StylistDetail() {
             )}
             <div className="flex items-center gap-2.5 mb-2.5">
               <h1
-                className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white tracking-tight drop-shadow-xl"
+                className="text-3xl sm:text-4xl font-bold text-white tracking-tight drop-shadow-xl"
                 style={{ fontFamily: FONT_DISPLAY }}
               >
                 {stylist.name}
@@ -1565,46 +1995,50 @@ export default function StylistDetail() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {[
-                {
-                  content: (
-                    <>
-                      <MapPin size={10} /> {getLocationString(stylist.location)}
-                    </>
-                  ),
-                  key: "loc",
-                },
-                {
-                  content: (
-                    <>
-                      <StarRating
-                        rating={Math.round(stylist.rating)}
-                        size={10}
-                      />
-                      <span className="font-bold ml-1">{stylist.rating}</span>
-                      <span
-                        style={{ color: "rgba(255,255,255,0.55)" }}
-                        className="ml-1"
-                      >
-                        ({stylist.reviews.length})
-                      </span>
-                    </>
-                  ),
-                  key: "rating",
-                },
-              ].map(({ content, key }) => (
-                <span
-                  key={key}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium"
-                  style={{
-                    background: "rgba(255,255,255,0.11)",
-                    backdropFilter: "blur(12px)",
-                    color: "rgba(255,255,255,0.88)",
-                  }}
-                >
-                  {content}
+              <span
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium"
+                style={{
+                  background: "rgba(255,255,255,0.11)",
+                  backdropFilter: "blur(12px)",
+                  color: "rgba(255,255,255,0.88)",
+                }}
+              >
+                <MapPin size={10} /> {getLocationString(stylist.location)}
+              </span>
+              <span
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium"
+                style={{
+                  background: "rgba(255,255,255,0.11)",
+                  backdropFilter: "blur(12px)",
+                  color: "rgba(255,255,255,0.88)",
+                }}
+              >
+                <StarRating rating={Math.round(stylist.rating)} size={10} />
+                <span className="font-bold ml-1">{stylist.rating}</span>
+                <span style={{ color: "rgba(255,255,255,0.55)" }} className="ml-1">
+                  ({stylist.reviews.length})
                 </span>
-              ))}
+              </span>
+              <span
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium"
+                style={{
+                  background: "rgba(255,255,255,0.11)",
+                  backdropFilter: "blur(12px)",
+                  color: "rgba(255,255,255,0.88)",
+                }}
+              >
+                <Users size={10} /> {formatCount(stylist.followerCount ?? 0)} followers
+              </span>
+              <span
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium"
+                style={{
+                  background: "rgba(255,255,255,0.11)",
+                  backdropFilter: "blur(12px)",
+                  color: "rgba(255,255,255,0.88)",
+                }}
+              >
+                <Heart size={10} /> {formatCount(stylist.totalLikes ?? 0)} likes
+              </span>
               {stylist.isVerified && (
                 <span
                   className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium"
@@ -1618,6 +2052,14 @@ export default function StylistDetail() {
                 </span>
               )}
             </div>
+            {stylist.bio && (
+              <p
+                className="mt-3 text-xs sm:text-sm leading-relaxed max-w-xl"
+                style={{ color: "rgba(255,255,255,0.75)" }}
+              >
+                {stylist.bio}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -1755,13 +2197,9 @@ export default function StylistDetail() {
                           title="Featured Services"
                           subtitle={`${services.length} services available`}
                           action={
-                            <button
-                              className="text-xs font-semibold flex items-center gap-1 transition-all hover:gap-1.5"
-                              style={{ color: T.goldMid }}
-                              onClick={() => goTo("services")}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => goTo("services")}>
                               View all <ArrowRight size={13} />
-                            </button>
+                            </Button>
                           }
                         />
                         <HScroll>
@@ -1820,14 +2258,10 @@ export default function StylistDetail() {
                                   >
                                     {svc.price || "—"}
                                   </span>
-                                  <span
-                                    className="text-[10px] font-bold px-2.5 py-1 rounded-lg"
-                                    style={{
-                                      background: T.navy,
-                                      color: T.white,
-                                    }}
-                                  >
-                                    Book
+                                  <span className="inline-block">
+                                    <Button size="sm" className="!text-[10px] !px-2.5 !py-1 !h-auto !min-h-0" style={{ background: T.navy, color: T.white }}>
+                                      Book
+                                    </Button>
                                   </span>
                                 </div>
                               </div>
@@ -1842,17 +2276,13 @@ export default function StylistDetail() {
                           title="Client Reviews"
                           subtitle={`${stylist.reviews.length} verified reviews`}
                           action={
-                            <button
-                              className="text-xs font-semibold flex items-center gap-1 transition-all hover:gap-1.5"
-                              style={{ color: T.goldMid }}
-                              onClick={() => goTo("reviews")}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => goTo("reviews")}>
                               See all <ArrowRight size={13} />
-                            </button>
+                            </Button>
                           }
                         />
                         <HScroll>
-                          {stylist.reviews.slice(0, 5).map((rev, i) => (
+                          {stylist.reviews.slice(0, 5).map((rev: Review, i: number) => (
                             <motion.div
                               key={i}
                               initial={{ opacity: 0, x: 14 }}
@@ -1864,16 +2294,8 @@ export default function StylistDetail() {
                                 boxShadow: T.shadowSm,
                               }}
                             >
-                              <div className="flex items-center gap-2.5 mb-3">
-                                <div
-                                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                                  style={{
-                                    background: `linear-gradient(135deg,${T.navy},${T.navyLight})`,
-                                    color: T.white,
-                                  }}
-                                >
-                                  {rev.user[0].toUpperCase()}
-                                </div>
+                               <div className="flex items-center gap-2.5 mb-3">
+                                 <Avatar name={rev.user} size="sm" />
                                 <div className="flex-1 min-w-0">
                                   <p
                                     className="text-xs font-bold truncate"
@@ -1906,7 +2328,10 @@ export default function StylistDetail() {
                 {activeTab === "portfolio" && (
                   <PortfolioTab
                     images={stylist.portfolioImages || []}
-                    onOpen={(i) => setLightbox({ open: true, index: i })}
+                    beforeAfter={stylist.beforeAfter || []}
+                    onOpenImage={(i) => setLightbox({ open: true, index: i })}
+                    onPlayVideo={(url) => setActiveVideoUrl(url)}
+                    onViewTransform={(i) => setTransformViewer({ open: true, index: i })}
                   />
                 )}
                 {activeTab === "services" && (
@@ -1917,8 +2342,94 @@ export default function StylistDetail() {
                   />
                 )}
                 {activeTab === "reviews" && <ReviewsTab stylist={stylist} />}
-                {activeTab === "transformations" && (
-                  <TransformationsTab items={stylist.beforeAfter || []} />
+                {activeTab === "products" && (
+                  <div>
+                    <SectionHeader icon={ShoppingBag} title="Shop" subtitle="Available products" />
+                    {products.length === 0 ? (
+                      <p className="text-sm" style={{ color: T.inkFaint }}>No products available</p>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {products.map((p: any) => (
+                          <div key={p._id} className="p-4 rounded-xl" style={{ background: T.canvas, border: `1px solid ${T.line}` }}>
+                            <p className="text-sm font-semibold" style={{ color: T.ink }}>{p.name}</p>
+                            {p.description && <p className="text-xs mt-1" style={{ color: T.inkFaint }}>{p.description}</p>}
+                            <p className="text-sm font-bold mt-2" style={{ color: T.navy }}>GH₵ {p.price}</p>
+                            <p className="text-xs" style={{ color: p.stock > 0 ? T.green : T.red }}>{p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {activeTab === "packages" && (
+                  <div>
+                    <SectionHeader icon={Gift} title="Packages" subtitle="Service bundles" />
+                    {packages.length === 0 ? (
+                      <p className="text-sm" style={{ color: T.inkFaint }}>No packages available</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {packages.map((p: any) => (
+                          <div key={p._id} className="p-5 rounded-xl" style={{ background: T.canvas, border: `1px solid ${T.line}` }}>
+                            <p className="text-base font-semibold" style={{ color: T.ink }}>{p.name}</p>
+                            {p.description && <p className="text-xs mt-1" style={{ color: T.inkFaint }}>{p.description}</p>}
+                            <div className="flex items-center gap-2 mt-3">
+                              <p className="text-lg font-bold" style={{ color: T.navy }}>GH₵ {p.price}</p>
+                              <span className="text-xs" style={{ color: T.inkFaint }}>• {p.totalSessions} sessions</span>
+                            </div>
+                            <p className="text-xs mt-1" style={{ color: T.inkFaint }}>Expires in {p.expiryDays} days</p>
+                            <button
+                              onClick={() => handleBuyPackage(p._id)}
+                              disabled={buyingPackage === p._id}
+                              className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all"
+                              style={{ background: T.navy, color: T.white }}
+                            >
+                              {buyingPackage === p._id ? <Loader2 size={13} className="animate-spin" /> : null}
+                              {buyingPackage === p._id ? 'Buying...' : 'Buy Package'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {activeTab === "memberships" && (
+                  <div>
+                    <SectionHeader icon={Crown} title="Memberships" subtitle="Subscription plans" />
+                    {tiers.length === 0 ? (
+                      <p className="text-sm" style={{ color: T.inkFaint }}>No membership plans available</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {tiers.map((t: any) => (
+                          <div key={t._id} className="p-5 rounded-xl" style={{ background: T.canvas, border: `1px solid ${T.line}` }}>
+                            <p className="text-base font-semibold" style={{ color: T.ink }}>{t.name}</p>
+                            {t.description && <p className="text-xs mt-1" style={{ color: T.inkFaint }}>{t.description}</p>}
+                            <p className="text-lg font-bold mt-3" style={{ color: T.navy }}>GH₵ {t.price}/{t.billingCycle}</p>
+                            {t.benefits?.length > 0 && (
+                              <ul className="mt-2 space-y-1">
+                                {t.benefits.map((b: string, i: number) => (
+                                  <li key={i} className="text-xs flex items-center gap-1.5" style={{ color: T.inkSoft }}>
+                                    <span style={{ color: T.green }}>✓</span> {b}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            {t.discountPercent > 0 && (
+                              <p className="text-xs font-semibold mt-2" style={{ color: T.gold }}>{t.discountPercent}% discount on services</p>
+                            )}
+                            <button
+                              onClick={() => handleSubscribe(t._id)}
+                              disabled={subscribingTier === t._id}
+                              className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all"
+                              style={{ background: T.gold, color: T.white }}
+                            >
+                              {subscribingTier === t._id ? <Loader2 size={13} className="animate-spin" /> : null}
+                              {subscribingTier === t._id ? 'Subscribing...' : 'Subscribe'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -1934,6 +2445,12 @@ export default function StylistDetail() {
                 services={services}
                 minPrice={minPrice}
                 onBook={handleBook}
+                onMessage={handleMessage}
+                onCall={handleCall}
+                onJoinWaitlist={handleJoinWaitlist}
+                onFollow={handleFollow}
+                joiningWaitlist={joiningWaitlist}
+                waitlistJoined={waitlistJoined}
               />
             </motion.div>
             <motion.div
@@ -1941,7 +2458,7 @@ export default function StylistDetail() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22 }}
             >
-              <ConnectCard />
+              <ConnectCard stylist={stylist} />
             </motion.div>
           </div>
         </div>
@@ -1979,6 +2496,13 @@ export default function StylistDetail() {
             <Share2 size={17} />
           </button>
           <button
+            onClick={handleMessage}
+            className="w-11 h-11 rounded-xl flex items-center justify-center transition-all"
+            style={{ background: T.raised, color: T.inkSoft }}
+          >
+            <MessageSquare size={17} />
+          </button>
+          <button
             onClick={() => handleBook()}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
             style={{
@@ -1996,9 +2520,27 @@ export default function StylistDetail() {
         {lightbox.open && stylist.portfolioImages && (
           <Lightbox
             key="lb"
-            images={stylist.portfolioImages}
+            images={stylist.portfolioImages.filter(i => i.type === 'image').map(i => imgSrc(i))}
             initialIndex={lightbox.index}
             onClose={() => setLightbox({ open: false, index: 0 })}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {activeVideoUrl && (
+          <VideoViewer
+            src={activeVideoUrl}
+            onClose={() => setActiveVideoUrl(null)}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {transformViewer.open && stylist.beforeAfter?.length && (
+          <TransformDetail
+            key="tv"
+            items={stylist.beforeAfter}
+            initialIndex={transformViewer.index}
+            onClose={() => setTransformViewer({ open: false, index: 0 })}
           />
         )}
       </AnimatePresence>
@@ -2036,12 +2578,12 @@ export default function StylistDetail() {
               <Check size={13} color="#fff" />
             </div>
             <div>
-              <p className="text-sm font-bold">Booking Confirmed</p>
+              <p className="text-sm font-bold">{toastMsg || 'Booking Confirmed'}</p>
               <p
                 className="text-[10px] mt-0.5"
                 style={{ color: "rgba(255,255,255,0.55)" }}
               >
-                You'll receive a confirmation shortly
+                {toastMsg ? '' : "You'll receive a confirmation shortly"}
               </p>
             </div>
           </motion.div>

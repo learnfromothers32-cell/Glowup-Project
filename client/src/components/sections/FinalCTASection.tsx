@@ -4,7 +4,6 @@ import {
   Smartphone,
   Scissors,
   CheckCircle2,
-  Sparkles,
   Apple,
   Play,
   Mail,
@@ -42,11 +41,9 @@ const T = {
 
 function StoreBadge({
   store,
-  label,
   icon: Icon,
 }: {
   store: string;
-  label: string;
   icon: typeof Apple;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -134,11 +131,9 @@ function PathCard({
   const cardBorder = isDark ? T.darkBorder : T.border;
   const textColor = isDark ? T.white : T.ink;
   const textMid = isDark ? T.whiteMid : T.inkMid;
-  const textLight = isDark ? T.whiteLight : T.inkLight;
-  const checkBg = isDark ? "rgba(255,255,255,0.08)" : T.greenBg;
-  const checkColor = isDark ? "#86EFAC" : T.green;
-  const dividerColor = isDark ? "rgba(255,255,255,0.06)" : T.border;
-
+  const dividerColor = isDark ? "rgba(255,255,255,0.08)" : T.line;
+  const checkBg = isDark ? "rgba(255,255,255,0.12)" : T.greenLight;
+  const checkColor = isDark ? T.green : T.green;
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -627,10 +622,9 @@ export default function FinalCTASection() {
             >
               <StoreBadge
                 store="App Store"
-                label="Download on the"
                 icon={Apple}
               />
-              <StoreBadge store="Google Play" label="Get it on" icon={Play} />
+              <StoreBadge store="Google Play" icon={Play} />
             </div>
 
             <div

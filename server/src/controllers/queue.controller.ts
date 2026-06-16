@@ -4,7 +4,7 @@ import { Stylist } from '../models/Stylist';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../utils/apiError';
 import { sendSuccess } from '../utils/apiResponse';
-import { getIO } from '../socket';
+import { toPublicQueue, emitQueueUpdate } from '../utils/queue';
 
 export const getQueueStatus = asyncHandler(async (req: Request, res: Response) => {
   const { stylistId } = req.params;
@@ -93,29 +93,4 @@ export const markDone = asyncHandler(async (req: Request, res: Response) => {
   return sendSuccess(res, { queue: toPublicQueue(queue) }, 'Customer marked as done');
 });
 
-function emitQueueUpdate(stylistId: string, queue: any) {
-  try {
-    const nsp = getIO().of('/queue');
-    nsp.to(`queue:${stylistId}`).emit('queue:update', toPublicQueue(queue));
-  } catch {}
-}
 
-function toPublicQueue(queue: any) {
-  return {
-    id: queue._id || queue.id,
-    stylistId: queue.stylistId,
-    currentPosition: queue.currentPosition,
-    predictedWaitMins: queue.predictedWaitMins,
-    avgServiceDuration: queue.avgServiceDuration,
-    lastUpdated: queue.lastUpdated,
-    entries: queue.entries
-      .filter((e: any) => e.status !== 'done' && e.status !== 'skipped')
-      .map((e: any) => ({
-        userId: e.userId,
-        position: e.position,
-        status: e.status,
-        estimatedServiceMins: e.estimatedServiceMins,
-        joinedAt: e.joinedAt,
-      })),
-  };
-}

@@ -22,17 +22,17 @@ export const verifyAccessToken = (token: string): AuthUser => {
 };
 
 export const signRefreshToken = (user: AuthUser) => {
-  if (!appConfig.jwtSecret) {
-    throw new ApiError(500, 'JWT_SECRET is not configured');
+  if (!appConfig.jwtRefreshSecret) {
+    throw new ApiError(500, 'JWT_REFRESH_SECRET is not configured');
   }
-  return jwt.sign(user, appConfig.jwtSecret + '_refresh', { expiresIn: REFRESH_EXPIRES });
+  return jwt.sign(user, appConfig.jwtRefreshSecret, { expiresIn: REFRESH_EXPIRES });
 };
 
 export const verifyRefreshToken = (token: string): AuthUser => {
-  if (!appConfig.jwtSecret) {
-    throw new ApiError(500, 'JWT_SECRET is not configured');
+  if (!appConfig.jwtRefreshSecret) {
+    throw new ApiError(500, 'JWT_REFRESH_SECRET is not configured');
   }
-  return jwt.verify(token, appConfig.jwtSecret + '_refresh') as AuthUser;
+  return jwt.verify(token, appConfig.jwtRefreshSecret) as AuthUser;
 };
 
 export const hashToken = (token: string) =>

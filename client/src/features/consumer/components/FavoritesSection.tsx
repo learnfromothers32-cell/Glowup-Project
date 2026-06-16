@@ -12,11 +12,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import { getLocationString } from "@/utils/location";
+import { logger } from "../../../utils/logger";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface FavoritesSectionProps {
   favorites: Stylist[];
-  onSelect: (stylist: Stylist) => void;
 }
 
 // ─── Favorite Card ─────────────────────────────────────────────────────────────
@@ -189,7 +189,6 @@ function FavoriteCard({
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function FavoritesSection({
   favorites,
-  onSelect,
 }: FavoritesSectionProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -312,7 +311,7 @@ export default function FavoritesSection({
                 if (stylist.id) {
                   navigate(`/app/stylist/${stylist.id}`);
                 } else {
-                  console.warn("Stylist missing id", stylist);
+                  logger.warn("Stylist missing id", stylist);
                 }
               }}
             />

@@ -115,4 +115,20 @@ userSchema.methods.comparePassword = function comparePassword(
   return bcrypt.compare(password, this.passwordHash);
 };
 
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('passwordHash')) return next();
+  if (this.passwordHash && !this.passwordHash.startsWith('$2a$') && !this.passwordHash.startsWith('$2b$')) {
+    this.passwordHash = await bcrypt.hash(this.passwordHash, 12);
+  }
+  next();
+});
+
+userSchema.pre('findOneAndUpdate', async function (next) {
+  const update = this.getUpdate() as any;
+  if (update?.passwordHash && !update.passwordHash.startsWith('$2a$') && !update.passwordHash.startsWith('$2b$')) {
+    update.passwordHash = await bcrypt.hash(update.passwordHash, 12);
+  }
+  next();
+});
+
 export const User = model<IUser>('User', userSchema);

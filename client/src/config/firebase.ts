@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, type FirebaseApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
@@ -10,7 +10,29 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-export const githubProvider = new GithubAuthProvider();
+let app: FirebaseApp | null = null;
+let auth: ReturnType<typeof getAuth> | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
+let githubProvider: GithubAuthProvider | null = null;
+
+export function getFirebaseAuth(): ReturnType<typeof getAuth> {
+  if (!auth) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+  }
+  return auth;
+}
+
+export function getGoogleProvider(): GoogleAuthProvider {
+  if (!googleProvider) {
+    googleProvider = new GoogleAuthProvider();
+  }
+  return googleProvider;
+}
+
+export function getGithubProvider(): GithubAuthProvider {
+  if (!githubProvider) {
+    githubProvider = new GithubAuthProvider();
+  }
+  return githubProvider;
+}

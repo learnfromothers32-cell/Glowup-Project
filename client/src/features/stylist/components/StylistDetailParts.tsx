@@ -1,42 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import {
-  Star,
-  MapPin,
-  Heart,
-  Share2,
-  ArrowLeft,
-  Clock,
-  ChevronRight,
-  Award,
-  Zap,
-  Calendar,
-  Maximize2,
-  ArrowRight,
-  MessageSquare,
-  BadgeCheck,
-  Users,
-  ChevronLeft,
-  Scissors,
-  Sparkles,
-  ImageIcon,
-  Phone,
-  Camera,
-  Shield,
-  TrendingUp,
-  Globe,
-  MoreHorizontal,
-  Grid3X3,
-  List,
-  ExternalLink,
-  ThumbsUp,
-  Eye,
-  Lock,
-  RefreshCw,
+  Star, MapPin, Clock, ChevronRight, Scissors, Sparkles,
+  Users, ChevronLeft, BadgeCheck, ArrowRight,
+  ImageIcon, Grid3X3, List, Maximize2, Eye,
+  ThumbsUp, MessageSquare, Calendar, Phone,
+  RefreshCw, Camera, Globe, ExternalLink, AtSign, Music,
 } from "lucide-react";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import { getLocationString } from "@/utils/location";
+import { API_SERVER_URL } from "../../../api/axios";
 
 /* DESIGN TOKENS (copied from original file) */
 export const T = {
@@ -89,9 +63,12 @@ export interface Review {
   date: string;
 }
 export interface BeforeAfter {
+  _id?: string;
   before: string;
   after: string;
   caption?: string;
+  service?: string;
+  mediaType?: 'image' | 'video';
 }
 export interface ServiceItem {
   name: string;
@@ -101,12 +78,11 @@ export interface ServiceItem {
   popular?: boolean;
 }
 
-export interface ExtendedStylist extends Stylist {
+export interface ExtendedStylist extends Omit<Stylist, 'bio'> {
   portfolioImages?: string[];
   beforeAfter?: BeforeAfter[];
   bio?: string;
   reviews: Review[];
-  isVerified?: boolean;
 }
 
 /* HELPERS */
@@ -279,11 +255,14 @@ export function BeforeAfterSlider({
   const [pos, setPos] = useState(50);
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const imgSrc = (path: string) =>
+    path.startsWith("http") ? path : `${API_SERVER_URL}${path}`;
   const move = useCallback((x: number) => {
     if (!ref.current) return;
     const r = ref.current.getBoundingClientRect();
     setPos((Math.max(0, Math.min(x - r.left, r.width)) / r.width) * 100);
   }, []);
+
   useEffect(() => {
     if (!drag) return;
     const mm = (e: MouseEvent | TouchEvent) =>
@@ -300,6 +279,38 @@ export function BeforeAfterSlider({
       window.removeEventListener("touchend", up);
     };
   }, [drag, move]);
+
+  if (item.mediaType === 'video') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1 }}
+        className="rounded-2xl overflow-hidden shadow-card"
+        style={{ background: T.canvas }}
+      >
+        <div className="relative aspect-[4/3] bg-black">
+          <video
+            src={imgSrc(item.after)}
+            controls
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute top-3 left-3 z-10 px-2 py-1 rounded text-[9px] font-bold tracking-widest uppercase text-white bg-black/50 backdrop-blur-sm">
+            Transformation
+          </div>
+        </div>
+        {item.caption && (
+          <div className="px-5 py-3.5 border-t" style={{ borderColor: T.line }}>
+            <p className="text-xs text-center font-medium" style={{ color: T.inkSoft }}>
+              {item.caption}
+            </p>
+          </div>
+        )}
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -315,7 +326,7 @@ export function BeforeAfterSlider({
         onTouchStart={() => setDrag(true)}
       >
         <img
-          src={item.after}
+          src={imgSrc(item.after)}
           alt="After"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -324,7 +335,7 @@ export function BeforeAfterSlider({
           style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
         >
           <img
-            src={item.before}
+            src={imgSrc(item.before)}
             alt="Before"
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -446,11 +457,14 @@ export function SectionHeader({
 }
 
 /* PORTFOLIO TAB */
+const imgSrc = (item: { url: string; type?: string }) =>
+  item.url.startsWith("http") ? item.url : `${API_SERVER_URL}${item.url}`;
+
 export function PortfolioTab({
   images,
   onOpen,
 }: {
-  images: string[];
+  images: Array<{ url: string; type: 'image' | 'video' }>;
   onOpen: (i: number) => void;
 }) {
   const [layout, setLayout] = useState<"masonry" | "grid">("masonry");
@@ -462,11 +476,14 @@ export function PortfolioTab({
         sub="Check back to see this stylist's work"
       />
     );
+  const imgCount = images.filter(i => i.type === 'image').length;
+  const vidCount = images.filter(i => i.type === 'video').length;
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
         <p className="text-xs font-medium" style={{ color: T.inkFaint }}>
-          {images.length} photos
+          {imgCount + vidCount} {vidCount > 0 ? 'items' : 'photos'}
+          {vidCount > 0 && ` (${imgCount} photos, ${vidCount} videos)`}
         </p>
         <div
           className="flex items-center gap-1 p-1 rounded-lg"
@@ -492,63 +509,97 @@ export function PortfolioTab({
         </div>
       </div>
       {layout === "masonry" ? (
-        <div className="columns-2 sm:columns-3 gap-2.5">
-          {images.map((img, i) => (
+        <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-2.5">
+          {images.map((item, i) => {
+            const imgIndex = images.slice(0, i).filter(x => x.type === 'image').length;
+            return (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
-              onClick={() => onOpen(i)}
-              className="group relative break-inside-avoid rounded-xl overflow-hidden cursor-pointer mb-2.5"
-              style={{ background: T.muted }}
+              onClick={item.type === 'image' ? () => onOpen(imgIndex) : undefined}
+              className="group relative break-inside-avoid rounded-xl overflow-hidden mb-2.5"
+              style={{ background: T.muted, cursor: item.type === 'image' ? 'pointer' : 'default' }}
             >
-              <img
-                src={img}
-                alt=""
-                loading="lazy"
-                className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
+              <div className="relative w-full aspect-[3/4]">
+                {item.type === 'video' ? (
+                  <>
+                    <video src={imgSrc(item)} className="absolute inset-0 w-full h-full object-cover" muted preload="metadata" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="w-11 h-11 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm shadow-lg ring-1 ring-white/20">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20" /></svg>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 left-2">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold text-white bg-black/60 backdrop-blur-sm">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21" /></svg>
+                        Video
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <img src={imgSrc(item)} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                )}
+              </div>
               <div
                 className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
-                style={{ background: "rgba(11,20,40,0.45)" }}
+                style={{ background: item.type === 'image' ? "rgba(11,20,40,0.45)" : "transparent" }}
               >
+                {item.type === 'image' && (
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center"
                   style={{ background: T.goldMid }}
                 >
                   <Maximize2 size={14} color="#fff" />
                 </div>
+                )}
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-2">
-          {images.map((img, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          {images.map((item, i) => {
+            const imgIndex = images.slice(0, i).filter(x => x.type === 'image').length;
+            return (
             <motion.div
               key={i}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.03 }}
-              onClick={() => onOpen(i)}
-              className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer"
-              style={{ background: T.muted }}
+              onClick={item.type === 'image' ? () => onOpen(imgIndex) : undefined}
+              className="group relative aspect-square rounded-xl overflow-hidden"
+              style={{ background: T.muted, cursor: item.type === 'image' ? 'pointer' : 'default' }}
             >
-              <img
-                src={img}
-                alt=""
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
+              {item.type === 'video' ? (
+                <>
+                  <video src={imgSrc(item)} className="absolute inset-0 w-full h-full object-cover" muted preload="metadata" />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm shadow-lg ring-1 ring-white/20">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><polygon points="6,4 20,12 6,20" /></svg>
+                    </div>
+                  </div>
+                  <div className="absolute top-1.5 left-1.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold text-white bg-black/60 backdrop-blur-sm">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21" /></svg>
+                      Video
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <img src={imgSrc(item)} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              )}
               <div
                 className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300"
-                style={{ background: "rgba(11,20,40,0.45)" }}
+                style={{ background: item.type === 'image' ? "rgba(11,20,40,0.45)" : "transparent" }}
               >
-                <Eye size={16} color="#fff" />
+                {item.type === 'image' && <Eye size={16} color="#fff" />}
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1229,7 +1280,44 @@ export function BookingCard({
 }
 
 /* CONNECT CARD */
-export function ConnectCard() {
+export function ConnectCard({ stylist }: { stylist?: any }) {
+  const socialLinks = [
+    stylist?.instagram && {
+      icon: Camera,
+      label: "Instagram",
+      sub: `@${stylist.instagram}`,
+      url: `https://instagram.com/${stylist.instagram}`,
+      color: "#E1306C",
+      bg: "#FFF0F5",
+    },
+    stylist?.twitter && {
+      icon: AtSign,
+      label: "Twitter / X",
+      sub: `@${stylist.twitter}`,
+      url: `https://x.com/${stylist.twitter}`,
+      color: "#1DA1F2",
+      bg: "#F0F7FF",
+    },
+    stylist?.tiktok && {
+      icon: Music,
+      label: "TikTok",
+      sub: `@${stylist.tiktok}`,
+      url: `https://tiktok.com/@${stylist.tiktok}`,
+      color: "#000000",
+      bg: "#F5F5F5",
+    },
+    stylist?.website && {
+      icon: Globe,
+      label: "Website",
+      sub: stylist.website,
+      url: stylist.website.startsWith('http') ? stylist.website : `https://${stylist.website}`,
+      color: T.navy,
+      bg: T.navyGhost,
+    },
+  ].filter(Boolean) as { icon: any; label: string; sub: string; url: string; color: string; bg: string }[];
+
+  if (socialLinks.length === 0) return null;
+
   return (
     <div
       className="rounded-xl overflow-hidden shadow-md"
@@ -1248,26 +1336,14 @@ export function ConnectCard() {
         </h3>
       </div>
       <div className="p-3 space-y-2">
-        {[
-          {
-            icon: Camera,
-            label: "Instagram",
-            sub: "@stylist.handle",
-            color: "#E1306C",
-            bg: "#FFF0F5",
-          },
-          {
-            icon: Globe,
-            label: "Website",
-            sub: "www.mystylist.com",
-            color: T.navy,
-            bg: T.navyGhost,
-          },
-        ].map(({ icon: SIcon, label, sub, color, bg }) => (
-          <button
+        {socialLinks.map(({ icon: SIcon, label, sub, url, color, bg }) => (
+          <a
             key={label}
-            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all duration-200"
-            style={{ background: T.raised }}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-left transition-all duration-200 no-underline"
+            style={{ background: T.raised, display: 'flex' }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.background = bg;
             }}
@@ -1290,7 +1366,7 @@ export function ConnectCard() {
               </p>
             </div>
             <ExternalLink size={12} style={{ color: T.inkFaint }} />
-          </button>
+          </a>
         ))}
       </div>
     </div>

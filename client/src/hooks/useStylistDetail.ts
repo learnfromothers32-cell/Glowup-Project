@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getStylistById } from "../api/stylists";
-import api from "../api/axios";
+import { getStylistReviews } from "../api/reviews";
 
 export function useStylistDetail(id?: string) {
   const [stylist, setStylist] = useState<any>(null);
@@ -16,16 +16,36 @@ export function useStylistDetail(id?: string) {
         const found = await getStylistById(id);
         if (!alive) return;
 
-        // Fetch real reviews
-        const reviewsRes = await api.get(`/reviews/stylist/${id}`);
-        const reviews = reviewsRes.data.data.reviews;
-
         setStylist({
           ...found,
-          reviews: reviews,
+          reviews: [],
+          reviewCount: found.reviewCount || 0,
         });
-
         setLoading(false);
+
+        try {
+          const rawReviews = await getStylistReviews(id);
+          if (!alive) return;
+          const reviews = (rawReviews || []).map((r: any) => ({
+            user: r.clientId?.name || r.userName || "Customer",
+            rating: r.rating || 0,
+            comment: r.comment || "",
+            date: r.createdAt
+              ? new Date(r.createdAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "",
+          }));
+          if (alive) {
+            setStylist((prev: any) =>
+              prev ? { ...prev, reviews, reviewCount: reviews.length } : prev
+            );
+          }
+        } catch {
+          // Reviews are non-critical — stylist renders with empty reviews
+        }
       } catch (err) {
         if (alive) setLoading(false);
       }

@@ -18,6 +18,19 @@ export const getFavorites = asyncHandler(async (req: Request, res: Response) => 
   return sendSuccess(res, { favorites: (user as any).favorites || [] });
 });
 
+export const checkFavorite = asyncHandler(async (req: Request, res: Response) => {
+  const { stylistId } = req.params;
+
+  const user = await User.findById(req.user?.id);
+  if (!user) {
+    return sendSuccess(res, { isFollowing: false });
+  }
+
+  const favs = (user as any).favorites || [];
+  const isFollowing = favs.some((id: any) => id.toString() === stylistId);
+  return sendSuccess(res, { isFollowing });
+});
+
 export const addFavorite = asyncHandler(async (req: Request, res: Response) => {
   const { stylistId } = req.body;
 
@@ -39,6 +52,8 @@ export const addFavorite = asyncHandler(async (req: Request, res: Response) => {
   (user as any).favorites = [...favs, stylist._id];
   await user.save();
 
+  await Stylist.findByIdAndUpdate(stylistId, { $inc: { followerCount: 1 } });
+
   return sendSuccess(res, { favorites: (user as any).favorites }, 'Added to favorites');
 });
 
@@ -50,10 +65,17 @@ export const removeFavorite = asyncHandler(async (req: Request, res: Response) =
     throw new ApiError(404, 'User not found');
   }
 
-  (user as any).favorites = ((user as any).favorites || []).filter(
+  const favs = (user as any).favorites || [];
+  if (!favs.some((id: any) => id.toString() === stylistId)) {
+    return sendSuccess(res, { favorites: favs }, 'Not in favorites');
+  }
+
+  (user as any).favorites = favs.filter(
     (id: any) => id.toString() !== stylistId
   );
   await user.save();
+
+  await Stylist.findByIdAndUpdate(stylistId, { $inc: { followerCount: -1 } });
 
   return sendSuccess(res, { favorites: (user as any).favorites }, 'Removed from favorites');
 });

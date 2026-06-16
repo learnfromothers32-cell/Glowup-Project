@@ -7,6 +7,7 @@ export interface IQueueEntry {
   position: number;
   joinedAt: Date;
   estimatedServiceMins: number;
+  estimatedWaitMins: number;
   status: QueueEntryStatus;
   bookingId?: Types.ObjectId;
 }
@@ -30,6 +31,7 @@ const queueEntrySchema = new Schema<IQueueEntry>(
     position: { type: Number, required: true },
     joinedAt: { type: Date, default: Date.now },
     estimatedServiceMins: { type: Number, default: 30 },
+    estimatedWaitMins: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ['waiting', 'in-service', 'done', 'skipped'],
@@ -67,22 +69,25 @@ queueSchema.methods.recalculate = function () {
     entry.position = idx + 1;
   });
 
-  this.currentPosition = this.entries.filter(
-    (e: IQueueEntry) => e.status === 'waiting' || e.status === 'in-service'
-  ).length;
+  this.currentPosition = waiting.length;
 
-  const activeEntries = this.entries.filter(
-    (e: IQueueEntry) => e.status === 'waiting'
-  );
-
-  if (activeEntries.length > 0) {
-    const avgMins = this.avgServiceDuration || 30;
-    this.predictedWaitMins = Math.round(
-      (this.currentPosition - 1) * avgMins
-    );
-  } else {
-    this.predictedWaitMins = 0;
+  // Compute wait time: sum of estimated service time of all ahead entries
+  let totalWait = 0;
+  let aheadCount = 0;
+  for (const e of this.entries) {
+    if (e.status === 'in-service') {
+      aheadCount++;
+      totalWait += e.estimatedServiceMins;
+    }
   }
+  const sortedWaiting = [...waiting].sort((a, b) => a.position - b.position);
+  for (const e of sortedWaiting) {
+    e.estimatedWaitMins = totalWait;
+    totalWait += e.estimatedServiceMins;
+    aheadCount++;
+  }
+
+  this.predictedWaitMins = totalWait;
 
   this.lastUpdated = new Date();
 };

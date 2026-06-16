@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/authUtils";
 import { useGamification } from "../../hooks/useGamification";
-import { updateProfile as updateProfileApi } from "../../api/auth";
+import { updateProfile as updateProfileApi, getMe } from "../../api/auth";
 import {
   ArrowLeft, Mail, Phone, MapPin, Calendar, Heart,
   Trophy, X, Camera, Check, Loader2, ChevronRight,
@@ -176,6 +176,7 @@ export default function ConsumerProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showEdit, setShowEdit] = useState(false);
+  const [profileUser, setProfileUser] = useState(user);
   const [localUser, setLocalUser] = useState(() => ({
     name: user?.name || "",
     email: user?.email || "",
@@ -184,13 +185,27 @@ export default function ConsumerProfile() {
   }));
   const { points, badges, checkInStreak } = useGamification();
 
-  const displayName = localUser.name || user?.name || "Beauty Lover";
-  const displayEmail = localUser.email || user?.email || "user@example.com";
-  const memberSince = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  useEffect(() => {
+    getMe().then((res) => {
+      setProfileUser(res.data.user);
+      setLocalUser({
+        name: res.data.user.name || "",
+        email: res.data.user.email || "",
+        phone: (res.data.user as any).phone || "",
+        location: (res.data.user as any).location || "",
+      });
+    }).catch(() => {
+      // fall back to auth context user
+    });
+  }, []);
+
+  const displayName = localUser.name || profileUser?.name || "Beauty Lover";
+  const displayEmail = localUser.email || profileUser?.email || "user@example.com";
+  const memberSince = profileUser?.createdAt
+    ? new Date(profileUser.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : "May 2026";
 
-  const handleSave = useCallback(async (data: typeof localUser) => {
+  const handleSave = useCallback(async (data: { name: string; email: string; phone: string; location: string }) => {
     const res = await updateProfileApi({
       name: data.name,
       phone: data.phone || undefined,
@@ -223,8 +238,8 @@ export default function ConsumerProfile() {
           <div className="p-6 pb-5">
             <div className="flex items-start gap-4">
               <div className="relative shrink-0">
-                {user?.avatar ? (
-                  <img src={user.avatar} alt="" className="w-20 h-20 rounded-2xl object-cover" />
+                {profileUser?.avatar ? (
+                  <img src={profileUser.avatar} alt="" className="w-20 h-20 rounded-2xl object-cover" />
                 ) : (
                   <div className="w-20 h-20 rounded-2xl bg-gray-900 text-white flex items-center justify-center text-2xl font-bold">
                     {initials}
@@ -257,8 +272,8 @@ export default function ConsumerProfile() {
 
           <div className="px-5 py-2">
             <InfoRow icon={Mail} label="Email" value={displayEmail} />
-            <InfoRow icon={Phone} label="Phone" value={localUser.phone || user?.phone || "Not set"} />
-            <InfoRow icon={MapPin} label="Location" value={localUser.location || user?.location || "Not set"} />
+            <InfoRow icon={Phone} label="Phone" value={localUser.phone || (profileUser as any)?.phone || "Not set"} />
+            <InfoRow icon={MapPin} label="Location" value={localUser.location || (profileUser as any)?.location || "Not set"} />
           </div>
         </div>
 

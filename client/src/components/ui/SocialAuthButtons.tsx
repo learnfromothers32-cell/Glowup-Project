@@ -1,5 +1,6 @@
-import React from "react";
+//import React from "react";
 import { useAuth } from "../../context/authUtils";
+import { logger } from "../../utils/logger";
 
 interface SocialAuthButtonsProps {
   role?: "client" | "stylist";
@@ -12,7 +13,7 @@ export default function SocialAuthButtons({ role }: SocialAuthButtonsProps) {
     try {
       await socialLogin(provider, role);
     } catch (err: any) {
-      console.error(err);
+      logger.error(err);
     }
   };
 

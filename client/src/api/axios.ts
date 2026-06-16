@@ -3,20 +3,19 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 export const API_SERVER_URL = API_BASE_URL.replace('/api', '');
 
-let accessToken: string | null = localStorage.getItem("access_token");
+let accessToken: string | null = null;
 let isRefreshing = false;
 let pendingRequests: Array<(token: string) => void> = [];
 
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
-  if (token) localStorage.setItem("access_token", token);
-  else localStorage.removeItem("access_token");
 };
 export const getAccessToken = () => accessToken;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  timeout: 15000,
 });
 
 api.interceptors.request.use((config) => {
@@ -26,10 +25,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+function getBackoff(retryCount: number): number {
+  // Exponential backoff with jitter: base 1s, 2s, 4s, 8s...
+  const base = Math.min(1000 * Math.pow(2, retryCount), 30000);
+  return base + Math.random() * base * 0.3;
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (error.response?.status === 429) {
+      originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
+      if (originalRequest._retryCount <= 3) {
+        const delay = getBackoff(originalRequest._retryCount - 1);
+        console.warn(`[axios] 429 on ${originalRequest.url}, retry ${originalRequest._retryCount}/3 in ${Math.round(delay)}ms`);
+        await new Promise((r) => setTimeout(r, delay));
+        return api(originalRequest);
+      }
+    }
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh')) {
       if (isRefreshing) {
         return new Promise((resolve) => {
@@ -50,10 +64,10 @@ api.interceptors.response.use(
         pendingRequests.forEach((cb) => cb(accessToken!));
         pendingRequests = [];
         return api(originalRequest);
-      } catch {
+      } catch (refreshError) {
         accessToken = null;
         pendingRequests = [];
-        return Promise.reject(error);
+        return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }

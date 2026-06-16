@@ -12,6 +12,8 @@ export interface ITransaction extends Document {
   status: 'pending' | 'paid' | 'failed' | 'refunded';
   paymentProvider: 'paystack';
   paymentRef: string;
+  paymentMethod: 'card' | 'mobile-money' | 'cash';
+  paymentDetails: Record<string, any>;
   metadata: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
@@ -49,9 +51,17 @@ const transactionSchema = new Schema<ITransaction>(
     },
     paymentProvider: { type: String, default: 'paystack' },
     paymentRef: { type: String },
+    paymentMethod: {
+      type: String,
+      enum: ['card', 'mobile-money', 'cash'],
+      default: 'card'
+    },
+    paymentDetails: { type: Schema.Types.Mixed, default: {} },
     metadata: { type: Schema.Types.Mixed, default: {} }
   },
   { timestamps: true }
 );
+
+transactionSchema.index({ paymentRef: 1 });
 
 export const Transaction = model<ITransaction>('Transaction', transactionSchema);

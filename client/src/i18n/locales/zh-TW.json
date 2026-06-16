@@ -1,0 +1,13 @@
+{
+  "app": { "name": "AI 髮型工作室", "tagline": "AI 虛擬試戴" },
+  "hero": { "title": "AI 髮型生成器", "subtitle": "上傳您的照片，虛擬試戴各種髮型。從短髮到長髮，從捲髮到瀏海，找到最適合您臉型的造型。" },
+  "upload": { "drop": "拖曳圖片至此上傳", "browse": "或點擊瀏覽", "maxSize": "JPEG、PNG、WebP · 最大 10MB", "cta": "使用我的照片試戴", "sample": "或使用範例圖片", "change": "更換照片", "remove": "移除照片" },
+  "studio": { "hairstyles": "髮型選擇", "viewAll": "查看全部", "yourPhoto": "您的照片", "original": "原始", "compare": "比較", "showResult": "顯示結果", "download": "下載", "save": "收藏", "saved": "已收藏", "newPhoto": "新照片", "generating": "正在生成預覽...", "savedLooks": "已收藏的造型", "noSaved": "還沒有收藏的造型", "noSavedHint": "生成的髮型將會顯示在這裡" },
+  "categories": { "all": "全部", "men": "男士", "women": "女士", "unisex": "中性" },
+  "face": { "analysis": "臉型分析", "analyzing": "正在分析臉型...", "detected": "已偵測到臉部", "detecting": "正在偵測臉部", "shape": "臉型", "confidence": "信心度" },
+  "howItWorks": { "title": "使用方式", "step1": "上傳照片", "step1desc": "拍攝自拍照或上傳清晰臉部照片", "step2": "選擇髮型", "step2desc": "瀏覽 150+ 種髮型，挑選您喜歡的", "step3": "立即試戴", "step3desc": "透過 AI 技術，秒看效果" },
+  "features": { "title": "為什麼選擇 AI 髮型工作室", "compare": "比較造型", "compareDesc": "前後對比，查看差異", "realistic": "逼真預覽", "realisticDesc": "AI 驅動的自然預覽效果", "faceShape": "臉型分析", "faceShapeDesc": "根據臉型獲得個人化建議", "free": "免費試用", "freeDesc": "無需信用卡。提供 5 次免費體驗。" },
+  "credits": { "title": "體驗次數", "balance": "餘額", "purchase": "購買次數", "free": "免費", "freeHint": "新用戶可獲得 5 次免費體驗", "noCredits": "次數不足", "noCreditsDesc": "購買更多次數以繼續使用 AI 髮型生成器" },
+  "footer": { "privacy": "隱私政策", "terms": "服務條款", "contact": "聯絡我們" },
+  "common": { "loading": "載入中…", "error": "發生錯誤", "retry": "重試", "close": "關閉" }
+}

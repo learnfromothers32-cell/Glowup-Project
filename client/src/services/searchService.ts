@@ -31,8 +31,6 @@ export interface SearchResult {
 // Client‑side search (current implementation)
 export async function searchLocal(query: string): Promise<SearchResult[]> {
   if (!query.trim()) return [];
-  const term = query.toLowerCase().trim();
-  const stylists = await loadStylists();
   const results: SearchResult[] = [];
 
   // ... (same filtering logic as before, but using cached stylists)

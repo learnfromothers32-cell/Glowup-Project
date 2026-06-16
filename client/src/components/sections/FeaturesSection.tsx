@@ -724,7 +724,7 @@ function StatsRow() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function FeaturesSection() {
-  const [activeId, setActiveId] = useState(FEATURES[0].id);
+  const [activeId, setActiveId] = useState<string>(FEATURES[0].id);
   const [isMobile, setIsMobile] = useState(false);
   const activeFeature = FEATURES.find((f) => f.id === activeId) ?? FEATURES[0];
 
