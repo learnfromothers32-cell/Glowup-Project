@@ -105,3 +105,12 @@ export const updateArticle = async (
 export const deleteArticle = async (id: string): Promise<void> => {
   await api.delete(`/articles/${id}`);
 };
+
+export const uploadArticleImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const { data } = await api.post('/articles/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data.data.url;
+};

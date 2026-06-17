@@ -8,9 +8,11 @@ import {
   updateArticle,
   deleteArticle,
   getCategories,
+  uploadArticleImage,
 } from '../controllers/article.controller';
 import { protect, requireRole } from '../middleware/auth.middleware';
 import { generalLimiter } from '../middleware/rateLimiter';
+import { upload } from '../utils/upload';
 
 const router = Router();
 
@@ -21,6 +23,7 @@ router.get('/published/:slug', getArticleBySlug);
 
 router.use(protect);
 
+router.post('/upload-image', generalLimiter, requireRole('stylist', 'admin'), upload.single('image'), uploadArticleImage);
 router.get('/my', requireRole('stylist', 'admin'), getMyArticles);
 router.get('/:id', getArticleById);
 router.post('/', generalLimiter, requireRole('stylist', 'admin'), createArticle);

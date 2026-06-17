@@ -4,6 +4,7 @@ import { User } from '../models/User';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../utils/apiError';
 import { sendSuccess, sendPaginated } from '../utils/apiResponse';
+import { isCloudinaryConfigured, uploadToCloudinary } from '../config/cloudinary';
 
 function sanitize(article: IArticle) {
   return {
@@ -157,4 +158,21 @@ export const deleteArticle = asyncHandler(async (req: Request, res: Response) =>
 export const getCategories = asyncHandler(async (_req: Request, res: Response) => {
   const categories = ['Hair', 'Barber', 'Skin', 'Nails', 'Lashes'];
   return sendSuccess(res, { categories });
+});
+
+export const uploadArticleImage = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) {
+    throw new ApiError(400, 'No image file provided');
+  }
+
+  let url: string;
+  if (isCloudinaryConfigured) {
+    url = await uploadToCloudinary(req.file.path, 'articles', {
+      transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }],
+    });
+  } else {
+    url = `/uploads/${req.file.filename}`;
+  }
+
+  return sendSuccess(res, { url }, 'Image uploaded');
 });
