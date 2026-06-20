@@ -192,35 +192,39 @@ export default function StylistBookings() {
                 <motion.div key={b._id} onClick={() => setDetail(b)}
                   initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                   className={`group bg-white rounded-xl border border-gray-100 cursor-pointer hover:border-gray-200 hover:shadow-md transition-all duration-200 ${isCancelled ? "opacity-60" : ""} ${isPending ? "border-amber-200 bg-amber-50/30" : ""}`}>
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 p-3 sm:p-4">
-                    <div className="shrink-0 w-12 sm:w-16 text-center leading-tight">
-                      <p className="text-xs sm:text-sm font-bold text-gray-900 tabular-nums">{fmtISO(b.startTime).split(" ")[0]}</p>
-                      <p className="text-[10px] text-gray-400 font-medium">{fmtISO(b.startTime).split(" ")[1]}</p>
-                    </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center p-3 sm:p-4">
 
-                    <div className={`w-px h-9 shrink-0 self-center ${isCancelled ? "bg-red-200" : isPending ? "bg-amber-300" : fmtDate(new Date(b.startTime)) === "Today" ? "bg-green-300" : "bg-gray-200"}`} />
+                    <div className="flex items-center gap-2 sm:gap-4 w-full">
+                      <div className="hidden sm:flex sm:flex-col sm:items-center sm:w-16 shrink-0 sm:leading-tight">
+                        <p className="text-sm font-bold text-gray-900 tabular-nums">{fmtISO(b.startTime).split(" ")[0]}</p>
+                        <p className="text-[10px] text-gray-400 font-medium">{fmtISO(b.startTime).split(" ")[1]}</p>
+                      </div>
+                      <div className="hidden sm:block w-px h-10 shrink-0 self-center bg-gray-200" />
 
-                    <div className="shrink-0">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gray-100 flex items-center justify-center ring-1 ring-gray-100">
-                        <span className="text-[11px] font-bold text-gray-400">{initials(clientName)}</span>
+                      <div className="shrink-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gray-100 flex items-center justify-center ring-1 ring-gray-100">
+                          <span className="text-[11px] font-bold text-gray-400">{initials(clientName)}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex-1 min-w-0 min-w-[100px]">
-                      <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                        <p className={`text-sm font-semibold truncate max-w-[120px] sm:max-w-none ${isCancelled ? "text-gray-400 line-through" : "text-gray-900"}`}>{clientName}</p>
-                        <StatusBadge status={b.status} date={dateStr} />
+                      <span className="sm:hidden text-xs font-medium text-gray-500">{fmtISO(b.startTime)}</span>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-sm font-semibold truncate ${isCancelled ? "text-gray-400 line-through" : "text-gray-900"}`}>{clientName}</p>
+                          <StatusBadge status={b.status} date={dateStr} />
+                        </div>
+                        <p className="text-xs text-gray-500 truncate sm:block">{serviceName}</p>
                       </div>
-                      <p className="text-xs text-gray-500 truncate">{serviceName}</p>
-                      <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400">
-                        <span className="flex items-center gap-1"><CalendarIcon size={10} />{fmtDate(new Date(b.startTime))}</span>
-                        {b.totalPrice > 0 && <span className="font-semibold text-gray-600">${b.totalPrice}</span>}
-                      </div>
+
+                      {b.totalPrice > 0 && (
+                        <p className={`hidden sm:block text-sm font-bold shrink-0 ${isCancelled ? "text-gray-300" : "text-gray-900"}`}>
+                          ${b.totalPrice}
+                        </p>
+                      )}
                     </div>
 
                     <div className="hidden sm:flex shrink-0 flex-col items-end gap-2">
-                      {b.totalPrice > 0 && <p className={`text-sm font-bold ${isCancelled ? "text-gray-300" : "text-gray-900"}`}>${b.totalPrice}</p>}
-
                       {isPending && (
                         <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
@@ -254,39 +258,42 @@ export default function StylistBookings() {
                       )}
                     </div>
 
-                    {isPending && (
-                      <div className="w-full flex sm:hidden items-center gap-2 pt-0.5">
-                        <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
-                          className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-[11px] font-semibold text-green-700 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                          {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <CheckIcon size={12} />} Confirm
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); handleCancel(b._id); }} disabled={actionLoading === b._id}
-                          className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-[11px] font-semibold text-red-600 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                          {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />} Cancel
-                        </button>
-                      </div>
-                    )}
-                    {b.status === "confirmed" && (
-                      <div className="w-full flex sm:hidden pt-0.5">
+                    <div className="flex sm:hidden items-center gap-2 mt-2 w-full">
+                      {isPending && (
+                        <>
+                          <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
+                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-[11px] font-semibold text-green-700 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <CheckIcon size={12} />} Confirm
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); handleCancel(b._id); }} disabled={actionLoading === b._id}
+                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-[11px] font-semibold text-red-600 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />} Cancel
+                          </button>
+                        </>
+                      )}
+                      {b.status === "confirmed" && (
                         <button onClick={(e) => { e.stopPropagation(); handleStartService(b._id); }} disabled={actionLoading === b._id}
                           className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-[11px] font-semibold text-blue-700 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
                           {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} Start Service
                         </button>
-                      </div>
-                    )}
-                    {b.status === "in-progress" && (
-                      <div className="w-full flex sm:hidden items-center gap-2 pt-0.5">
-                        {elapsed[b._id] && (
-                          <span className="flex items-center gap-1 text-[11px] font-mono text-orange-600 font-semibold shrink-0">
-                            <Timer size={12} /> {elapsed[b._id]}
-                          </span>
-                        )}
-                        <button onClick={(e) => { e.stopPropagation(); handleComplete(b._id); }} disabled={actionLoading === b._id}
-                          className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-[11px] font-semibold text-green-700 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
-                          {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <StopCircle size={12} />} Complete
-                        </button>
-                      </div>
-                    )}
+                      )}
+                      {b.status === "in-progress" && (
+                        <>
+                          {elapsed[b._id] && (
+                            <span className="flex items-center gap-1 text-[11px] font-mono text-orange-600 font-semibold shrink-0">
+                              <Timer size={12} /> {elapsed[b._id]}
+                            </span>
+                          )}
+                          <button onClick={(e) => { e.stopPropagation(); handleComplete(b._id); }} disabled={actionLoading === b._id}
+                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-[11px] font-semibold text-green-700 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <StopCircle size={12} />} Complete
+                          </button>
+                        </>
+                      )}
+                      {b.totalPrice > 0 && (
+                        <span className="sm:hidden shrink-0 text-xs font-semibold text-gray-700">${b.totalPrice}</span>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               );
