@@ -183,6 +183,7 @@ export default function ConsumerProfile() {
     phone: user?.phone || "",
     location: user?.location || "",
   }));
+  const [showImagePreview, setShowImagePreview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { points, badges, checkInStreak } = useGamification();
@@ -260,7 +261,9 @@ export default function ConsumerProfile() {
             <div className="flex items-start gap-4">
               <div className="relative shrink-0">
                 {profileUser?.avatar ? (
-                  <img src={profileUser.avatar} alt="" className="w-20 h-20 rounded-2xl object-cover" />
+                  <button onClick={() => setShowImagePreview(true)} className="block">
+                    <img src={profileUser.avatar} alt="" className="w-20 h-20 rounded-2xl object-cover cursor-pointer hover:opacity-90 transition-opacity" />
+                  </button>
                 ) : (
                   <div className="w-20 h-20 rounded-2xl bg-gray-900 text-white flex items-center justify-center text-2xl font-bold dark:bg-white dark:text-gray-900">
                     {initials}
@@ -444,6 +447,30 @@ export default function ConsumerProfile() {
             onClose={() => setShowEdit(false)}
             onSave={handleSave}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showImagePreview && profileUser?.avatar && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowImagePreview(false)}
+          >
+            <motion.img
+              key="preview"
+              src={profileUser.avatar}
+              alt=""
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
