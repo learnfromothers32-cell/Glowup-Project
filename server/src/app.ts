@@ -14,7 +14,21 @@ import { generalLimiter } from './middleware/rateLimiter';
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: appConfig.clientUrl, credentials: true }));
+app.use(cors({
+  origin: (origin, cb) => {
+    const allowed = [
+      appConfig.clientUrl,
+      'http://localhost:5173',
+      'http://localhost:5000',
+    ];
+    if (!origin || allowed.some((a) => origin.startsWith(a))) {
+      cb(null, true);
+    } else {
+      cb(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
 app.use(generalLimiter);
 app.use(compression());
 app.use(morgan('dev'));

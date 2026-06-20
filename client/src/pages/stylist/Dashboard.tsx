@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getMyStylistProfile, addMyService } from "../../api/stylists";
+import { useTheme } from "../../context/ThemeContext";
 import { getStylistBookings } from "../../api/bookings";
 import { getStylistReviews } from "../../api/reviews";
 import { getLocationString } from "@/utils/location";
@@ -73,6 +74,7 @@ function getRelativeTime(dateStr: string): string {
 
 export default function StylistDashboard() {
   const navigate = useNavigate();
+  const { resolved } = useTheme();
   const [stylist, setStylist] = useState<any>(null);
   const [rawBookings, setRawBookings] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
@@ -362,17 +364,17 @@ export default function StylistDashboard() {
                 <div className="h-52 sm:h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={weeklyEarnings} margin={{ top: 5, right: 10, left: -15, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} tickFormatter={(v) => `₵${v}`} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={resolved === 'dark' ? '#27272a' : '#f0f0f0'} />
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: resolved === 'dark' ? '#71717a' : '#9ca3af' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: resolved === 'dark' ? '#71717a' : '#9ca3af' }} tickFormatter={(v) => `₵${v}`} />
                       <Tooltip
-                        contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", fontSize: "12px" }}
+                        contentStyle={{ borderRadius: "12px", border: resolved === 'dark' ? "1px solid #3f3f46" : "1px solid #e5e7eb", backgroundColor: resolved === 'dark' ? '#18181b' : '#fff', color: resolved === 'dark' ? '#fafafa' : '#1a1a2e', boxShadow: "0 4px 16px rgba(0,0,0,0.08)", fontSize: "12px" }}
                         formatter={(value) => [`₵${value}`, "Earnings"]}
                         labelFormatter={(label) => weeklyEarnings.find(d => d.day === label)?.fullDay || label}
                       />
                       <Bar dataKey="amount" radius={[6, 6, 0, 0]} barSize={28}>
                         {weeklyEarnings.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.amount > 0 ? chartColors[index % chartColors.length] : "#f3f4f6"} />
+                          <Cell key={`cell-${index}`} fill={entry.amount > 0 ? chartColors[index % chartColors.length] : (resolved === 'dark' ? '#27272a' : '#f3f4f6')} />
                         ))}
                       </Bar>
                     </BarChart>

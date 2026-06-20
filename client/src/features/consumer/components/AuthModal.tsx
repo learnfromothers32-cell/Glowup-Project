@@ -89,7 +89,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           </button>
           <button
             onClick={() => handleSocialLogin("apple")}
-            className="w-full flex items-center justify-center gap-3 py-2.5 bg-black text-white rounded-xl hover:bg-gray-900 transition"
+            className="w-full flex items-center justify-center gap-3 py-2.5 bg-black text-white rounded-xl hover:bg-gray-900 transition dark:hover:bg-gray-200"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />

@@ -48,13 +48,13 @@ export default function Settings() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#7A7168]" /></div>;
+    return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-text-secondary dark:text-text-dark-secondary" /></div>;
   }
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl">
       <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary font-display mb-1">Settings</h1>
-      <p className="text-[#7A7168] text-sm mb-6">Manage your account preferences</p>
+      <p className="text-text-secondary dark:text-text-dark-secondary text-sm mb-6">Manage your account preferences</p>
 
       {error && (
         <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 text-red-700 rounded-lg text-sm">
@@ -64,8 +64,8 @@ export default function Settings() {
       )}
 
       <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] p-4 sm:p-5">
-          <h3 className="font-medium text-[#1A1A1A] flex items-center gap-2 mb-4"><Bell className="w-4 h-4" /> Notifications</h3>
+        <div className="card p-4 sm:p-5">
+          <h3 className="font-medium text-text-primary dark:text-text-dark-primary flex items-center gap-2 mb-4"><Bell className="w-4 h-4" /> Notifications</h3>
           <div className="space-y-3">
             {[
               { key: 'newBooking', label: 'New booking alerts' },
@@ -75,17 +75,17 @@ export default function Settings() {
               { key: 'reminderEmails', label: 'Appointment reminder emails' },
             ].map(item => (
               <label key={item.key} className="flex items-center justify-between gap-3 min-h-[44px]">
-                <span className="text-sm text-[#1A1A1A]">{item.label}</span>
+                <span className="text-sm text-text-primary dark:text-text-dark-primary">{item.label}</span>
                 <input type="checkbox" checked={(notifications as any)[item.key]}
                   onChange={e => setNotifications({ ...notifications, [item.key]: e.target.checked })}
-                  className="rounded border-gray-300 text-[#8B7355] focus:ring-[#8B7355] shrink-0" />
+                  className="rounded border-gray-300 dark:border-gray-600 text-brand-500 focus:ring-brand-500 shrink-0" />
               </label>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] p-4 sm:p-5">
-          <h3 className="font-medium text-[#1A1A1A] flex items-center gap-2 mb-4"><Shield className="w-4 h-4" /> Privacy</h3>
+        <div className="card p-4 sm:p-5">
+          <h3 className="font-medium text-text-primary dark:text-text-dark-primary flex items-center gap-2 mb-4"><Shield className="w-4 h-4" /> Privacy</h3>
           <div className="space-y-3">
             {[
               { key: 'showInSearch', label: 'Show profile in search results' },
@@ -93,17 +93,17 @@ export default function Settings() {
               { key: 'showPhoneToClients', label: 'Show phone to clients' },
             ].map(item => (
               <label key={item.key} className="flex items-center justify-between gap-3 min-h-[44px]">
-                <span className="text-sm text-[#1A1A1A]">{item.label}</span>
+                <span className="text-sm text-text-primary dark:text-text-dark-primary">{item.label}</span>
                 <input type="checkbox" checked={(privacy as any)[item.key]}
                   onChange={e => setPrivacy({ ...privacy, [item.key]: e.target.checked })}
-                  className="rounded border-gray-300 text-[#8B7355] focus:ring-[#8B7355] shrink-0" />
+                  className="rounded border-gray-300 dark:border-gray-600 text-brand-500 focus:ring-brand-500 shrink-0" />
               </label>
             ))}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] p-4 sm:p-5">
-          <h3 className="font-medium text-[#1A1A1A] flex items-center gap-2 mb-4"><Palette className="w-4 h-4" /> Appearance</h3>
+        <div className="card p-4 sm:p-5">
+          <h3 className="font-medium text-text-primary dark:text-text-dark-primary flex items-center gap-2 mb-4"><Palette className="w-4 h-4" /> Appearance</h3>
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {[
               { key: 'light', icon: Sun, label: 'Light' },
@@ -111,7 +111,11 @@ export default function Settings() {
               { key: 'system', icon: Monitor, label: 'System' },
             ].map(option => (
               <button key={option.key} onClick={() => setTheme(option.key as any)}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-3 rounded-lg border text-xs sm:text-sm transition-colors min-h-[44px] ${theme === option.key ? 'border-[#8B7355] bg-[#FAF8F4] text-[#8B7355]' : 'border-[#E8E0D8] text-gray-500 hover:border-gray-300'}`}>
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 p-3 rounded-lg border text-xs sm:text-sm transition-colors min-h-[44px] ${
+                  theme === option.key
+                    ? 'border-brand-500 bg-brand-500/10 text-brand-600 dark:text-brand-400'
+                    : 'border-gray-200 dark:border-gray-600 text-text-secondary dark:text-text-dark-secondary hover:border-gray-300 dark:hover:border-gray-500'
+                }`}>
                 <option.icon className="w-4 h-4 shrink-0" /> <span>{option.label}</span>
               </button>
             ))}
@@ -119,7 +123,7 @@ export default function Settings() {
         </div>
 
         <button onClick={handleSave} disabled={saving}
-          className="w-full bg-[#1A1A1A] text-white py-3 sm:py-2.5 rounded-lg text-sm hover:bg-[#333] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]">
+          className="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-3 sm:py-2.5 rounded-lg text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}
         </button>

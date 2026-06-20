@@ -242,7 +242,7 @@ export default function QueueManagement() {
               <button
                 onClick={handleAdvance}
                 disabled={actionLoading === "advance"}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 shadow-sm transition-all min-h-[48px]"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 disabled:opacity-50 shadow-sm transition-all min-h-[48px] dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
               >
                 {actionLoading === "advance" ? (
                   <Loader2 size={16} className="animate-spin" />

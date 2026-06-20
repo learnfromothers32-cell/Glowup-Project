@@ -13,17 +13,17 @@ import { useNavigate } from "react-router-dom";
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
 const T = {
-  bg: "#FAFAF7",
+  bg: "var(--section-bg)",
   dark: "#1A1714",
   darkSurface: "#221F1B",
   darkBorder: "rgba(255,255,255,0.08)",
-  surface: "#FFFFFF",
-  muted: "#F5F3EE",
-  border: "#E8E4DC",
-  ink: "#1A1714",
-  inkMid: "#5C554A",
-  inkLight: "#8A7F72",
-  inkXLight: "#B5AD9E",
+  surface: "var(--section-surface)",
+  muted: "var(--section-muted)",
+  border: "var(--section-border)",
+  ink: "var(--section-ink)",
+  inkMid: "var(--section-ink-mid)",
+  inkLight: "var(--section-ink-light)",
+  inkXLight: "var(--section-ink-xlight)",
   white: "#FFFFFF",
   whiteMid: "rgba(255,255,255,0.7)",
   whiteLight: "rgba(255,255,255,0.4)",
@@ -131,8 +131,8 @@ function PathCard({
   const cardBorder = isDark ? T.darkBorder : T.border;
   const textColor = isDark ? T.white : T.ink;
   const textMid = isDark ? T.whiteMid : T.inkMid;
-  const dividerColor = isDark ? "rgba(255,255,255,0.08)" : T.line;
-  const checkBg = isDark ? "rgba(255,255,255,0.12)" : T.greenLight;
+  const dividerColor = isDark ? "rgba(255,255,255,0.08)" : T.border;
+  const checkBg = isDark ? "rgba(255,255,255,0.12)" : T.greenBg;
   const checkColor = isDark ? T.green : T.green;
   return (
     <div
@@ -448,8 +448,6 @@ export default function FinalCTASection() {
         style={{
           padding: "clamp(64px, 10vw, 120px) clamp(20px, 5vw, 48px)",
           background: T.dark,
-          fontFamily:
-            "-apple-system,'SF Pro Text','Segoe UI',system-ui,sans-serif",
           overflow: "hidden",
         }}
       >

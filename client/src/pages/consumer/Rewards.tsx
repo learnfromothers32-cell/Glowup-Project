@@ -75,7 +75,7 @@ function PointsCard({ points, streak, alreadyCheckedIn, onCheckIn }: {
                     initial={{ width: 0 }}
                     animate={{ width: `${progressToNext}%` }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
-                    className="h-full rounded-full bg-gray-900"
+                    className="h-full rounded-full bg-gray-900 dark:bg-gray-200"
                   />
                 </div>
               </div>
@@ -102,7 +102,7 @@ function PointsCard({ points, streak, alreadyCheckedIn, onCheckIn }: {
                 transition-all duration-200
                 ${alreadyCheckedIn
                   ? "bg-green-50 text-green-600 border border-green-100 cursor-default"
-                  : "bg-gray-900 text-white hover:bg-gray-800 shadow-md shadow-gray-900/10 active:scale-[0.97]"
+                  : "bg-gray-900 text-white hover:bg-gray-800 shadow-md shadow-gray-900/10 active:scale-[0.97] dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
                 }
               `}
             >
@@ -237,7 +237,7 @@ function TierList({ points }: { points: number }) {
                   {tier.name}
                 </p>
                 {isCurrent && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-900 text-white uppercase tracking-wider">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-900 text-white uppercase tracking-wider dark:bg-white dark:text-gray-900">
                     Current
                   </span>
                 )}
@@ -297,7 +297,7 @@ export default function Rewards() {
         {/* ── Header ── */}
         <div className="pt-14 pb-6">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center dark:bg-gray-200">
               <Trophy size={18} className="text-white" />
             </div>
             <div>
@@ -374,7 +374,7 @@ export default function Rewards() {
                   initial={{ width: 0 }}
                   animate={{ width: `${(unlockedCount / totalMilestones) * 100}%` }}
                   transition={{ duration: 0.6 }}
-                  className="h-full rounded-full bg-gray-900"
+                  className="h-full rounded-full bg-gray-900 dark:bg-gray-200"
                 />
               </div>
             </div>

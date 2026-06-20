@@ -167,7 +167,7 @@ function FavoriteCard({
                 e.stopPropagation();
                 onClick(); // this will now navigate to detail page
               }}
-              className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-gray-900 text-white text-[10px] font-semibold hover:bg-gray-800 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-gray-900 text-white text-[10px] font-semibold hover:bg-gray-800 transition-colors dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
             >
               Book
               <ArrowRight size={9} />

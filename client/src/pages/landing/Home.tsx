@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import Hero from "../../components/sections/Hero";
 import HowItWorks from "../../components/sections/HowItWorks";
@@ -10,6 +10,35 @@ import SocialProofSection from "../../components/sections/SocialProofSection";
 import FinalCTASection from "../../components/sections/FinalCTASection";
 import AppFooter from "../../components/layout/AppFooter";
 import LandingNavbar from "../../components/layout/LandingNavbar";
+
+function useScrollReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("visible");
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
+}
+
+function RevealSection({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const ref = useScrollReveal();
+  return (
+    <div ref={ref} className={`reveal ${delay > 0 ? `reveal-delay-${delay}` : ""}`}>
+      {children}
+    </div>
+  );
+}
 
 const SECTIONS = [
   { component: <HowItWorks />, id: "how" },
@@ -63,13 +92,15 @@ export default function Home() {
   return (
     <>
       <LandingNavbar />
-      <div className="pt-5">
+      <div>
         <Hero />
 
-        {SECTIONS.map(({ component, id }) => (
-          <div key={id} id={id}>
-            {component}
-          </div>
+        {SECTIONS.map(({ component, id }, i) => (
+          <RevealSection key={id} delay={Math.min(i + 1, 4)}>
+            <div id={id}>
+              {component}
+            </div>
+          </RevealSection>
         ))}
         <AppFooter variant="landing" />
       </div>

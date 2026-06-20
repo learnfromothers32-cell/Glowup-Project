@@ -7,7 +7,7 @@ export default function AiVibeMatchPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 dark:bg-surface-dark/95 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">

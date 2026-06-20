@@ -95,7 +95,7 @@ function CategoryTabs({
               transition-all duration-200
               ${
                 isActive
-                  ? "bg-gray-900 text-white shadow-sm"
+                  ? "bg-gray-900 text-white shadow-sm dark:bg-white dark:text-gray-900"
                   : "bg-white text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-700"
               }
             `}
@@ -370,7 +370,7 @@ function CompactRow({
               e.stopPropagation();
               onBook();
             }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-[11px] font-semibold hover:bg-gray-800 shadow-sm transition-all opacity-0 group-hover:opacity-100"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-[11px] font-semibold hover:bg-gray-800 shadow-sm transition-all opacity-0 group-hover:opacity-100 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
           >
             Book
             <ArrowRight size={10} />
@@ -512,7 +512,7 @@ function GridCard({
             e.stopPropagation();
             onBook();
           }}
-          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-50 text-gray-700 text-xs font-semibold hover:bg-gray-900 hover:text-white border border-gray-100 hover:border-gray-900 transition-all duration-200"
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-50 text-gray-700 text-xs font-semibold hover:bg-gray-900 hover:text-white border border-gray-100 hover:border-gray-900 transition-all duration-200 dark:hover:bg-gray-200 dark:hover:text-gray-900 dark:hover:border-gray-200"
         >
           Book Now
           <ArrowRight size={11} />
@@ -637,7 +637,7 @@ export default function RecommendedSection({
               {category !== "all" && (
                 <Link
                   to={`/app/${category.toLowerCase()}`}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors shadow-sm whitespace-nowrap sm:ml-2"
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors shadow-sm whitespace-nowrap sm:ml-2 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
                 >
                   View all {category}
                   <ArrowRight size={12} />

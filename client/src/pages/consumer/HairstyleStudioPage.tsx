@@ -254,7 +254,7 @@ export default function HairstyleStudioPage() {
   return (
     <div className="min-h-screen bg-white" dir={i18n.language === "ar" ? "rtl" : "ltr"}>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 dark:bg-surface-dark/95 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
@@ -417,7 +417,7 @@ export default function HairstyleStudioPage() {
                   { step: "3", titleKey: "howItWorks.step3", descKey: "howItWorks.step3desc" },
                 ].map((item) => (
                   <div key={item.step} className="text-center p-4 rounded-xl bg-gray-50/50">
-                    <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center mx-auto mb-3 text-sm font-bold">{item.step}</div>
+                    <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center mx-auto mb-3 text-sm font-bold dark:bg-white dark:text-gray-900">{item.step}</div>
                     <h4 className="text-sm font-semibold text-gray-800 mb-1">{t(item.titleKey)}</h4>
                     <p className="text-xs text-gray-400">{t(item.descKey)}</p>
                   </div>
@@ -540,7 +540,7 @@ export default function HairstyleStudioPage() {
                     className={cn(
                       "flex items-center gap-1.5 h-9 px-4 rounded-xl border text-xs font-semibold transition-all",
                       showBefore
-                        ? "bg-gray-900 text-white border-gray-900"
+                        ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white"
                         : "border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
                     )}
                   >
@@ -611,7 +611,7 @@ export default function HairstyleStudioPage() {
                         className={cn(
                           "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                           category === cat.id
-                            ? "bg-gray-900 text-white shadow-sm"
+                            ? "bg-gray-900 text-white shadow-sm dark:bg-white dark:text-gray-900"
                             : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                         )}
                       >
@@ -647,7 +647,7 @@ export default function HairstyleStudioPage() {
                               className="w-full h-full object-cover"
                             />
                             {isSelected && (
-                              <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-gray-900 flex items-center justify-center shadow">
+                              <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-gray-900 flex items-center justify-center shadow dark:bg-gray-200">
                                 <Check size={8} className="text-white" />
                               </div>
                             )}
@@ -708,7 +708,7 @@ export default function HairstyleStudioPage() {
                       className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                         category === cat.id
-                          ? "bg-gray-900 text-white"
+                          ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
                           : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                       )}
                     >
@@ -737,7 +737,7 @@ export default function HairstyleStudioPage() {
                           />
                         </div>
                         {isSelected && (
-                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-gray-900 flex items-center justify-center">
+                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-gray-900 flex items-center justify-center dark:bg-gray-200">
                             <Check size={7} className="text-white" />
                           </div>
                         )}

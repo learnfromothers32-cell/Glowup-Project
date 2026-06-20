@@ -166,7 +166,7 @@ function AreaSelector({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all min-w-[160px]"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all min-w-[160px] dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-primary dark:hover:border-gray-500"
       >
         <MapPin size={14} className="text-gray-400 shrink-0" />
         <span className="flex-1 text-left truncate">
@@ -185,9 +185,9 @@ function AreaSelector({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full mt-2 left-0 z-[1000] w-72 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden"
+            className="absolute top-full mt-2 left-0 z-[1000] w-72 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden dark:bg-surface-dark dark:border-gray-600"
           >
-            <div className="p-2 border-b border-gray-100">
+            <div className="p-2 border-b border-gray-100 dark:border-gray-700">
               <div className="relative">
                 <input
                   autoFocus
@@ -195,7 +195,7 @@ function AreaSelector({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search areas…"
-                  className="w-full pl-3 pr-3 py-2 rounded-lg bg-gray-50 border border-gray-100 text-sm outline-none focus:border-blue-300 focus:bg-white transition-all"
+                  className="w-full pl-3 pr-3 py-2 rounded-lg bg-gray-50 border border-gray-100 text-sm outline-none focus:border-blue-300 focus:bg-white transition-all dark:bg-surface-dark-tertiary dark:border-gray-600 dark:text-text-dark-primary dark:placeholder:text-text-dark-muted"
                 />
               </div>
             </div>
@@ -234,37 +234,37 @@ function AreaSelector({
                         setSearch("");
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2.5 text-left transition-colors ${
-                        isActive ? "bg-blue-50" : "hover:bg-gray-50"
+                        isActive ? "bg-blue-50 dark:bg-blue-950/30" : "hover:bg-gray-50 dark:hover:bg-white/5"
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                            isActive ? "bg-blue-100" : "bg-gray-100"
+                            isActive ? "bg-blue-100 dark:bg-blue-900/40" : "bg-gray-100 dark:bg-surface-dark-tertiary"
                           }`}
                         >
                           <MapPin
                             size={14}
                             className={
-                              isActive ? "text-blue-600" : "text-gray-400"
+                              isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-text-dark-muted"
                             }
                           />
                         </div>
                         <div>
                           <p
                             className={`text-sm font-medium ${
-                              isActive ? "text-blue-700" : "text-gray-900"
+                              isActive ? "text-blue-700 dark:text-blue-300" : "text-gray-900 dark:text-text-dark-primary"
                             }`}
                           >
                             {area.name}
                           </p>
-                          <p className="text-[11px] text-gray-400">
+                          <p className="text-[11px] text-gray-400 dark:text-text-dark-muted">
                             {area.tag}
                           </p>
                         </div>
                       </div>
                       {isActive && (
-                        <Check size={14} className="text-blue-600" />
+                        <Check size={14} className="text-blue-600 dark:text-blue-400" />
                       )}
                     </button>
                   );
@@ -301,9 +301,9 @@ function StylistPopup({
       : null;
 
   return (
-    <div className="w-56 font-sans">
-      {/* Cover / image */}
-      <div className="relative h-20 -mx-3 -mt-3 mb-2 rounded-t-lg overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100">
+      <div className="w-56 font-sans dark:text-text-dark-primary">
+        {/* Cover / image */}
+        <div className="relative h-20 -mx-3 -mt-3 mb-2 rounded-t-lg overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950 dark:to-purple-950">
         {stylist.image && (
           <img
             src={stylist.image}
@@ -321,14 +321,14 @@ function StylistPopup({
 
       {/* Info */}
       <div className="mb-3">
-        <h3 className="text-sm font-bold text-gray-900 mb-0.5">
+        <h3 className="text-sm font-bold text-gray-900 mb-0.5 dark:text-text-dark-primary">
           {stylist.name}
         </h3>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-text-dark-muted">
           {stylist.rating && (
             <span className="flex items-center gap-0.5">
               <Star size={10} fill="#f59e0b" stroke="#f59e0b" />
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-gray-700 dark:text-text-dark-secondary">
                 {stylist.rating}
               </span>
             </span>
@@ -337,7 +337,7 @@ function StylistPopup({
             <span>{getLocationString(stylist.location)}</span>
           )}
           {dist !== null && (
-            <span className="text-blue-600 font-medium">
+            <span className="text-blue-600 font-medium dark:text-blue-400">
               {dist < 1
                 ? `${(dist * 1000).toFixed(0)}m`
                 : `${dist.toFixed(1)}km`}
@@ -352,13 +352,13 @@ function StylistPopup({
           {stylist.services.slice(0, 3).map((s, i) => (
             <span
               key={i}
-              className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-medium text-gray-600"
+              className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-medium text-gray-600 dark:bg-surface-dark-tertiary dark:text-text-dark-muted"
             >
               {typeof s === "string" ? s : s.name}
             </span>
           ))}
           {stylist.services.length > 3 && (
-            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] text-gray-400">
+            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] text-gray-400 dark:bg-surface-dark-tertiary dark:text-text-dark-muted">
               +{stylist.services.length - 3}
             </span>
           )}
@@ -369,13 +369,13 @@ function StylistPopup({
       <div className="flex gap-2 mt-3">
         <button
           onClick={() => navigate(`/app/stylist/${stylist.id}`)}
-          className="flex-1 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition-colors"
+          className="flex-1 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition-colors dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-secondary"
         >
           View Profile
         </button>
         <button
           onClick={onSelect}
-          className="flex-1 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-1.5"
+          className="flex-1 py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-1.5 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
         >
           <Navigation size={12} />
           Book
@@ -396,14 +396,14 @@ function StatsBar({
   selectedArea?: string;
 }) {
   return (
-    <div className="flex items-center gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+    <div className="flex items-center gap-4 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500 dark:bg-surface-dark dark:border-gray-700/50 dark:text-text-dark-muted">
       <span className="flex items-center gap-1.5">
-        <Users size={13} className="text-gray-400" />
-        <span className="font-semibold text-gray-700">{stylistCount}</span>
+        <Users size={13} className="text-gray-400 dark:text-text-dark-muted" />
+        <span className="font-semibold text-gray-700 dark:text-text-dark-primary">{stylistCount}</span>
         {selectedArea ? `stylist${stylistCount !== 1 ? "s" : ""} in ${selectedArea}` : `stylist${stylistCount !== 1 ? "s" : ""} nearby`}
       </span>
       {userLocation && (
-        <span className="flex items-center gap-1.5 text-green-600">
+        <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
           Location active
         </span>
@@ -521,9 +521,9 @@ export default function ConsumerMap({
     : stylistsWithCoords;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden relative z-0">
+    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden relative z-0 dark:bg-surface-dark-secondary dark:border-gray-700/50">
       {/* ── Top controls ──────────────────────────────── */}
-      <div className="flex items-center gap-2 p-3 border-b border-gray-100">
+      <div className="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700/50">
         <AreaSelector
           value={selectedArea}
           onChange={handleAreaSelect}
@@ -537,8 +537,8 @@ export default function ConsumerMap({
           disabled={locating}
           className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
             locating
-              ? "bg-blue-50 text-blue-500 border border-blue-200"
-              : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:shadow-sm"
+              ? "bg-blue-50 text-blue-500 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50"
+              : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:shadow-sm dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-primary dark:hover:border-gray-500"
           }`}
         >
           {locating ? (
@@ -556,8 +556,8 @@ export default function ConsumerMap({
           onClick={() => setShowUserRadius((v) => !v)}
           className={`p-2 rounded-lg border transition-all ${
             showUserRadius && userLocation
-              ? "bg-blue-50 border-blue-200 text-blue-600"
-              : "bg-white border-gray-200 text-gray-400 hover:text-gray-600"
+              ? "bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-950/30 dark:border-blue-900/50 dark:text-blue-400"
+              : "bg-white border-gray-200 text-gray-400 hover:text-gray-600 dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-muted dark:hover:text-text-dark-secondary"
           }`}
           title="Toggle radius indicator"
         >
@@ -615,8 +615,8 @@ export default function ConsumerMap({
               <Marker position={userLocation} icon={userIcon}>
                 <Popup className="custom-popup">
                   <div className="text-center px-1">
-                    <p className="text-sm font-semibold text-gray-900">You</p>
-                    <p className="text-[11px] text-gray-400">Current location</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-text-dark-primary">You</p>
+                    <p className="text-[11px] text-gray-400 dark:text-text-dark-muted">Current location</p>
                   </div>
                 </Popup>
               </Marker>
@@ -662,20 +662,20 @@ export default function ConsumerMap({
         <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
           <button
             onClick={() => mapInstanceRef.current?.zoomIn()}
-            className="w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all"
+            className="w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-secondary"
           >
             <ZoomIn size={14} />
           </button>
           <button
             onClick={() => mapInstanceRef.current?.zoomOut()}
-            className="w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all"
+            className="w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-secondary"
           >
             <ZoomOut size={14} />
           </button>
-          <div className="h-px bg-gray-200 mx-1" />
+          <div className="h-px bg-gray-200 mx-1 dark:bg-gray-600" />
           <button
             onClick={getUserLocation}
-            className="w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all"
+            className="w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-secondary"
             title="Center on my location"
           >
             <Locate size={14} />
@@ -683,8 +683,8 @@ export default function ConsumerMap({
         </div>
 
         {/* Legend (lower z-index) */}
-        <div className="absolute bottom-3 left-3 z-10 bg-white/90 backdrop-blur-sm rounded-lg border border-gray-200 shadow-sm px-3 py-2">
-          <div className="flex items-center gap-4 text-[11px] text-gray-500">
+        <div className="absolute bottom-3 left-3 z-10 bg-white/90 backdrop-blur-sm rounded-lg border border-gray-200 shadow-sm px-3 py-2 dark:bg-surface-dark/90 dark:border-gray-600">
+          <div className="flex items-center gap-4 text-[11px] text-gray-500 dark:text-text-dark-muted">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
               You
@@ -743,6 +743,10 @@ export default function ConsumerMap({
           box-shadow: 0 10px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06) !important;
           border: 1px solid rgba(0,0,0,0.06) !important;
         }
+        .dark .leaflet-popup-content-wrapper {
+          background: #18181b !important;
+          border-color: #3f3f46 !important;
+        }
         .leaflet-popup-content {
           margin: 12px !important;
           font-family: inherit !important;
@@ -752,6 +756,10 @@ export default function ConsumerMap({
           border: 1px solid rgba(0,0,0,0.06) !important;
           border-top: none !important;
           border-left: none !important;
+        }
+        .dark .leaflet-popup-tip {
+          background: #18181b !important;
+          border-color: #3f3f46 !important;
         }
         .leaflet-popup-close-button {
           display: none !important;

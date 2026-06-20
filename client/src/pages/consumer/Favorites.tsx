@@ -67,7 +67,7 @@ export default function Favorites() {
           </p>
           <Link
             to="/app"
-            className="inline-block mt-6 px-4 py-2 bg-gray-900 text-white rounded-full text-sm"
+            className="inline-block mt-6 px-4 py-2 bg-gray-900 text-white rounded-full text-sm dark:bg-white dark:text-gray-900"
           >
             Browse stylists
           </Link>
@@ -121,7 +121,7 @@ export default function Favorites() {
                       e.stopPropagation();
                       navigate(`/app/stylist/${stylist.id}`);
                     }}
-                    className="px-3 py-1 text-xs bg-gray-900 text-white rounded-full hover:bg-gray-800 transition"
+                    className="px-3 py-1 text-xs bg-gray-900 text-white rounded-full hover:bg-gray-800 transition dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
                   >
                     View
                   </button>

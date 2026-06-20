@@ -322,7 +322,7 @@ export default function PaymentFormModal({
               {/* ── Header ── */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${method === "card" ? "bg-gray-900" : "bg-purple-700"}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${method === "card" ? "bg-gray-900 dark:bg-gray-200 dark:text-gray-900" : "bg-purple-700"}`}>
                     {method === "card" ? <CreditCard size={18} /> : <Smartphone size={18} />}
                   </div>
                   <div>
@@ -580,7 +580,7 @@ export default function PaymentFormModal({
                     </div>
 
                     <button type="submit" disabled={!mobile.phone}
-                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none bg-gray-900 text-white hover:bg-gray-800 shadow-lg shadow-gray-900/20">
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none bg-gray-900 text-white hover:bg-gray-800 shadow-lg shadow-gray-900/20 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">
                       <Lock size={13} />
                       {!mobile.phone ? "Enter phone number" : `Pay GH₵ ${breakdown.total.toFixed(2)}`}
                     </button>
@@ -661,7 +661,7 @@ export default function PaymentFormModal({
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => { setFlow("form"); setError(null); setFieldErrors({}); }} className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-all">Try Again</button>
+                <button onClick={() => { setFlow("form"); setError(null); setFieldErrors({}); }} className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-all dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">Try Again</button>
                 <button onClick={onClose} className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all">Cancel</button>
               </div>
             </motion.div>

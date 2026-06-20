@@ -398,7 +398,7 @@ export default function LiveSection() {
 
   return (
     <section
-      className="py-16 px-4 sm:px-8 overflow-hidden"
+      className="py-16 px-4 sm:px-8 overflow-hidden dark:bg-[#09090b]"
       style={{ background: "#F7F4EF" }}
     >
       <div className="max-w-7xl mx-auto">
@@ -520,7 +520,7 @@ export default function LiveSection() {
 
               <button
                 onClick={() => navigate("/signup")}
-                className="w-full py-3 rounded-xl bg-gray-900 text-white font-extrabold text-sm flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-100"
+                className="w-full py-3 rounded-xl bg-gray-900 text-white font-extrabold text-sm flex items-center justify-center gap-2 transition-transform hover:scale-[1.02] active:scale-100 dark:bg-white dark:text-gray-900"
               >
                 <Play size={15} fill="white" /> Watch live session
               </button>

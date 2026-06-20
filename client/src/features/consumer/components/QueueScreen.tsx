@@ -223,7 +223,7 @@ function DetailModal({ booking, queueData, onClose, onCancel }: {
         <div className={`h-1.5 ${isNext ? "bg-gradient-to-r from-emerald-400 to-green-500" : isToday ? "bg-gradient-to-r from-amber-400 to-orange-400" : cancelled ? "bg-gradient-to-r from-red-400 to-red-300" : "bg-gradient-to-r from-sky-400 to-blue-500"}`} />
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-base font-bold ${cancelled ? "bg-gray-100 text-gray-400" : "bg-gray-900 text-white"}`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-base font-bold ${cancelled ? "bg-gray-100 text-gray-400" : "bg-gray-900 text-white dark:bg-white dark:text-gray-900"}`}>
               {initials(stylistName)}
             </div>
             <div>
@@ -463,7 +463,7 @@ export default function QueueScreen() {
                     { key: "cancelled" as FilterKey, label: "Cancelled" },
                   ].map(({ key, label }) => (
                     <button key={key} onClick={() => setFilter(key)}
-                      className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${filter === key ? "bg-gray-900 text-white shadow-lg shadow-gray-200" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
+                      className={`shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${filter === key ? "bg-gray-900 text-white shadow-lg shadow-gray-200 dark:bg-white dark:text-gray-900" : "bg-gray-50 text-gray-500 hover:bg-gray-100"}`}>
                       {label}
                       {counts[key] > 0 && <span className={`text-[10px] font-bold min-w-[18px] h-[18px] px-1.5 rounded-full inline-flex items-center justify-center ${filter === key ? "bg-white/20 text-white" : "bg-gray-200 text-gray-500"}`}>{counts[key]}</span>}
                     </button>

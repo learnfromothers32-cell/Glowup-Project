@@ -125,7 +125,7 @@ export default function StylistCard({ stylist, onBook }: StylistCardProps) {
           </span>
           <button
             onClick={handleBookClick}
-            className="text-xs font-semibold px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+            className="text-xs font-semibold px-4 py-2 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
           >
             Book now
           </button>

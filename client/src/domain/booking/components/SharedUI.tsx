@@ -77,7 +77,7 @@ export function EmptyState({ icon: Icon, title, sub }: EmptyStateProps) {
 export function Toast({ message, visible }: { message: string; visible: boolean }) {
   return (
     <div
-      className={`fixed bottom-8 left-1/2 z-[400] pointer-events-none flex items-center gap-2 px-5 py-3 rounded-full bg-gray-900 text-white text-sm font-medium shadow-xl whitespace-nowrap transition-all duration-300 ${
+      className={`fixed bottom-8 left-1/2 z-[400] pointer-events-none flex items-center gap-2 px-5 py-3 rounded-full bg-gray-900 text-white text-sm font-medium shadow-xl whitespace-nowrap transition-all duration-300 dark:bg-white dark:text-gray-900 ${
         visible
           ? "-translate-x-1/2 translate-y-0 opacity-100"
           : "-translate-x-1/2 translate-y-5 opacity-0"
@@ -109,7 +109,7 @@ export function FilterPills({ filters, active, onChange, counts }: FilterPillsPr
             onClick={() => onChange(key)}
             className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
               on
-                ? "bg-gray-900 text-white shadow-sm"
+                ? "bg-gray-900 text-white shadow-sm dark:bg-white dark:text-gray-900"
                 : "bg-white text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-700"
             }`}
           >

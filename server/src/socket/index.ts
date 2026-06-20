@@ -14,7 +14,18 @@ let io: Server;
 export const initSocket = (server: HttpServer): Server => {
   io = new Server(server, {
     cors: {
-      origin: appConfig.clientUrl,
+      origin: (origin, cb) => {
+        const allowed = [
+          appConfig.clientUrl,
+          'http://localhost:5173',
+          'http://localhost:5000',
+        ];
+        if (!origin || allowed.some((a) => origin?.startsWith(a))) {
+          cb(null, true);
+        } else {
+          cb(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true,
     },
     pingInterval: 25000,

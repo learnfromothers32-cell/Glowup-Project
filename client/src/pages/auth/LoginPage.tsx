@@ -32,7 +32,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-gray-50 dark:bg-surface-dark">
       {/* Left — Brand panel */}
       <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-brand-600 via-brand-500 to-brand-700 p-12 text-white relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(circle at 20% 50%, #fff 0%, transparent 50%), radial-gradient(circle at 80% 50%, #fff 0%, transparent 50%)` }} />
@@ -72,7 +72,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="rounded-xl bg-error/10 border border-error/20 px-4 py-3 text-sm text-error-dark dark:text-error">
+            <div role="alert" aria-live="polite" className="rounded-xl bg-error/10 border border-error/20 px-4 py-3 text-sm text-error-dark dark:text-error">
               {error}
             </div>
           )}

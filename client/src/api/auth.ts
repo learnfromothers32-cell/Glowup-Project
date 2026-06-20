@@ -53,3 +53,10 @@ export const updateProfile = async (data: { name?: string; phone?: string; locat
   const res = await api.put('/auth/profile', data);
   return res.data;
 };
+
+export const uploadAvatar = async (formData: FormData): Promise<{ success: boolean; message: string; data: { avatar: string; user: User } }> => {
+  const res = await api.post('/auth/me/image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+};

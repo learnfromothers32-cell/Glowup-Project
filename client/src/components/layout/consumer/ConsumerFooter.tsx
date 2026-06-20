@@ -79,15 +79,15 @@ const LEGAL_LINKS = [
   { label: "Refund Policy", to: "/refunds" },
 ];
 
-// ─── Gold color tokens (CSS custom properties) ───────────────────────────────
-const GOLD = {
-  primary: "#c9a96e",
-  light: "#e0c89e",
-  dark: "#a68544",
-  glow: "rgba(201, 169, 110, 0.08)",
-  glowStrong: "rgba(201, 169, 110, 0.15)",
-  border: "rgba(201, 169, 110, 0.12)",
-  borderStrong: "rgba(201, 169, 110, 0.25)",
+// ─── Brand color tokens ──────────────────────────────────────────────────────
+const BRAND = {
+  primary: "#f43f5e",
+  light: "#fb7188",
+  dark: "#be123c",
+  glow: "rgba(244, 63, 94, 0.08)",
+  glowStrong: "rgba(244, 63, 94, 0.15)",
+  border: "rgba(244, 63, 94, 0.12)",
+  borderStrong: "rgba(244, 63, 94, 0.25)",
 };
 
 // ─── Footer Nav Group ─────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ function FooterNavGroup({
     <nav aria-label={heading}>
       <p
         className="text-[10px] uppercase tracking-[0.16em] font-bold mb-5"
-        style={{ color: GOLD.primary }}
+        style={{ color: BRAND.primary }}
       >
         {heading}
       </p>
@@ -111,9 +111,9 @@ function FooterNavGroup({
           <li key={label}>
             <Link
               to={to}
-              className="group inline-flex items-center gap-2 text-[13px] font-medium transition-colors duration-200"
+              className="group inline-flex items-center gap-2 text-[13px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded"
               style={{ color: "#7a706a" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = GOLD.light)}
+              onMouseEnter={(e) => (e.currentTarget.style.color = BRAND.light)}
               onMouseLeave={(e) => (e.currentTarget.style.color = "#7a706a")}
             >
               {label}
@@ -121,9 +121,9 @@ function FooterNavGroup({
                 <span
                   className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
                   style={{
-                    background: GOLD.glow,
-                    color: GOLD.primary,
-                    border: `1px solid ${GOLD.border}`,
+                    background: BRAND.glow,
+                    color: BRAND.primary,
+                    border: `1px solid ${BRAND.border}`,
                   }}
                 >
                   {badge}
@@ -157,13 +157,13 @@ function SocialButton({
       aria-label={label}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-250"
+      className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       style={{
-        border: `1px solid ${hovered ? GOLD.borderStrong : "rgba(255,255,255,0.04)"}`,
-        background: hovered ? GOLD.glow : "rgba(255,255,255,0.01)",
-        color: hovered ? GOLD.light : "#6b6560",
+        border: `1px solid ${hovered ? BRAND.borderStrong : "rgba(255,255,255,0.04)"}`,
+        background: hovered ? BRAND.glow : "rgba(255,255,255,0.01)",
+        color: hovered ? BRAND.light : "#6b6560",
         transform: hovered ? "translateY(-2px)" : "none",
-        boxShadow: hovered ? `0 4px 12px rgba(201, 169, 110, 0.08)` : "none",
+        boxShadow: hovered ? `0 4px 12px ${BRAND.glow}` : "none",
       }}
     >
       <Icon />
@@ -200,9 +200,9 @@ function NewsletterForm() {
       <div className="flex items-center gap-2.5 mb-3">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: GOLD.glow }}
+          style={{ background: BRAND.glow }}
         >
-          <Mail size={14} style={{ color: GOLD.primary }} />
+          <Mail size={14} style={{ color: BRAND.primary }} />
         </div>
         <div>
           <p className="text-sm font-semibold" style={{ color: "#e8e0d8" }}>
@@ -240,7 +240,7 @@ function NewsletterForm() {
             onSubmit={handleSubmit}
             className="flex overflow-hidden rounded-xl transition-all duration-200"
             style={{
-              border: `1px solid ${focused ? GOLD.borderStrong : "rgba(255,255,255,0.06)"}`,
+              border: `1px solid ${focused ? BRAND.borderStrong : "rgba(255,255,255,0.06)"}`,
               background: "rgba(0,0,0,0.3)",
             }}
           >
@@ -260,15 +260,15 @@ function NewsletterForm() {
               disabled={loading}
               className="shrink-0 flex items-center gap-1.5 px-4 text-sm font-semibold transition-all duration-200"
               style={{
-                background: GOLD.primary,
+                background: BRAND.primary,
                 color: "#0f0b07",
                 opacity: loading ? 0.7 : 1,
               }}
               onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.background = GOLD.light;
+                if (!loading) e.currentTarget.style.background = BRAND.light;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = GOLD.primary;
+                e.currentTarget.style.background = BRAND.primary;
               }}
             >
               {loading ? (
@@ -311,13 +311,13 @@ function StoreBadge({
       rel="noopener noreferrer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
+      className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
       style={{
-        border: `1px solid ${hovered ? GOLD.borderStrong : "rgba(255,255,255,0.04)"}`,
-        background: hovered ? GOLD.glow : "rgba(255,255,255,0.01)",
+        border: `1px solid ${hovered ? BRAND.borderStrong : "rgba(255,255,255,0.04)"}`,
+        background: hovered ? BRAND.glow : "rgba(255,255,255,0.01)",
       }}
     >
-      <span style={{ color: hovered ? GOLD.light : "#8a8078" }}>{icon}</span>
+      <span style={{ color: hovered ? BRAND.light : "#8a8078" }}>{icon}</span>
       <div className="text-left">
         <p className="text-[9px] leading-none" style={{ color: "#5a5450" }}>
           {sub}
@@ -343,13 +343,18 @@ export default function ConsumerFooter() {
         borderTop: `1px solid rgba(255,255,255,0.04)`,
       }}
     >
+      <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          .footer-animate { opacity: 1 !important; transform: none !important; }
+        }
+      `}</style>
       {/* ── Decorative elements ──────────────────────────── */}
       {/* Top golden line */}
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 h-px pointer-events-none"
         style={{
           width: "50%",
-          background: `linear-gradient(90deg, transparent, ${GOLD.border}, transparent)`,
+          background: `linear-gradient(90deg, transparent, ${BRAND.border}, transparent)`,
         }}
       />
 
@@ -359,7 +364,7 @@ export default function ConsumerFooter() {
         style={{
           width: "700px",
           height: "250px",
-          background: `radial-gradient(ellipse at center, ${GOLD.glow} 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse at center, ${BRAND.glow} 0%, transparent 70%)`,
         }}
       />
 
@@ -381,7 +386,7 @@ export default function ConsumerFooter() {
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center"
                   style={{
-                    background: `linear-gradient(135deg, ${GOLD.primary}, ${GOLD.dark})`,
+                    background: `linear-gradient(135deg, ${BRAND.primary}, ${BRAND.dark})`,
                   }}
                 >
                   <Sparkles size={16} className="text-black" />
@@ -414,7 +419,7 @@ export default function ConsumerFooter() {
             <div className="space-y-3">
               <p
                 className="text-[10px] uppercase tracking-[0.16em] font-bold mb-4"
-                style={{ color: GOLD.primary }}
+                style={{ color: BRAND.primary }}
               >
                 Get in touch
               </p>
@@ -422,14 +427,14 @@ export default function ConsumerFooter() {
                 href="mailto:asantekelvin229@gmail.com"
                 className="flex items-center gap-3 text-[13px] transition-colors duration-200"
                 style={{ color: "#6b6560" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = GOLD.light)}
+                onMouseEnter={(e) => (e.currentTarget.style.color = BRAND.light)}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "#6b6560")}
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: "rgba(255,255,255,0.03)" }}
                 >
-                  <Mail size={13} style={{ color: GOLD.primary }} />
+                  <Mail size={13} style={{ color: BRAND.primary }} />
                 </div>
                 asantekelvin229@gmail.com
               </a>
@@ -437,14 +442,14 @@ export default function ConsumerFooter() {
                 href="tel:+233538281749"
                 className="flex items-center gap-3 text-[13px] transition-colors duration-200"
                 style={{ color: "#6b6560" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = GOLD.light)}
+                onMouseEnter={(e) => (e.currentTarget.style.color = BRAND.light)}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "#6b6560")}
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: "rgba(255,255,255,0.03)" }}
                 >
-                  <Phone size={13} style={{ color: GOLD.primary }} />
+                  <Phone size={13} style={{ color: BRAND.primary }} />
                 </div>
                 +233 538-281-749
               </a>
@@ -456,7 +461,7 @@ export default function ConsumerFooter() {
                   className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: "rgba(255,255,255,0.03)" }}
                 >
-                  <MapPin size={13} style={{ color: GOLD.primary }} />
+                  <MapPin size={13} style={{ color: BRAND.primary }} />
                 </div>
                 Accra, Ghana
               </div>
@@ -466,7 +471,7 @@ export default function ConsumerFooter() {
             <div>
               <p
                 className="text-[10px] uppercase tracking-[0.16em] font-bold mb-4"
-                style={{ color: GOLD.primary }}
+                style={{ color: BRAND.primary }}
               >
                 Follow us
               </p>
@@ -481,7 +486,7 @@ export default function ConsumerFooter() {
             <div>
               <p
                 className="text-[10px] uppercase tracking-[0.16em] font-bold mb-4"
-                style={{ color: GOLD.primary }}
+                style={{ color: BRAND.primary }}
               >
                 Get the app
               </p>
@@ -561,8 +566,8 @@ export default function ConsumerFooter() {
               Made with
               <Heart
                 size={10}
-                fill={GOLD.primary}
-                style={{ color: GOLD.primary }}
+                fill={BRAND.primary}
+                style={{ color: BRAND.primary }}
               />
               for beauty lovers
             </div>

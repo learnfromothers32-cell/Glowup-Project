@@ -144,7 +144,7 @@ export default function ServicePage() {
                         </span>
                       ))}
                     </div>
-                    <div className="mt-3 w-full py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold text-center hover:bg-gray-800 transition">
+                    <div className="mt-3 w-full py-2 rounded-lg bg-gray-900 text-white text-xs font-semibold text-center hover:bg-gray-800 transition dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">
                       View Profile
                     </div>
                   </div>

@@ -215,7 +215,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="space-y-4 px-4 pb-4 pt-4">
+      <div className="space-y-4 pb-4 pt-4">
         <Skeleton className="h-12 w-full rounded-2xl" />
         <Skeleton className="h-10 w-full rounded-2xl" />
         <Skeleton className="h-48 w-full rounded-2xl" />
@@ -231,7 +231,7 @@ export default function Home() {
   }
 
   return (
-    <div className="space-y-5 px-4 pb-6 pt-0">
+    <div className="space-y-5 pb-6 pt-0">
       <IntentBar
         activeCategory={activeCategory}
         onCategoryChange={setActiveCategory}

@@ -176,9 +176,13 @@ export default function Sidebar({ collapsed, onClose }: SidebarProps) {
       <div className="shrink-0 border-t border-gray-100 dark:border-gray-700/50 p-3">
         {!collapsed && (
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-              {initials}
-            </div>
+            {user?.avatar ? (
+              <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                {initials}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-text-primary dark:text-text-dark-primary truncate">{user?.name || "Stylist"}</p>
               <p className="text-xs text-text-muted truncate">{user?.email || ""}</p>

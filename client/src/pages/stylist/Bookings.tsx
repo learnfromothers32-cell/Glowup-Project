@@ -145,7 +145,7 @@ export default function StylistBookings() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium shadow-lg shadow-black/20"
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium shadow-lg shadow-black/20 dark:bg-white dark:text-gray-900"
           >
             {toast.message}
           </motion.div>

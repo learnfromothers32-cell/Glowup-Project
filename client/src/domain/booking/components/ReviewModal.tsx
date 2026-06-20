@@ -109,7 +109,7 @@ export default function ReviewModal({
           className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] ${
             loading
               ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-gray-900 text-white hover:bg-gray-800 shadow-md"
+              : "bg-gray-900 text-white hover:bg-gray-800 shadow-md dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
           }`}
         >
           {loading ? (

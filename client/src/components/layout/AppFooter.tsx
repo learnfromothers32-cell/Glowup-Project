@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
@@ -10,6 +10,26 @@ import {
   Mail,
 } from "lucide-react";
 import { motion } from "framer-motion";
+
+function useReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("visible");
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface NavLink {
@@ -26,7 +46,7 @@ interface FooterGroup {
 interface SocialLink {
   label: string;
   href: string;
-  icon: React.FC<React.SVGProps<SVGSVGElement>>;
+  icon: React.ReactNode;
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -75,7 +95,7 @@ const LANDING_GROUPS: FooterGroup[] = [
     heading: "Product",
     links: [
       { label: "Features", href: "/#features" },
-      { label: "How It Works", href: "/#how-it-works" },
+      { label: "How It Works", href: "/#how" },
       { label: "AI Vibe Match", href: "#", badge: "Coming Soon" },
       { label: "Live Sessions", href: "/signup" },
       { label: "Pricing", href: "/#pricing" },
@@ -114,8 +134,8 @@ const SOCIAL_LINKS: SocialLink[] = [
   {
     label: "Instagram",
     href: "https://www.instagram.com/glowupapp",
-    icon: () => (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
         <rect x="2" y="2" width="20" height="20" rx="5" />
         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
@@ -125,8 +145,8 @@ const SOCIAL_LINKS: SocialLink[] = [
   {
     label: "X (Twitter)",
     href: "https://twitter.com/glowupapp",
-    icon: () => (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
         <path d="M4 4l11.733 16h4.267l-11.733-16z" />
         <path d="M4 20l6.768-6.768m2.46-2.46L20 4" />
       </svg>
@@ -135,8 +155,8 @@ const SOCIAL_LINKS: SocialLink[] = [
   {
     label: "TikTok",
     href: "https://www.tiktok.com/@glowupapp",
-    icon: () => (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
         <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
       </svg>
     ),
@@ -144,8 +164,8 @@ const SOCIAL_LINKS: SocialLink[] = [
   {
     label: "LinkedIn",
     href: "https://www.linkedin.com/company/glowupapp",
-    icon: () => (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" />
         <rect x="2" y="9" width="4" height="12" />
         <circle cx="4" cy="4" r="2" />
@@ -201,12 +221,12 @@ function NewsletterForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
             required
-            className="flex-1 min-w-0 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/20 transition-colors"
+            className="flex-1 min-w-0 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/20 focus:ring-2 focus:ring-amber-500/20 transition-colors"
           />
           <button
             type="submit"
             disabled={loading}
-            className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.08] text-neutral-300 text-sm font-medium hover:bg-white/[0.12] hover:text-white transition-all disabled:opacity-50"
+            className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.08] text-neutral-300 text-sm font-medium hover:bg-white/[0.12] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 transition-all disabled:opacity-50"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-neutral-500 border-t-white rounded-full animate-spin" />
@@ -252,7 +272,7 @@ function NavGroup({ heading, links }: FooterGroup) {
 }
 
 // ─── Social Button ────────────────────────────────────────────────────────────
-function SocialBtn({ label, href, icon: Icon }: SocialLink) {
+function SocialBtn({ label, href, icon }: SocialLink) {
   return (
     <a
       href={href}
@@ -262,9 +282,10 @@ function SocialBtn({ label, href, icon: Icon }: SocialLink) {
       className="w-9 h-9 flex items-center justify-center rounded-xl
         text-neutral-500 border border-white/[0.06] bg-white/[0.02]
         hover:text-white hover:border-white/20 hover:bg-white/[0.06]
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60
         transition-all duration-200"
     >
-      <Icon />
+      {icon}
     </a>
   );
 }
@@ -277,14 +298,22 @@ interface AppFooterProps {
 export default function AppFooter({ variant = "landing" }: AppFooterProps) {
   const isConsumer = variant === "consumer";
   const navGroups = isConsumer ? CONSUMER_GROUPS : LANDING_GROUPS;
+  const ctaReveal = useReveal();
+  const bodyReveal = useReveal();
 
   return (
-    <footer
-      aria-label="Site footer"
-      className="bg-neutral-950 border-t border-white/[0.06] mt-12"
-    >
-      {/* ── CTA Banner ─────────────────────────────────────── */}
-      <div className="border-b border-white/[0.06]">
+    <>
+      <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          .footer-section * { transition: none !important; animation: none !important; }
+        }
+      `}</style>
+      <footer
+        aria-label="Site footer"
+        className="bg-neutral-950 border-t border-white/[0.06] mt-12 footer-section"
+      >
+        {/* ── CTA Banner ─────────────────────────────────────── */}
+        <div ref={ctaReveal} className="border-b border-white/[0.06] reveal">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
             <div className="max-w-md">
@@ -308,7 +337,7 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
             <div className="flex items-center gap-3 shrink-0">
               <Link
                 to={isConsumer ? "/app/vibe-match" : "/signup"}
-                className="inline-flex items-center gap-2.5 bg-white text-gray-900 text-sm font-semibold px-6 py-3 rounded-xl hover:bg-neutral-100 transition-colors duration-200 shadow-lg shadow-white/10"
+                className="inline-flex items-center gap-2.5 bg-white text-gray-900 text-sm font-semibold px-6 py-3 rounded-xl hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 transition-colors duration-200 shadow-lg shadow-white/10"
               >
                 {isConsumer ? "Find Your Vibe" : "Get Started"}
                 <ArrowRight size={14} />
@@ -319,7 +348,7 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
       </div>
 
       {/* ── Main Footer Body ───────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
+      <div ref={bodyReveal} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 reveal reveal-delay-1">
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_3fr] gap-12 lg:gap-16">
           {/* Brand column */}
           <div className="flex flex-col gap-8">
@@ -367,7 +396,7 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
                     sub: "Download on the",
                     href: "https://apps.apple.com",
                     icon: (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                       </svg>
                     ),
@@ -377,7 +406,7 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
                     sub: "Get it on",
                     href: "https://play.google.com",
                     icon: (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 1.33c.576.334.576 1.16 0 1.494l-2.302 1.33-2.532-2.532 2.532-2.622zM5.864 3.458L16.8 9.79l-2.302 2.302-8.635-8.634z" />
                       </svg>
                     ),
@@ -388,7 +417,7 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-3 w-fit px-4 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:border-white/15 hover:text-white hover:bg-white/[0.04] transition-all duration-200"
+                    className="inline-flex items-center gap-3 w-fit px-4 py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:border-white/15 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 transition-all duration-200"
                   >
                     <span className="text-neutral-300">{icon}</span>
                     <div className="text-left">
@@ -450,5 +479,6 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
         </div>
       </div>
     </footer>
+    </>
   );
 }

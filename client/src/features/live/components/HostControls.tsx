@@ -21,7 +21,7 @@ const fmt = (s: number) => {
 export function HostControls({ isLive, loading, duration, onGoLive, onEndLive, onToggleMic, onToggleVideo, isMuted, isVideoOff }: Props) {
   if (isLive) {
     return (
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-t border-white/10">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-900 border-t border-white/10 dark:bg-white dark:text-gray-900">
         <div className="flex items-center gap-2">
           <button onClick={onToggleMic} className={`p-2 rounded-lg transition-all ${isMuted ? "bg-red-500/20 text-red-400" : "text-white/60 hover:bg-white/10"}`}>
             {isMuted ? <MicOff size={18} /> : <Mic size={18} />}

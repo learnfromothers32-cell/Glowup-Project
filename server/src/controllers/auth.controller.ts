@@ -11,6 +11,7 @@ import { appConfig } from '../config/app';
 import { admin } from '../config/firebase';
 import { verifyFirebaseToken } from '../utils/firebase-verify';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.service';
+import { cloudinary, isCloudinaryConfigured, uploadToCloudinary } from '../config/cloudinary';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -229,6 +230,33 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
   await user.save();
 
   return sendSuccess(res, { user: toPublicUser(user) }, 'Profile updated');
+});
+
+// ---------- Upload Avatar ----------
+
+export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, 'User not found');
+
+  if (!req.file) {
+    throw new ApiError(400, 'No image file provided');
+  }
+
+  let imageUrl: string;
+
+  if (isCloudinaryConfigured) {
+    imageUrl = await uploadToCloudinary(req.file.path, 'profiles', {
+      transformation: [{ width: 600, height: 600, crop: 'limit', quality: 'auto' }]
+    });
+  } else {
+    imageUrl = `/uploads/${req.file.filename}`;
+  }
+
+  user.avatar = imageUrl;
+  await user.save();
+
+  return sendSuccess(res, { avatar: imageUrl, user: toPublicUser(user) }, 'Avatar updated');
 });
 
 // ---------- Verify Email ----------

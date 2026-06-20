@@ -22,7 +22,8 @@ type AuthAction =
   | { type: "LOGIN_SUCCESS"; payload: { user: User } }
   | { type: "LOGOUT" }
   | { type: "RESTORE_SESSION"; payload: { user: User } }
-  | { type: "SESSION_VALIDATED"; payload: { user: User } };
+  | { type: "SESSION_VALIDATED"; payload: { user: User } }
+  | { type: "UPDATE_USER"; payload: { user: User } };
 
 export interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<User>;
@@ -37,6 +38,7 @@ export interface AuthContextType extends AuthState {
     role?: UserRole,
   ) => Promise<User>;
   logout: () => void;
+  updateUser: (user: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(
@@ -70,6 +72,11 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         user: action.payload.user,
         isLoading: false,
         isAuthenticated: true,
+      };
+    case "UPDATE_USER":
+      return {
+        ...state,
+        user: action.payload.user,
       };
     default:
       return state;
@@ -178,9 +185,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ type: "LOGOUT" });
   }, []);
 
+  const updateUser = useCallback((user: User) => {
+    dispatch({ type: "UPDATE_USER", payload: { user } });
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ ...state, login, register, socialLogin, logout }}
+      value={{ ...state, login, register, socialLogin, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>

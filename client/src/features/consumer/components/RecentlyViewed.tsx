@@ -84,7 +84,7 @@ function RecentCard({
 
         {/* "View" badge on hover */}
         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200">
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-900 text-white text-[10px] font-semibold shadow-lg whitespace-nowrap">
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-900 text-white text-[10px] font-semibold shadow-lg whitespace-nowrap dark:bg-white dark:text-gray-900">
             View
             <ArrowRight size={9} />
           </div>

@@ -79,18 +79,18 @@ const steps = [
   },
 ];
 
-// ─── Design Tokens – unified with GlowUp brand ───────────────────────────────
+// ─── Design Tokens – using CSS variables for dark mode support ────────────────
 
 const T = {
-  bg: "#FFFFFF", // white background for contrast with hero
-  card: "#FFFFFF",
+  bg: "var(--section-bg)",
+  card: "var(--section-surface)",
   cardSubtle: "#FDFCFA",
-  border: "#EAE4D9",
-  borderMed: "#D9D0C0",
-  ink: "#18150F",
-  inkMid: "#6B5F50",
-  inkLight: "#9E9082",
-  inkXLight: "#C4B8A8",
+  border: "var(--section-border)",
+  borderMed: "var(--section-border)",
+  ink: "var(--section-ink)",
+  inkMid: "var(--section-ink-mid)",
+  inkLight: "var(--section-ink-light)",
+  inkXLight: "var(--section-ink-xlight)",
   shadowSm: "0 1px 3px rgba(24,21,15,0.06), 0 1px 2px rgba(24,21,15,0.04)",
   shadowMd: "0 4px 12px rgba(24,21,15,0.08), 0 2px 4px rgba(24,21,15,0.04)",
   shadowLg: "0 12px 32px rgba(24,21,15,0.10), 0 4px 12px rgba(24,21,15,0.06)",
@@ -481,7 +481,8 @@ function ImagePanel({ step }: { step: (typeof steps)[number] }) {
         {!imgErr ? (
           <img
             src={step.image}
-            alt={step.title}
+            alt={`${step.title} — GlowUp step illustration`}
+            loading="lazy"
             onError={() => setImgErr(true)}
             style={{
               width: "100%",
@@ -606,14 +607,15 @@ export default function HowItWorks() {
           outline: 2px solid ${step.accent};
           outline-offset: 2px;
         }
+        @media (prefers-reduced-motion: reduce) {
+          .how-steps * { animation: none !important; transition: none !important; }
+        }
       `}</style>
 
       <section
         style={{
           padding: "clamp(48px, 8vw, 96px) clamp(16px, 4vw, 32px)",
           background: T.bg,
-          fontFamily:
-            "-apple-system,'SF Pro Text','Segoe UI',system-ui,sans-serif",
           overflow: "hidden",
         }}
         onMouseEnter={() => setAutoPlay(false)}
@@ -694,7 +696,7 @@ export default function HowItWorks() {
                   gap: 8,
                   padding: "10px 14px",
                   borderRadius: 12,
-                  background: autoPlay ? `${step.accent}08` : T.cardSubtle,
+                  background: autoPlay ? `${step.accent}08` : T.bg,
                   border: `1px solid ${autoPlay ? step.accent + "15" : T.border}`,
                 }}
               >
@@ -782,6 +784,7 @@ export default function HowItWorks() {
               onClick={() => {
                 navigate("/signup");
               }}
+              className="how-cta-btn"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -813,7 +816,7 @@ export default function HowItWorks() {
         </div>
       </section>
 
-      {/* ── Responsive media query styles ──────────────────────────── */}
+      {/* ── Responsive + dark mode media query styles ─────────────── */}
       <style>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
@@ -830,11 +833,14 @@ export default function HowItWorks() {
           .mobile-layout { display: block !important; }
         }
 
-        /* Main grid override on mobile */
         @media (max-width: 960px) {
           [style*="grid-template-columns: 280px 1fr"] {
             display: none !important;
           }
+        }
+
+        .dark .how-cta-btn {
+          background: #09090b !important;
         }
       `}</style>
     </>

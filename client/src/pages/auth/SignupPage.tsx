@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/authUtils";
 import { Button } from "../../components/ui/Button";
-import { Sparkles, Shield, Zap, Star, ArrowRight } from "lucide-react";
+import { Sparkles, Shield, Zap, Star, Check, X } from "lucide-react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -22,15 +22,19 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const emailValid = EMAIL_REGEX.test(email.trim());
   const passwordValid = password.length >= 6;
   const nameValid = name.trim().length >= 2;
   const allValid = emailValid && passwordValid && nameValid;
 
+  const markTouched = (field: string) => setTouched(prev => ({ ...prev, [field]: true }));
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(""); setSuccess("");
+    setTouched({ name: true, email: true, password: true });
     if (!nameValid) { setError("Name must be at least 2 characters"); return; }
     if (!emailValid) { setError("Please enter a valid email address"); return; }
     if (!passwordValid) { setError("Password must be at least 6 characters"); return; }
@@ -44,12 +48,17 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="flex min-h-screen bg-surface dark:bg-surface-dark">
+      <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          .signup-animate { opacity: 1 !important; transform: none !important; }
+        }
+      `}</style>
       {/* Brand Panel */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800 items-center justify-center p-12 overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
         <div className="relative z-10 max-w-lg">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.div className="signup-animate" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <div className="flex items-center gap-2 mb-8">
               <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm">
                 <Sparkles size={20} className="text-white" />
@@ -61,7 +70,7 @@ export default function SignupPage() {
               Join thousands discovering talented stylists in their area. Book appointments, explore transformations, and elevate your look.
             </p>
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-4">
+          <motion.div className="signup-animate" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-4">
             {[
               { icon: Star, text: "Browse 500+ verified stylists in your area", sub: "Filter by style, price, location, and rating" },
               { icon: Zap, text: "Book appointments in seconds", sub: "Real-time availability with instant confirmation" },
@@ -78,7 +87,7 @@ export default function SignupPage() {
               </div>
             ))}
           </motion.div>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-10 pt-8 border-t border-white/10">
+          <motion.div className="signup-animate" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-10 pt-8 border-t border-white/10">
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2">
                 {[1,2,3,4].map((i) => (
@@ -93,7 +102,7 @@ export default function SignupPage() {
 
       {/* Form Panel */}
       <div className="flex-1 flex items-center justify-center p-6">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm space-y-6">
+        <motion.div className="signup-animate" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm space-y-6">
           <div className="text-center lg:text-left">
             <div className="flex lg:hidden items-center justify-center gap-2 mb-6">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
@@ -106,25 +115,51 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-error/10 border border-error/20 text-sm text-error text-center">{error}</div>
+            <div role="alert" aria-live="polite" className="p-3 rounded-xl bg-error/10 border border-error/20 text-sm text-error text-center">{error}</div>
           )}
           {success && (
-            <div className="p-3 rounded-xl bg-success/10 border border-success/20 text-sm text-success text-center">{success}</div>
+            <div role="alert" aria-live="polite" className="p-3 rounded-xl bg-success/10 border border-success/20 text-sm text-success text-center">{success}</div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-body-sm font-semibold text-text-primary mb-1.5">Full name</label>
-              <input id="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className="input-field" placeholder="Your name" />
+              <div className="relative">
+                <input id="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} onBlur={() => markTouched("name")}
+                  className={`input-field pr-9 ${touched.name && !nameValid ? "input-error" : ""}`} placeholder="Your name" />
+                {touched.name && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {nameValid ? <Check size={14} className="text-success" /> : <X size={14} className="text-error" />}
+                  </span>
+                )}
+              </div>
             </div>
             <div>
               <label htmlFor="email" className="block text-body-sm font-semibold text-text-primary mb-1.5">Email address</label>
-              <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" placeholder="you@example.com" />
+              <div className="relative">
+                <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} onBlur={() => markTouched("email")}
+                  className={`input-field pr-9 ${touched.email && !emailValid ? "input-error" : ""}`} placeholder="you@example.com" />
+                {touched.email && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {emailValid ? <Check size={14} className="text-success" /> : <X size={14} className="text-error" />}
+                  </span>
+                )}
+              </div>
             </div>
             <div>
               <label htmlFor="password" className="block text-body-sm font-semibold text-text-primary mb-1.5">Password</label>
-              <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                className="input-field" placeholder="At least 6 characters" />
+              <div className="relative">
+                <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => markTouched("password")}
+                  className={`input-field pr-9 ${touched.password && !passwordValid ? "input-error" : ""}`} placeholder="At least 6 characters" />
+                {touched.password && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {passwordValid ? <Check size={14} className="text-success" /> : <X size={14} className="text-error" />}
+                  </span>
+                )}
+              </div>
+              {touched.password && !passwordValid && (
+                <p className="mt-1 text-xs text-error">Must be at least 6 characters</p>
+              )}
             </div>
             <Button type="submit" disabled={isLoading || !allValid} loading={isLoading} className="w-full">
               <Sparkles size={14} /> Create account

@@ -347,6 +347,8 @@ export const uploadProfileImage = asyncHandler(async (req: Request, res: Respons
   stylist.image = imageUrl;
   await stylist.save();
 
+  await User.findByIdAndUpdate(userId, { avatar: imageUrl });
+
   return sendSuccess(res, { imageUrl }, 'Profile image uploaded');
 });
 

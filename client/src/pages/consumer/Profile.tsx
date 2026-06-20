@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/authUtils";
 import { useGamification } from "../../hooks/useGamification";
-import { updateProfile as updateProfileApi, getMe } from "../../api/auth";
+import { updateProfile as updateProfileApi, getMe, uploadAvatar } from "../../api/auth";
 import {
   ArrowLeft, Mail, Phone, MapPin, Calendar, Heart,
   Trophy, X, Camera, Check, Loader2, ChevronRight,
@@ -154,7 +154,7 @@ function EditModal({
               transition-all duration-200 active:scale-[0.98]
               ${saving
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gray-900 text-white hover:bg-gray-800 shadow-md"
+                : "bg-gray-900 text-white hover:bg-gray-800 shadow-md dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
               }
             `}
           >
@@ -174,7 +174,7 @@ function EditModal({
 
 export default function ConsumerProfile() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [showEdit, setShowEdit] = useState(false);
   const [profileUser, setProfileUser] = useState(user);
   const [localUser, setLocalUser] = useState(() => ({
@@ -183,7 +183,28 @@ export default function ConsumerProfile() {
     phone: user?.phone || "",
     location: user?.location || "",
   }));
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { points, badges, checkInStreak } = useGamification();
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await uploadAvatar(formData);
+      setProfileUser((prev) => prev ? { ...prev, avatar: res.data.avatar } : null);
+      updateUser(res.data.user);
+    } catch {
+      // upload failed
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     getMe().then((res) => {
@@ -241,13 +262,24 @@ export default function ConsumerProfile() {
                 {profileUser?.avatar ? (
                   <img src={profileUser.avatar} alt="" className="w-20 h-20 rounded-2xl object-cover" />
                 ) : (
-                  <div className="w-20 h-20 rounded-2xl bg-gray-900 text-white flex items-center justify-center text-2xl font-bold">
+                  <div className="w-20 h-20 rounded-2xl bg-gray-900 text-white flex items-center justify-center text-2xl font-bold dark:bg-white dark:text-gray-900">
                     {initials}
                   </div>
                 )}
-                <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:shadow-sm transition-all shadow-sm">
-                  <Camera size={12} />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:shadow-sm transition-all shadow-sm disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 size={12} className="animate-spin" /> : <Camera size={12} />}
                 </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
               </div>
 
               <div className="flex-1 min-w-0 pt-1">

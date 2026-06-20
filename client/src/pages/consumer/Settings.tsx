@@ -42,7 +42,7 @@ function Toggle({
   return (
     <div className="flex items-center gap-3.5 py-3.5">
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-        checked ? "bg-gray-900 text-white dark:bg-indigo-500 dark:text-white" : "bg-gray-100 text-gray-400"
+        checked ? "bg-gray-900 text-white dark:bg-indigo-500 dark:text-white" : "bg-gray-100 text-gray-400 dark:bg-surface-dark-tertiary dark:text-text-dark-muted"
       } transition-colors duration-200`}>
         <Icon size={16} />
       </div>
@@ -87,10 +87,10 @@ function Section({
     <div className={`bg-white rounded-2xl border overflow-hidden ${
       danger ? "border-red-200" : "border-gray-100"
     }`}>
-      <div className={`px-5 py-4 ${danger ? "border-b border-red-100 bg-red-50/30" : "border-b border-gray-100"}`}>
+      <div className={`px-5 py-4 ${danger ? "border-b border-red-100 dark:border-red-900/30 bg-red-50/30" : "border-b border-gray-100"}`}>
         <div className="flex items-center gap-2.5">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-            danger ? "bg-red-100 text-red-500" : "bg-gray-100 text-gray-500"
+            danger ? "bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400" : "bg-gray-100 text-gray-500 dark:bg-surface-dark-tertiary dark:text-text-dark-muted"
           }`}>
             <Icon size={15} />
           </div>
@@ -125,19 +125,19 @@ function NavRow({
 }) {
   const content = (
     <div className="flex items-center gap-3.5 py-3.5 group cursor-pointer">
-      <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0 group-hover:bg-gray-200 transition-colors">
+      <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0 group-hover:bg-gray-200 transition-colors dark:bg-surface-dark-tertiary dark:text-text-dark-muted dark:group-hover:bg-surface-dark">
         <Icon size={16} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 group-hover:text-gray-700 transition-colors">{label}</p>
-        {description && <p className="text-xs text-gray-400 mt-0.5">{description}</p>}
+        <p className="text-sm font-medium text-gray-900 group-hover:text-gray-700 transition-colors dark:text-text-dark-primary">{label}</p>
+        {description && <p className="text-xs text-gray-400 mt-0.5 dark:text-text-dark-muted">{description}</p>}
       </div>
       {badge && (
-        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-surface-dark-tertiary dark:text-text-dark-muted">
           {badge}
         </span>
-      )}
-      <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+      }
+      <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-400 transition-colors dark:text-text-dark-muted" />
     </div>
   );
 
@@ -189,13 +189,13 @@ function PasswordForm() {
             type={showCurrent ? "text" : "password"}
             value={form.current}
             onChange={e => setForm({ ...form, current: e.target.value })}
-            className="w-full px-3.5 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
+            className="w-full px-3.5 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all dark:bg-surface-dark-secondary dark:border-gray-600 dark:text-text-dark-primary dark:placeholder:text-text-dark-muted dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
             required
           />
           <button
             type="button"
             onClick={() => setShowCurrent(!showCurrent)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors dark:text-text-dark-muted dark:hover:text-text-dark-secondary"
           >
             {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
@@ -212,13 +212,13 @@ function PasswordForm() {
             type={showNew ? "text" : "password"}
             value={form.new}
             onChange={e => setForm({ ...form, new: e.target.value })}
-            className="w-full px-3.5 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
+            className="w-full px-3.5 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all dark:bg-surface-dark-secondary dark:border-gray-600 dark:text-text-dark-primary dark:placeholder:text-text-dark-muted dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
             required
           />
           <button
             type="button"
             onClick={() => setShowNew(!showNew)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors dark:text-text-dark-muted dark:hover:text-text-dark-secondary"
           >
             {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
@@ -234,7 +234,7 @@ function PasswordForm() {
           type="password"
           value={form.confirm}
           onChange={e => setForm({ ...form, confirm: e.target.value })}
-          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
+          className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all dark:bg-surface-dark-secondary dark:border-gray-600 dark:text-text-dark-primary dark:placeholder:text-text-dark-muted dark:focus:border-indigo-400 dark:focus:ring-indigo-500/30"
           required
         />
       </div>
@@ -307,7 +307,7 @@ function DeleteModal({ onConfirm, onClose }: { onConfirm: () => void; onClose: (
         exit={{ scale: 0.95, y: 16, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         onClick={e => e.stopPropagation()}
-        className="relative w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl dark:bg-[#1e1e32]"
+        className="relative w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl dark:bg-surface-dark-secondary"
       >
         <div className="h-1 bg-gradient-to-r from-red-500 to-red-300" />
         <div className="p-5">
@@ -328,7 +328,7 @@ function DeleteModal({ onConfirm, onClose }: { onConfirm: () => void; onClose: (
               value={confirmText}
               onChange={e => setConfirmText(e.target.value)}
               placeholder="DELETE"
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all dark:focus:border-red-400 dark:focus:ring-red-500/30"
+              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all dark:bg-surface-dark-secondary dark:border-gray-600 dark:text-text-dark-primary dark:placeholder:text-text-dark-muted dark:focus:border-red-400 dark:focus:ring-red-500/30"
             />
           </div>
 

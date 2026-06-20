@@ -43,6 +43,24 @@ interface FloatingHeart {
 
 const HEART_EMOJIS = ["❤️", "🧡", "💛", "💜", "💖", "💗", "🩷"];
 
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const date = new Date(dateStr).getTime();
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  if (diffDay < 30) return `${Math.floor(diffDay / 7)}w ago`;
+  if (diffDay < 365) return `${Math.floor(diffDay / 30)}mo ago`;
+  return `${Math.floor(diffDay / 365)}y ago`;
+}
+
 export default function TrendingFeed() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -812,61 +830,132 @@ export default function TrendingFeed() {
         </button>
       </div>
 
-      {/* Comment modal */}
+      {/* Comment modal — Instagram/TikTok style */}
       {commentModalOpen && activePostId && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end lg:items-center lg:justify-center"
           onClick={() => setCommentModalOpen(false)}
         >
           <div
-            className="bg-[#141210] w-full max-h-[80vh] rounded-t-2xl flex flex-col"
+            className="bg-[#141210] w-full max-h-[85vh] rounded-t-2xl flex flex-col lg:rounded-2xl lg:max-h-[90vh] lg:max-w-4xl lg:flex-row lg:overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center p-4 border-b border-white/10">
-              <h3 className="text-white font-semibold">
-                Comments ({commentsTotal})
-              </h3>
-              <button onClick={() => setCommentModalOpen(false)} className="text-white/60 hover:text-white">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {commentsLoading ? (
-                <div className="text-white/40 text-sm text-center py-8 animate-pulse">Loading comments...</div>
-              ) : (commentsMap[activePostId]?.length > 0 ? (
-                commentsMap[activePostId].map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    {comment.userAvatar ? <img src={comment.userAvatar} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"><span className="text-white/40 text-xs">{comment.userName[0]}</span></div>}
-                    <div>
-                      <p className="text-white text-sm font-semibold">{comment.userName}</p>
-                      <p className="text-white/70 text-xs">{comment.text}</p>
-                      <p className="text-white/30 text-[10px] mt-1">
-                        {new Date(comment.createdAt).toLocaleString()}
-                      </p>
+            {/* Desktop: post/video preview on the left */}
+            <div className="hidden lg:flex lg:w-1/2 bg-black items-center justify-center min-h-[50vh]">
+              {(() => {
+                const post = items.find(item => item.id === activePostId);
+                if (!post) return null;
+                return post.mediaType === 'video' ? (
+                  <video
+                    src={imgUrl(post.after)}
+                    className="w-full h-full object-contain"
+                    loop
+                    muted
+                    autoPlay
+                    playsInline
+                  />
+                ) : post.before ? (
+                  <div className="grid grid-cols-2 w-full h-full">
+                    <div className="relative overflow-hidden">
+                      <img src={imgUrl(post.before)} alt="Before" className="w-full h-full object-cover" />
+                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-bold text-white bg-black/50">BEFORE</span>
+                    </div>
+                    <div className="relative overflow-hidden">
+                      <img src={imgUrl(post.after)} alt="After" className="w-full h-full object-cover" />
+                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-bold text-white bg-amber-400/90">AFTER</span>
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-white/40 text-sm text-center">No comments yet. Be the first!</p>
-              ))}
+                ) : (
+                  <img src={imgUrl(post.after)} alt="Post" className="w-full h-full object-contain" />
+                );
+              })()}
             </div>
-            <div className="p-4 border-t border-white/10 flex gap-2">
-              <input
-                ref={commentInputRef}
-                type="text"
-                value={newCommentText}
-                onChange={(e) => setNewCommentText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addComment()}
-                placeholder="Add a comment..."
-                className="flex-1 bg-white/10 rounded-full px-4 py-2 text-white text-sm placeholder:text-white/40 outline-none"
-              />
-              <button
-                onClick={addComment}
-                disabled={!newCommentText.trim()}
-                className="px-4 py-2 bg-[#fe2c55] text-white rounded-full text-sm font-medium disabled:opacity-50"
-              >
-                Post
-              </button>
+
+            {/* Comments panel */}
+            <div className="flex flex-col lg:w-1/2 lg:max-h-[90vh]">
+              {/* Header */}
+              <div className="flex justify-between items-center px-4 py-3 border-b border-white/10 shrink-0">
+                <h3 className="text-white font-semibold text-base">
+                  Comments <span className="text-white/40 font-normal">{commentsTotal}</span>
+                </h3>
+                <button onClick={() => setCommentModalOpen(false)} className="text-white/50 hover:text-white p-1">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Comments list */}
+              <div className="flex-1 overflow-y-auto">
+                {commentsLoading ? (
+                  <div className="space-y-4 p-4">
+                    {[1,2,3].map((n) => (
+                      <div key={n} className="flex gap-3 animate-pulse">
+                        <div className="w-8 h-8 rounded-full bg-white/10 shrink-0" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 w-24 rounded bg-white/10" />
+                          <div className="h-3 w-48 rounded bg-white/10" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (commentsMap[activePostId]?.length > 0 ? (
+                  <div>
+                    {commentsMap[activePostId].map((comment) => (
+                      <div key={comment.id} className="flex gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors">
+                        {comment.userAvatar ? (
+                          <img src={comment.userAvatar} className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center shrink-0">
+                            <span className="text-white/50 text-xs font-bold">{comment.userName[0]?.toUpperCase()}</span>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <p className="text-white text-sm font-semibold truncate">{comment.userName}</p>
+                            <p className="text-white/30 text-[11px] shrink-0 whitespace-nowrap">{formatRelativeTime(comment.createdAt)}</p>
+                          </div>
+                          <p className="text-white/80 text-sm mt-0.5 break-words">{comment.text}</p>
+                        </div>
+                        <button className="shrink-0 self-start mt-1.5 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
+                          <Heart size={14} className="text-white/30 hover:text-white/60" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                    <MessageCircle size={36} className="text-white/15 mb-3" />
+                    <p className="text-white/40 text-sm font-medium">No comments yet.</p>
+                    <p className="text-white/20 text-xs mt-1">Start the conversation.</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Input bar */}
+              <div className="shrink-0 border-t border-white/10 p-3 flex gap-2 items-center">
+                {user?.avatar ? (
+                  <img src={imgUrl(user.avatar)} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-white/20 to-white/5 flex items-center justify-center shrink-0">
+                    <span className="text-white/40 text-[10px] font-bold">{user?.name?.[0]?.toUpperCase() || 'U'}</span>
+                  </div>
+                )}
+                <input
+                  ref={commentInputRef}
+                  type="text"
+                  value={newCommentText}
+                  onChange={(e) => setNewCommentText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addComment()}
+                  placeholder="Add a comment..."
+                  className="flex-1 bg-white/10 rounded-full px-4 py-2 text-white text-sm placeholder:text-white/40 outline-none focus:bg-white/[0.15] transition-colors"
+                />
+                <button
+                  onClick={addComment}
+                  disabled={!newCommentText.trim()}
+                  className="text-[#fe2c55] text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
+                >
+                  Post
+                </button>
+              </div>
             </div>
           </div>
         </div>

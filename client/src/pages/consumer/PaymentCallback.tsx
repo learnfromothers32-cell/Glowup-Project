@@ -64,7 +64,7 @@ export default function PaymentCallback() {
             <p className="text-sm text-gray-400 mb-6">{message}</p>
             <button
               onClick={() => navigate("/app/my-bookings")}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-all dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
             >
               View My Bookings <ArrowRight size={14} />
             </button>
@@ -81,7 +81,7 @@ export default function PaymentCallback() {
             <div className="space-y-2">
               <button
                 onClick={() => navigate("/app/my-bookings")}
-                className="w-full py-3.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-all"
+                className="w-full py-3.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-all dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"
               >
                 Go to My Bookings
               </button>

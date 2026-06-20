@@ -235,7 +235,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
     <div className="flex items-center gap-3">
       <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
         <motion.div
-          className="h-full rounded-full bg-gray-900"
+          className="h-full rounded-full bg-gray-900 dark:bg-gray-200"
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.4, ease: "easeOut" }}
@@ -346,7 +346,7 @@ function QuestionScreen({
       transition={{ duration: 0.25, ease: "easeInOut" }}
       className="min-h-[calc(100vh-64px)] flex flex-col"
     >
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100">
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100 dark:bg-surface-dark/80 dark:border-gray-700">
         <div className="max-w-2xl mx-auto px-4 py-3">
           <div className="flex items-center gap-3 mb-3">
             {canGoBack && (

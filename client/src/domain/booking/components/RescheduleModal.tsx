@@ -66,7 +66,7 @@ export default function RescheduleModal({
               const dt = new Date(d + "T00:00:00");
               return (
                 <button key={d} onClick={() => onDateChange(d)}
-                  className={`shrink-0 flex flex-col items-center py-2.5 px-3 rounded-xl border min-w-[56px] transition-all ${sel ? "border-gray-900 bg-gray-900 text-white shadow-md" : "border-gray-100 bg-white text-gray-600 hover:border-gray-200"}`}>
+                  className={`shrink-0 flex flex-col items-center py-2.5 px-3 rounded-xl border min-w-[56px] transition-all ${sel ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-gray-900" : "border-gray-100 bg-white text-gray-600 hover:border-gray-200"}`}>
                   <span className={`text-[10px] font-semibold uppercase ${sel ? "text-gray-400" : "text-gray-400"}`}>
                     {fmtDate(d) === "Today" ? "Today" : dt.toLocaleDateString("en-US", { weekday: "short" })}
                   </span>
@@ -82,7 +82,7 @@ export default function RescheduleModal({
           <div className="grid grid-cols-4 gap-2">
             {TIME_SLOTS.map((t) => (
               <button key={t} onClick={() => onTimeChange(t)}
-                className={`py-2.5 rounded-xl border text-center text-xs font-medium transition-all ${t === newTime ? "border-gray-900 bg-gray-900 text-white shadow-md" : "border-gray-100 bg-white text-gray-700 hover:border-gray-200"}`}>
+                className={`py-2.5 rounded-xl border text-center text-xs font-medium transition-all ${t === newTime ? "border-gray-900 bg-gray-900 text-white shadow-md dark:border-white dark:bg-white dark:text-gray-900" : "border-gray-100 bg-white text-gray-700 hover:border-gray-200"}`}>
                 {fmtSlot(t)}
               </button>
             ))}
@@ -90,7 +90,7 @@ export default function RescheduleModal({
         </div>
 
         <button onClick={onConfirm} disabled={loading || !newDate || !newTime}
-          className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] ${loading || !newDate || !newTime ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-900 text-white hover:bg-gray-800 shadow-md"}`}>
+          className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] ${loading || !newDate || !newTime ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-900 text-white hover:bg-gray-800 shadow-md dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200"}`}>
           {loading ? <><Loader2 size={16} className="animate-spin" /> Rescheduling…</> : <><RotateCcw size={14} /> Confirm Reschedule</>}
         </button>
       </div>

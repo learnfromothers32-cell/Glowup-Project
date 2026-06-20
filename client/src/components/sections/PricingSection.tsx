@@ -101,15 +101,15 @@ const COMPARISON_ROWS = [
 // ─── Brand Tokens (aligned with GlowUp) ──────────────────────────────────────
 
 const T = {
-  bg: "#FAFAF7",
-  surface: "#FFFFFF",
-  muted: "#F5F3EE",
-  border: "#E8E4DC",
-  borderLight: "#F0ECE4",
-  ink: "#1A1714",
-  inkMid: "#5C554A",
-  inkLight: "#8A7F72",
-  inkXLight: "#B5AD9E",
+  bg: "var(--section-bg)",
+  surface: "var(--section-surface)",
+  muted: "var(--section-muted)",
+  border: "var(--section-border)",
+  borderLight: "var(--section-border-light)",
+  ink: "var(--section-ink)",
+  inkMid: "var(--section-ink-mid)",
+  inkLight: "var(--section-ink-light)",
+  inkXLight: "var(--section-ink-xlight)",
   gold: "#C9A870",
   goldLight: "#FEF5E4",
   goldBorder: "#F2CC80",
@@ -255,8 +255,9 @@ function PricingCard({
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      className={highlighted ? "pricing-card-highlighted" : ""}
       style={{
-        background: highlighted ? T.ink : T.surface,
+        background: highlighted ? "var(--section-surface-inverted)" : T.surface,
         border: highlighted ? "none" : `1px solid ${T.border}`,
         borderRadius: 24,
         padding: highlighted ? "32px 28px 28px" : "28px",
@@ -494,6 +495,7 @@ function PricingCard({
             navigate("/signup?plan=" + plan.id);
           }
         }}
+        className="pricing-cta-btn"
         style={{
           width: "100%",
           padding: "14px",
@@ -762,16 +764,37 @@ export default function PricingSection() {
   const [annual, setAnnual] = useState(false);
 
   return (
-    <section
-      id="pricing"
-      aria-labelledby="pricing-heading"
-      style={{
-        padding: "clamp(64px, 10vw, 120px) clamp(20px, 5vw, 48px)",
-        background: T.bg,
-        fontFamily:
-          "-apple-system,'SF Pro Text','Segoe UI',system-ui,sans-serif",
-        overflow: "hidden",
-      }}
+    <>
+      <style>{`
+        .dark .pricing-card-highlighted {
+          background: #09090b !important;
+          border-color: #27272a !important;
+        }
+        .dark .pricing-card-highlighted * {
+          color: #fafafa !important;
+        }
+        .dark .pricing-card-highlighted .pricing-cta-btn {
+          background: #ffffff !important;
+          color: #1a1714 !important;
+        }
+        .dark .pricing-cta-btn {
+          color: #fafafa !important;
+        }
+        .dark .pricing-cta-btn:hover {
+          color: #ffffff !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .pricing-section * { transition: none !important; animation: none !important; }
+        }
+      `}</style>
+      <section
+        id="pricing"
+        aria-labelledby="pricing-heading"
+        style={{
+          padding: "clamp(64px, 10vw, 120px) clamp(20px, 5vw, 48px)",
+          background: T.bg,
+          overflow: "hidden",
+        }}
     >
       <div style={{ maxWidth: 1080, margin: "0 auto" }}>
         {/* Header */}
@@ -884,5 +907,6 @@ export default function PricingSection() {
         <FAQ />
       </div>
     </section>
+    </>
   );
 }

@@ -17,16 +17,16 @@ import {
 // ─── Tokens (aligned with GlowUp) ───────────────────────────────────────────
 
 const T = {
-  bg: "#FAFAF7",
-  surface: "#FFFFFF",
-  muted: "#F5F3EE",
-  border: "#E8E4DC",
-  borderLight: "#F0ECE4",
-  ink: "#1A1714",
-  inkMid: "#5C554A",
-  inkLight: "#8A7F72",
-  inkXLight: "#B5AD9E",
-  blue: "#3B5BDB", // kept for UI elements
+  bg: "var(--section-bg)",
+  surface: "var(--section-surface)",
+  muted: "var(--section-muted)",
+  border: "var(--section-border)",
+  borderLight: "var(--section-border-light)",
+  ink: "var(--section-ink)",
+  inkMid: "var(--section-ink-mid)",
+  inkLight: "var(--section-ink-light)",
+  inkXLight: "var(--section-ink-xlight)",
+  blue: "#3B5BDB",
   blueLight: "#E7F0FF",
   blueMid: "#D0E1FF",
   green: "#1A5C38",
@@ -924,8 +924,6 @@ export default function ProductPreviewSection() {
         style={{
           padding: "clamp(64px, 10vw, 120px) clamp(20px, 5vw, 48px)",
           background: T.bg,
-          fontFamily:
-            "-apple-system,'SF Pro Text','Segoe UI',system-ui,sans-serif",
           overflow: "hidden",
         }}
       >

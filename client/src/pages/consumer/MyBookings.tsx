@@ -115,7 +115,7 @@ function BookingRow({
 
           {showReview && (
             <button onClick={(e) => { e.stopPropagation(); onReview(); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-[11px] font-semibold hover:bg-gray-800 shadow-sm transition-all">
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-[11px] font-semibold hover:bg-gray-800 shadow-sm transition-all dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200">
               <Star size={10} /> Review
             </button>
           )}

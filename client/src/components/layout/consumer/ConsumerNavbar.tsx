@@ -165,6 +165,12 @@ export default function ConsumerNavbar() {
         onClose={() => setSearchModalOpen(false)}
       />
 
+      <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          .nav-animate { opacity: 1 !important; transform: none !important; }
+        }
+      `}</style>
+
       {/* ── Main Header ─────────────────────────────────── */}
       <header className="fixed top-0 inset-x-0 z-50">
         {/* Glassmorphism backdrop */}
@@ -178,7 +184,7 @@ export default function ConsumerNavbar() {
                 onClick={() => { navigate("/app"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className="flex items-center gap-2 shrink-0 mr-4 group"
               >
-                <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 dark:from-indigo-500 dark:to-violet-600 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-lg font-bold tracking-tight text-gray-900 hidden sm:inline">
@@ -224,8 +230,8 @@ export default function ConsumerNavbar() {
                     ml-1 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200
                     ${
                       isActive("/app/vibe-match")
-                        ? "bg-gray-900 text-white shadow-md shadow-gray-900/20 dark:bg-indigo-600 dark:shadow-indigo-900/30"
-                        : "bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md shadow-gray-900/10 dark:bg-indigo-600 dark:hover:bg-indigo-500 dark:shadow-indigo-900/20"
+                        ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
+                        : "bg-brand-500 text-white hover:bg-brand-600 shadow-sm hover:shadow-md shadow-brand-500/10"
                     }
                   `}
                 >
@@ -344,7 +350,7 @@ export default function ConsumerNavbar() {
                               key={n._id}
                               className={`
                                 border-b border-gray-50 last:border-0 dark:border-gray-800/60
-                                ${!n.read ? "bg-blue-50/40 dark:bg-blue-900/20" : ""}
+                                ${!n.read ? "bg-brand-50/40 dark:bg-brand-950/20" : ""}
                               `}
                             >
                               <button
@@ -369,7 +375,7 @@ export default function ConsumerNavbar() {
                                   </p>
                                 </div>
                                 {!n.read && (
-                                  <span className="mt-2 w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                                  <span className="mt-2 w-2 h-2 rounded-full bg-brand-500 shrink-0" />
                                 )}
                                 <ChevronRight
                                   size={14}
@@ -386,7 +392,7 @@ export default function ConsumerNavbar() {
                                   <p className="leading-relaxed">{n.message}</p>
                                   <button
                                     onClick={() => handleNotificationNavigate(n.link)}
-                                    className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                    className="inline-flex items-center gap-1 text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
                                   >
                                     View details
                                     <ChevronRight size={12} />
@@ -426,9 +432,13 @@ export default function ConsumerNavbar() {
                   `}
                   aria-label="Profile menu"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-gray-600 text-white flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm dark:from-indigo-500 dark:to-violet-600 dark:ring-gray-900">
-                    {initials}
-                  </div>
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm dark:ring-gray-900" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm dark:ring-gray-900">
+                      {initials}
+                    </div>
+                  )}
                 </button>
 
                 <AnimatePresence>
@@ -544,7 +554,7 @@ export default function ConsumerNavbar() {
               {/* Close + Logo */}
               <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-gray-800">
                 <Link to="/app" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-gray-900 to-gray-700 dark:from-indigo-500 dark:to-violet-600 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
                     <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
                   <span className="text-base font-bold text-gray-900 dark:text-gray-100">
@@ -562,9 +572,13 @@ export default function ConsumerNavbar() {
               {/* User card */}
               <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-gray-600 dark:from-indigo-600 dark:to-violet-600 text-white flex items-center justify-center text-sm font-bold">
-                    {initials}
-                  </div>
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center text-sm font-bold">
+                      {initials}
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {user?.name || "User Name"}
@@ -579,7 +593,7 @@ export default function ConsumerNavbar() {
                 <Link
                   to="/app/vibe-match"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold shadow-md hover:bg-gray-800 transition dark:bg-indigo-600 dark:hover:bg-indigo-500"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-brand-500 text-white text-sm font-semibold shadow-md hover:bg-brand-600 transition"
                 >
                   <Zap size={16} className="text-amber-400" />
                   Vibe Match
@@ -613,7 +627,7 @@ export default function ConsumerNavbar() {
                     />
                     {label}
                     {isActive(to) && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gray-900 dark:bg-indigo-400" />
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-500" />
                     )}
                   </Link>
                 ))}

@@ -175,7 +175,7 @@ function StarRow({
       ))}
       {count !== undefined && (
         <span
-          className={`ml-0.5 font-['Plus_Jakarta_Sans'] ${small ? "text-[11px]" : "text-xs"} text-[#7A7770]`}
+          className={`ml-0.5 font-['Plus_Jakarta_Sans'] ${small ? "text-[11px]" : "text-xs"} text-[#7A7770] dark:text-gray-400`}
         >
           ({count})
         </span>
@@ -198,8 +198,8 @@ function Tag({
         uppercase tracking-wider font-['Plus_Jakarta_Sans']
         ${
           accent
-            ? "border border-[#B8895A] bg-[#F0E6D6] text-[#B8895A]"
-            : "border border-[#E4E0D8] bg-transparent text-[#7A7770]"
+            ? "border border-[#B8895A] dark:border-amber-500 bg-[#F0E6D6] dark:bg-amber-900/30 text-[#B8895A] dark:text-amber-400"
+            : "border border-[#E4E0D8] dark:border-gray-700 bg-transparent text-[#7A7770] dark:text-gray-400"
         }
       `}
     >
@@ -218,7 +218,7 @@ function HeroGallery({
   const [activeIdx, setActiveIdx] = useState(0);
 
   return (
-    <div className="relative w-full aspect-video rounded-[22px] overflow-hidden bg-[#1A1A18]">
+    <div className="relative w-full aspect-video rounded-[22px] overflow-hidden bg-[#1A1A18] dark:bg-black">
       <AnimatePresence mode="wait">
         <motion.img
           key={activeIdx}
@@ -241,7 +241,7 @@ function HeroGallery({
             onClick={() => setActiveIdx(i)}
             className={`
               rounded-full border-none cursor-pointer transition-all duration-300 p-0
-              ${i === activeIdx ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40"}
+              ${i === activeIdx ? "w-5 h-1.5 bg-white dark:bg-white" : "w-1.5 h-1.5 bg-white/40 dark:bg-white/40"}
             `}
           />
         ))}
@@ -269,22 +269,22 @@ function ProcessSteps({ steps }: { steps: StepItem[] }) {
           className="flex gap-[18px] relative"
         >
           <div className="flex flex-col items-center shrink-0">
-            <div className="w-9 h-9 rounded-full border-[1.5px] border-[#B8895A] bg-[#F0E6D6] flex items-center justify-center shrink-0">
-              <span className="font-['Cormorant_Garamond'] text-xs font-semibold text-[#B8895A]">
+            <div className="w-9 h-9 rounded-full border-[1.5px] border-[#B8895A] dark:border-amber-500 bg-[#F0E6D6] dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+              <span className="font-['Cormorant_Garamond'] text-xs font-semibold text-[#B8895A] dark:text-amber-400">
                 {step.step}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className="w-px flex-1 min-h-[20px] bg-[#E4E0D8] my-1.5" />
+              <div className="w-px flex-1 min-h-[20px] bg-[#E4E0D8] dark:bg-gray-700 my-1.5" />
             )}
           </div>
           <div
             className={`pb-5 pt-1.5 ${i === steps.length - 1 ? "pb-0" : ""}`}
           >
-            <p className="font-['Plus_Jakarta_Sans'] font-semibold text-[13.5px] text-[#0D0C0B] leading-tight">
+            <p className="font-['Plus_Jakarta_Sans'] font-semibold text-[13.5px] text-[#0D0C0B] dark:text-white leading-tight">
               {step.title}
             </p>
-            <p className="font-['Plus_Jakarta_Sans'] text-[12.5px] text-[#7A7770] mt-1 leading-relaxed">
+            <p className="font-['Plus_Jakarta_Sans'] text-[12.5px] text-[#7A7770] dark:text-gray-400 mt-1 leading-relaxed">
               {step.desc}
             </p>
           </div>
@@ -303,25 +303,25 @@ function ReviewCard({ review }: { review: ReviewItem }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#F3F0EA] rounded-[14px] p-[18px_20px] border border-[#E4E0D8]"
+      className="bg-[#F3F0EA] dark:bg-gray-800 rounded-[14px] p-[18px_20px] border border-[#E4E0D8] dark:border-gray-700"
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-[#F0E6D6] border-[1.5px] border-[#B8895A] flex items-center justify-center font-['Cormorant_Garamond'] font-semibold text-[13px] text-[#B8895A]">
+          <div className="w-9 h-9 rounded-full bg-[#F0E6D6] dark:bg-amber-900/30 border-[1.5px] border-[#B8895A] dark:border-amber-500 flex items-center justify-center font-['Cormorant_Garamond'] font-semibold text-[13px] text-[#B8895A] dark:text-amber-400">
             {initials}
           </div>
           <div>
-            <p className="font-['Plus_Jakarta_Sans'] font-semibold text-[13.5px] text-[#0D0C0B]">
+            <p className="font-['Plus_Jakarta_Sans'] font-semibold text-[13.5px] text-[#0D0C0B] dark:text-white">
               {review.user}
             </p>
-            <p className="font-['Plus_Jakarta_Sans'] text-[11px] text-[#7A7770] mt-0.5">
+            <p className="font-['Plus_Jakarta_Sans'] text-[11px] text-[#7A7770] dark:text-gray-400 mt-0.5">
               {review.date}
             </p>
           </div>
         </div>
         <StarRow rating={review.rating} small />
       </div>
-      <p className="font-['Plus_Jakarta_Sans'] text-[13px] text-[#3D3B38] leading-relaxed italic">
+      <p className="font-['Plus_Jakarta_Sans'] text-[13px] text-[#3D3B38] dark:text-gray-300 leading-relaxed italic">
         &ldquo;{review.comment}&rdquo;
       </p>
     </motion.div>
@@ -344,8 +344,8 @@ function RelatedServiceRow({
         transition-all duration-200
         ${
           hovered
-            ? "border border-[#B8895A] bg-[#F0E6D6]"
-            : "border border-[#E4E0D8] bg-white"
+            ? "border border-[#B8895A] dark:border-amber-500 bg-[#F0E6D6] dark:bg-amber-900/30"
+            : "border border-[#E4E0D8] dark:border-gray-700 bg-white dark:bg-gray-900"
         }
       `}
     >
@@ -353,24 +353,24 @@ function RelatedServiceRow({
         <div
           className={`
             w-9 h-9 rounded-lg flex items-center justify-center transition-all
-            ${hovered ? "bg-[rgba(184,137,90,0.15)]" : "bg-[#F3F0EA]"}
+            ${hovered ? "bg-[rgba(184,137,90,0.15)] dark:bg-amber-900/20" : "bg-[#F3F0EA] dark:bg-gray-800"}
           `}
         >
           <Scissors size={15} color={hovered ? "#B8895A" : "#7A7770"} />
         </div>
         <div>
-          <p className="font-['Plus_Jakarta_Sans'] font-semibold text-[13.5px] text-[#0D0C0B]">
+          <p className="font-['Plus_Jakarta_Sans'] font-semibold text-[13.5px] text-[#0D0C0B] dark:text-white">
             {svc.name}
           </p>
           {svc.duration && (
-            <p className="font-['Plus_Jakarta_Sans'] text-[11.5px] text-[#7A7770] mt-0.5">
+            <p className="font-['Plus_Jakarta_Sans'] text-[11.5px] text-[#7A7770] dark:text-gray-400 mt-0.5">
               {svc.duration}
             </p>
           )}
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className="font-['Plus_Jakarta_Sans'] font-semibold text-sm text-[#0D0C0B]">
+        <span className="font-['Plus_Jakarta_Sans'] font-semibold text-sm text-[#0D0C0B] dark:text-white">
           {svc.price}
         </span>
         <ChevronRight size={15} color={hovered ? "#B8895A" : "#7A7770"} />
@@ -392,9 +392,9 @@ function BookingSidebar({
 
   return (
     <div className="sticky top-6 flex flex-col gap-3.5">
-      <div className="bg-white rounded-[22px] border border-[#E4E0D8] overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.05)]">
+      <div className="bg-white dark:bg-gray-900 rounded-[22px] border border-[#E4E0D8] dark:border-gray-700 overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.05)]">
         <div className="p-5 pb-0">
-          <p className="font-['Plus_Jakarta_Sans'] text-[10.5px] font-semibold tracking-[0.08em] uppercase text-[#7A7770] mb-3">
+          <p className="font-['Plus_Jakarta_Sans'] text-[10.5px] font-semibold tracking-[0.08em] uppercase text-[#7A7770] dark:text-gray-400 mb-3">
             Your Specialist
           </p>
           <div className="flex items-center gap-3 mb-4">
@@ -402,19 +402,19 @@ function BookingSidebar({
               <img
                 src={stylist.image}
                 alt={stylist.name}
-                className="w-14 h-14 rounded-full object-cover border-2 border-[#F0E6D6]"
+                className="w-14 h-14 rounded-full object-cover border-2 border-[#F0E6D6] dark:border-gray-700"
               />
               {stylist.isVerified && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-[#1D4E89] border-2 border-white flex items-center justify-center">
+                <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-[#1D4E89] dark:bg-blue-700 border-2 border-white dark:border-gray-800 flex items-center justify-center">
                   <BadgeCheck size={10} color="white" />
                 </div>
               )}
             </div>
             <div>
-              <p className="font-['Cormorant_Garamond'] font-semibold text-[19px] text-[#0D0C0B] leading-tight">
+              <p className="font-['Cormorant_Garamond'] font-semibold text-[19px] text-[#0D0C0B] dark:text-white leading-tight">
                 {stylist.name}
               </p>
-              <p className="font-['Plus_Jakarta_Sans'] text-xs text-[#B8895A] font-medium mt-0.5">
+              <p className="font-['Plus_Jakarta_Sans'] text-xs text-[#B8895A] dark:text-amber-400 font-medium mt-0.5">
                 {stylist.title}
               </p>
             </div>
@@ -432,13 +432,13 @@ function BookingSidebar({
             ].map(({ icon: Icon, label, val }) => (
               <div
                 key={label}
-                className="bg-[#F3F0EA] rounded-lg p-[10px_8px] text-center"
+                className="bg-[#F3F0EA] dark:bg-gray-800 rounded-lg p-[10px_8px] text-center"
               >
                 <Icon size={13} color="#B8895A" className="mx-auto mb-1" />
-                <p className="font-['Plus_Jakarta_Sans'] font-bold text-[13.5px] text-[#0D0C0B]">
+                <p className="font-['Plus_Jakarta_Sans'] font-bold text-[13.5px] text-[#0D0C0B] dark:text-white">
                   {val}
                 </p>
-                <p className="font-['Plus_Jakarta_Sans'] text-[10px] text-[#7A7770] mt-0.5">
+                <p className="font-['Plus_Jakarta_Sans'] text-[10px] text-[#7A7770] dark:text-gray-400 mt-0.5">
                   {label}
                 </p>
               </div>
@@ -446,10 +446,10 @@ function BookingSidebar({
           </div>
         </div>
 
-        <div className="h-px bg-[#E4E0D8]" />
+        <div className="h-px bg-[#E4E0D8] dark:bg-gray-700" />
 
         <div className="px-5 py-4">
-          <p className="font-['Plus_Jakarta_Sans'] text-[10.5px] font-semibold tracking-[0.08em] uppercase text-[#7A7770] mb-3">
+          <p className="font-['Plus_Jakarta_Sans'] text-[10.5px] font-semibold tracking-[0.08em] uppercase text-[#7A7770] dark:text-gray-400 mb-3">
             Price Breakdown
           </p>
           {[
@@ -457,26 +457,26 @@ function BookingSidebar({
             { label: "Service fee", price: "GHC 0" },
           ].map(({ label, price }) => (
             <div key={label} className="flex justify-between items-center mb-2">
-              <span className="font-['Plus_Jakarta_Sans'] text-[13px] text-[#3D3B38]">
+              <span className="font-['Plus_Jakarta_Sans'] text-[13px] text-[#3D3B38] dark:text-gray-300">
                 {label}
               </span>
-              <span className="font-['Plus_Jakarta_Sans'] text-[13px] font-semibold text-[#0D0C0B]">
+              <span className="font-['Plus_Jakarta_Sans'] text-[13px] font-semibold text-[#0D0C0B] dark:text-white">
                 {price}
               </span>
             </div>
           ))}
-          <div className="h-px bg-[#E4E0D8] my-2.5" />
+          <div className="h-px bg-[#E4E0D8] dark:bg-gray-700 my-2.5" />
           <div className="flex justify-between items-baseline">
-            <span className="font-['Cormorant_Garamond'] text-base text-[#0D0C0B] font-medium">
+            <span className="font-['Cormorant_Garamond'] text-base text-[#0D0C0B] dark:text-white font-medium">
               Total
             </span>
-            <span className="font-['Cormorant_Garamond'] text-[26px] font-semibold text-[#0D0C0B]">
+            <span className="font-['Cormorant_Garamond'] text-[26px] font-semibold text-[#0D0C0B] dark:text-white">
               {service.price}
             </span>
           </div>
           <div className="flex items-center gap-1.5 mt-1">
             <Clock size={11} color="#7A7770" />
-            <span className="font-['Plus_Jakarta_Sans'] text-[11px] text-[#7A7770]">
+            <span className="font-['Plus_Jakarta_Sans'] text-[11px] text-[#7A7770] dark:text-gray-400">
               {service.duration} · Free cancellation up to 24h
             </span>
           </div>
@@ -487,7 +487,7 @@ function BookingSidebar({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onBook}
-            className="w-full py-[15px] rounded-[14px] bg-[#0D0C0B] text-white font-['Plus_Jakarta_Sans'] font-semibold text-sm tracking-[0.01em] flex items-center justify-center gap-2 cursor-pointer border-none"
+            className="w-full py-[15px] rounded-[14px] bg-[#0D0C0B] dark:bg-white text-white dark:text-gray-900 font-['Plus_Jakarta_Sans'] font-semibold text-sm tracking-[0.01em] flex items-center justify-center gap-2 cursor-pointer border-none"
           >
             <Calendar size={16} />
             Book Appointment
@@ -501,8 +501,8 @@ function BookingSidebar({
                 flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer
                 ${
                   liked
-                    ? "border border-[#B8895A] bg-[#F0E6D6] text-[#B8895A]"
-                    : "border border-[#E4E0D8] bg-white text-[#7A7770]"
+                    ? "border border-[#B8895A] dark:border-amber-500 bg-[#F0E6D6] dark:bg-amber-900/30 text-[#B8895A] dark:text-amber-400"
+                    : "border border-[#E4E0D8] dark:border-gray-700 bg-white dark:bg-gray-900 text-[#7A7770] dark:text-gray-400"
                 }
               `}
             >
@@ -511,7 +511,7 @@ function BookingSidebar({
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              className="flex-1 py-[11px] rounded-[14px] border border-[#E4E0D8] bg-white text-[#7A7770] font-['Plus_Jakarta_Sans'] font-medium text-[13px] flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer"
+              className="flex-1 py-[11px] rounded-[14px] border border-[#E4E0D8] dark:border-gray-700 bg-white dark:bg-gray-900 text-[#7A7770] dark:text-gray-400 font-['Plus_Jakarta_Sans'] font-medium text-[13px] flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer"
             >
               <Share2 size={14} />
               Share
@@ -520,7 +520,7 @@ function BookingSidebar({
         </div>
       </div>
 
-      <div className="bg-white rounded-[14px] border border-[#E4E0D8] p-4 flex flex-col gap-2.5">
+      <div className="bg-white dark:bg-gray-900 rounded-[14px] border border-[#E4E0D8] dark:border-gray-700 p-4 flex flex-col gap-2.5">
         {[
           { icon: Shield, label: "Secure & verified booking" },
           { icon: CheckCircle, label: "Free cancellation within 24h" },
@@ -528,7 +528,7 @@ function BookingSidebar({
         ].map(({ icon: Icon, label }) => (
           <div key={label} className="flex items-center gap-2.5">
             <Icon size={14} color="#2D6A4F" />
-            <span className="font-['Plus_Jakarta_Sans'] text-[12.5px] text-[#3D3B38]">
+            <span className="font-['Plus_Jakarta_Sans'] text-[12.5px] text-[#3D3B38] dark:text-gray-300">
               {label}
             </span>
           </div>
@@ -554,7 +554,7 @@ export default function ServiceDetailPage() {
   return (
     <>
       <FontLoader />
-      <div className="min-h-screen bg-[#FAFAF8] font-['Plus_Jakarta_Sans']">
+      <div className="min-h-screen bg-[#FAFAF8] dark:bg-gray-950 font-['Plus_Jakarta_Sans']">
         {/* Topbar */}
         <motion.div
           initial={false}
@@ -565,7 +565,7 @@ export default function ServiceDetailPage() {
             sticky top-0 z-[100] transition-all duration-300
             ${
               scrolled
-                ? "border-b border-[#E4E0D8] backdrop-blur-xl"
+                ? "border-b border-[#E4E0D8] dark:border-gray-700 backdrop-blur-xl"
                 : "border-b border-transparent"
             }
           `}
@@ -573,7 +573,7 @@ export default function ServiceDetailPage() {
           <div className="max-w-[1140px] mx-auto px-4 md:px-8 py-3.5 flex items-center justify-between">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 bg-white border border-[#E4E0D8] rounded-full px-3 md:px-4 py-2 font-['Plus_Jakarta_Sans'] text-[13px] font-medium text-[#3D3B38] cursor-pointer"
+              className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-[#E4E0D8] dark:border-gray-700 rounded-full px-3 md:px-4 py-2 font-['Plus_Jakarta_Sans'] text-[13px] font-medium text-[#3D3B38] dark:text-gray-300 cursor-pointer"
             >
               <ArrowLeft size={14} />{" "}
               <span className="hidden sm:inline">Back to Stylist</span>
@@ -581,17 +581,17 @@ export default function ServiceDetailPage() {
 
             {/* Breadcrumb – hidden on mobile */}
             <div className="hidden md:flex items-center gap-1.5">
-              <span className="text-xs text-[#7A7770]">Stylists</span>
+              <span className="text-xs text-[#7A7770] dark:text-gray-400">Stylists</span>
               <ChevronRight size={11} color="#7A7770" />
-              <span className="text-xs text-[#7A7770]">{stylist.name}</span>
+              <span className="text-xs text-[#7A7770] dark:text-gray-400">{stylist.name}</span>
               <ChevronRight size={11} color="#7A7770" />
-              <span className="text-xs font-semibold text-[#0D0C0B]">
+              <span className="text-xs font-semibold text-[#0D0C0B] dark:text-white">
                 {service.name}
               </span>
             </div>
 
             <div className="flex gap-2">
-              <button className="flex items-center gap-1.5 bg-white border border-[#E4E0D8] rounded-full px-3 md:px-3.5 py-2 font-['Plus_Jakarta_Sans'] text-[13px] font-medium text-[#3D3B38] cursor-pointer">
+              <button className="flex items-center gap-1.5 bg-white dark:bg-gray-900 border border-[#E4E0D8] dark:border-gray-700 rounded-full px-3 md:px-3.5 py-2 font-['Plus_Jakarta_Sans'] text-[13px] font-medium text-[#3D3B38] dark:text-gray-300 cursor-pointer">
                 <Share2 size={13} />{" "}
                 <span className="hidden sm:inline">Share</span>
               </button>
@@ -615,17 +615,17 @@ export default function ServiceDetailPage() {
                 </Tag>
               )}
             </div>
-            <h1 className="font-['Cormorant_Garamond'] text-3xl md:text-5xl lg:text-[52px] font-light text-[#0D0C0B] leading-tight tracking-[-0.01em]">
+            <h1 className="font-['Cormorant_Garamond'] text-3xl md:text-5xl lg:text-[52px] font-light text-[#0D0C0B] dark:text-white leading-tight tracking-[-0.01em]">
               {service.name}
             </h1>
             <div className="flex flex-wrap items-center gap-3 md:gap-5 mt-3">
               <StarRow rating={stylist.rating} count={stylist.totalReviews} />
-              <span className="hidden md:inline text-[#E4E0D8]">·</span>
-              <span className="flex items-center gap-1.5 text-[13px] text-[#7A7770]">
+              <span className="hidden md:inline text-[#E4E0D8] dark:text-gray-500">·</span>
+              <span className="flex items-center gap-1.5 text-[13px] text-[#7A7770] dark:text-gray-400">
                 <Clock size={13} /> {service.duration}
               </span>
-              <span className="hidden md:inline text-[#E4E0D8]">·</span>
-              <span className="flex items-center gap-1.5 text-[13px] text-[#7A7770]">
+              <span className="hidden md:inline text-[#E4E0D8] dark:text-gray-500">·</span>
+              <span className="flex items-center gap-1.5 text-[13px] text-[#7A7770] dark:text-gray-400">
                 <MapPin size={13} /> {getLocationString(stylist.location)}
               </span>
             </div>
@@ -650,12 +650,12 @@ export default function ServiceDetailPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-[22px] border border-[#E4E0D8] p-5 md:p-8"
+                className="bg-white dark:bg-gray-900 rounded-[22px] border border-[#E4E0D8] dark:border-gray-700 p-5 md:p-8"
               >
-                <h2 className="font-['Cormorant_Garamond'] text-2xl md:text-[26px] font-normal text-[#0D0C0B] mb-3.5">
+                <h2 className="font-['Cormorant_Garamond'] text-2xl md:text-[26px] font-normal text-[#0D0C0B] dark:text-white mb-3.5">
                   About this service
                 </h2>
-                <p className="font-['Plus_Jakarta_Sans'] text-sm md:text-[14.5px] text-[#3D3B38] leading-[1.8]">
+                <p className="font-['Plus_Jakarta_Sans'] text-sm md:text-[14.5px] text-[#3D3B38] dark:text-gray-300 leading-[1.8]">
                   {service.description}
                 </p>
               </motion.div>
@@ -664,9 +664,9 @@ export default function ServiceDetailPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="bg-white rounded-[22px] border border-[#E4E0D8] p-5 md:p-8"
+                className="bg-white dark:bg-gray-900 rounded-[22px] border border-[#E4E0D8] dark:border-gray-700 p-5 md:p-8"
               >
-                <h2 className="font-['Cormorant_Garamond'] text-2xl md:text-[26px] font-normal text-[#0D0C0B] mb-6">
+                <h2 className="font-['Cormorant_Garamond'] text-2xl md:text-[26px] font-normal text-[#0D0C0B] dark:text-white mb-6">
                   What's included
                 </h2>
                 <ProcessSteps steps={service.whatsIncluded || []} />
@@ -676,20 +676,20 @@ export default function ServiceDetailPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white rounded-[22px] border border-[#E4E0D8] p-5 md:p-8"
+                className="bg-white dark:bg-gray-900 rounded-[22px] border border-[#E4E0D8] dark:border-gray-700 p-5 md:p-8"
               >
                 <div className="flex items-baseline justify-between mb-5">
-                  <h2 className="font-['Cormorant_Garamond'] text-2xl md:text-[26px] font-normal text-[#0D0C0B]">
+                  <h2 className="font-['Cormorant_Garamond'] text-2xl md:text-[26px] font-normal text-[#0D0C0B] dark:text-white">
                     Reviews
                   </h2>
                   <div className="flex items-center gap-2.5">
                     <div className="flex items-baseline gap-1.5">
-                      <span className="font-['Cormorant_Garamond'] text-3xl md:text-[40px] font-medium text-[#0D0C0B] leading-none">
+                      <span className="font-['Cormorant_Garamond'] text-3xl md:text-[40px] font-medium text-[#0D0C0B] dark:text-white leading-none">
                         {stylist.rating}
                       </span>
                       <div>
                         <StarRow rating={stylist.rating} />
-                        <p className="font-['Plus_Jakarta_Sans'] text-[11px] text-[#7A7770] mt-1">
+                        <p className="font-['Plus_Jakarta_Sans'] text-[11px] text-[#7A7770] dark:text-gray-400 mt-1">
                           {stylist.totalReviews} reviews
                         </p>
                       </div>
@@ -701,7 +701,7 @@ export default function ServiceDetailPage() {
                     <ReviewCard key={i} review={rev} />
                   ))}
                 </div>
-                <button className="mt-4 w-full py-3 rounded-[14px] border border-[#E4E0D8] bg-transparent font-['Plus_Jakarta_Sans'] text-[13px] font-semibold text-[#3D3B38] cursor-pointer flex items-center justify-center gap-1.5">
+                <button className="mt-4 w-full py-3 rounded-[14px] border border-[#E4E0D8] dark:border-gray-700 bg-transparent font-['Plus_Jakarta_Sans'] text-[13px] font-semibold text-[#3D3B38] dark:text-gray-300 cursor-pointer flex items-center justify-center gap-1.5">
                   <MessageSquare size={14} />
                   View all {stylist.totalReviews} reviews
                   <ChevronRight size={14} />
@@ -712,9 +712,9 @@ export default function ServiceDetailPage() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
-                className="bg-white rounded-[22px] border border-[#E4E0D8] p-5 md:p-8"
+                className="bg-white dark:bg-gray-900 rounded-[22px] border border-[#E4E0D8] dark:border-gray-700 p-5 md:p-8"
               >
-                <h2 className="font-['Cormorant_Garamond'] text-2xl md:text-[26px] font-normal text-[#0D0C0B] mb-5">
+                <h2 className="font-['Cormorant_Garamond'] text-2xl md:text-[26px] font-normal text-[#0D0C0B] dark:text-white mb-5">
                   More from {stylist.name}
                 </h2>
                 <div className="flex flex-col gap-2.5">

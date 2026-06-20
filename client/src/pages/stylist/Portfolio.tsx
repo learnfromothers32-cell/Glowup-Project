@@ -616,7 +616,7 @@ export default function Portfolio() {
                     <button
                       onClick={() => togglePendingType(p.id)}
                       className={`text-[9px] px-1.5 py-0.5 rounded font-semibold text-white ${
-                        p.type === "video" ? "bg-amber-400" : "bg-gray-900"
+                        p.type === "video" ? "bg-amber-400 dark:bg-amber-500" : "bg-gray-900 dark:bg-gray-200"
                       }`}
                     >
                       {p.type === "video" ? "Video" : "Image"}
@@ -630,7 +630,7 @@ export default function Portfolio() {
                   </div>
                   <div
                     className={`absolute top-1 left-1 text-[9px] px-1.5 py-0.5 rounded font-semibold text-white ${
-                      p.type === "video" ? "bg-amber-400" : "bg-gray-900"
+                      p.type === "video" ? "bg-amber-400 dark:bg-amber-500" : "bg-gray-900 dark:bg-gray-200"
                     }`}
                   >
                     {p.type === "video" ? "V" : "I"}

@@ -6,6 +6,8 @@ import {
   X, Navigation,
 } from "lucide-react";
 import { getMyStylistProfile, updateMyProfile, uploadProfileImage } from "../../api/stylists";
+import { useAuth } from "../../context/authUtils";
+import { getMe } from "../../api/auth";
 import { getLocationString } from "@/utils/location";
 import StylistLocationPicker from "../../components/stylist/StylistLocationPicker";
 import type { LocationValue } from "../../components/stylist/StylistLocationPicker";
@@ -92,6 +94,7 @@ interface FieldError {
 }
 
 export default function Profile() {
+  const { updateUser } = useAuth();
   const [stylist, setStylist] = useState<any>(null);
   const [initialForm, setInitialForm] = useState<Record<string, any>>({});
   const [name, setName] = useState("");
@@ -220,6 +223,8 @@ export default function Profile() {
       fd.append("image", file);
       const result = await uploadProfileImage(fd);
       setStylist((prev: any) => ({ ...prev, image: result.imageUrl }));
+      const meRes = await getMe();
+      updateUser(meRes.data.user);
       setSuccessMsg("Profile image updated");
       setTimeout(() => setSuccessMsg(null), 2000);
     } catch (err: any) {
