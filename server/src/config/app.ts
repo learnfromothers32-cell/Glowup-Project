@@ -7,7 +7,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 export const appConfig = {
   env: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT || 5000),
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, ''),
   jwtSecret: process.env.JWT_SECRET || '',
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || '',
   mongoUri: process.env.MONGODB_URI || '',
