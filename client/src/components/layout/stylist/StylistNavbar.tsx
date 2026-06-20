@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../context/authUtils";
 import { useNotifications } from "../../../hooks/useNotifications";
 import { getUnreadConversationsCount } from "../../../api/conversations";
+import { getMyStylistProfile } from "../../../api/stylists";
 
 const notifIconMap: Record<string, string> = {
   booking: "📅",
@@ -53,6 +54,7 @@ export default function StylistNavbar({ onMenuToggle }: StylistNavbarProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [expandedNotifId, setExpandedNotifId] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState(user?.avatar || "");
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +87,16 @@ export default function StylistNavbar({ onMenuToggle }: StylistNavbarProps) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    if (user?.avatar) {
+      setProfileImage(user.avatar);
+    } else {
+      getMyStylistProfile()
+        .then((p) => { if (p?.image) setProfileImage(p.image); })
+        .catch(() => {});
+    }
+  }, [user?.avatar]);
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -282,8 +294,8 @@ export default function StylistNavbar({ onMenuToggle }: StylistNavbarProps) {
               onClick={() => setShowProfileMenu((v) => !v)}
               className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary transition-colors"
             >
-              {user?.avatar ? (
-                <img src={user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+              {profileImage ? (
+                <img src={profileImage} alt="" className="w-7 h-7 rounded-full object-cover" />
               ) : (
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-800 to-gray-600 dark:from-indigo-500 dark:to-violet-600 text-white flex items-center justify-center text-[10px] font-bold">
                   {initials}
