@@ -45,6 +45,8 @@ export function LiveHomeScreen() {
     pastSessions,
     recommendedSessions,
     openPlayer,
+    closePlayer,
+    isPlayerOpen,
     notifications,
     markAsRead,
     markAllAsRead,
@@ -278,7 +280,7 @@ export function LiveHomeScreen() {
         />
       )}
 
-      <LivePlayerScreen />
+      {isPlayerOpen && <LivePlayerScreen onClose={closePlayer} />}
     </>
   );
 }

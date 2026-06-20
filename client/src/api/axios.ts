@@ -64,7 +64,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.get(`${API_BASE_URL}/auth/refresh`, { withCredentials: true });
+        const { data } = await axios.get(`${API_BASE_URL}/auth/refresh`, {
+          withCredentials: true,
+          timeout: 60000,
+        });
         accessToken = data.data.accessToken;
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         pendingRequests.forEach((cb) => cb(accessToken!));

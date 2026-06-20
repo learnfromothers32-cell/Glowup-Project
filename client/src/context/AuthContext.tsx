@@ -100,9 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const res = await authApi.getMe();
         dispatch({ type: "SESSION_VALIDATED", payload: { user: res.data.user } });
-      } catch {
-        // Don't cascade into refreshToken here — the axios 401 interceptor handles that
-        // on subsequent requests. This keeps the mount-time request count minimal.
+      } catch (err) {
+        console.error("[Auth] getMe failed on mount:", err);
         dispatch({ type: "LOGOUT" });
       }
     }, 100);

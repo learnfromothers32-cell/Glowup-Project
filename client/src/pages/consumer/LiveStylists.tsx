@@ -145,7 +145,7 @@ export default function LiveStylists() {
               </p>
             </div>
           </div>
-          <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-white/50 transition-colors">
+          <button onClick={() => navigate("/app/live")} className="p-2 rounded-full hover:bg-white/50 transition-colors">
             <X size={18} style={{ color: "#5A6E8A" }} />
           </button>
         </div>

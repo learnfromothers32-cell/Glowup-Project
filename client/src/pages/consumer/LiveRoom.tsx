@@ -215,7 +215,11 @@ export default function LiveRoom() {
   }, [stylistId, streamEnded, connected, on, off, emit]);
 
   const handleClose = useCallback(() => {
-    navigate(-1);
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/app/live");
+    }
   }, [navigate]);
 
   const isFollowing = followCtx.isFollowing(stylistId ?? '');
