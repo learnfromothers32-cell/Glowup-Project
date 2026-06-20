@@ -41,9 +41,8 @@ export function LiveHomeScreen() {
   const [activeTab, setActiveTab] = useState<Tab>("live");
   const [showSchedule, setShowSchedule] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [fullscreenFeed, setFullscreenFeed] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const feedRef = useRef<HTMLDivElement>(null);
 
   const {
     liveSessions,
@@ -95,7 +94,7 @@ export function LiveHomeScreen() {
     }
   };
 
-  const inFeed = activeTab === "live" && fullscreenFeed && allSessions.length > 0;
+  const inFeed = !showGrid && allSessions.length > 0;
   const currentSession = inFeed ? allSessions[currentIndex] : null;
 
   const feedContent = currentSession && (
@@ -115,10 +114,10 @@ export function LiveHomeScreen() {
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30 pointer-events-none" />
 
-          <div className="absolute top-0 left-0 right-0 z-10 px-4 pt-4">
+          <div className="absolute top-0 left-0 right-0 z-10 px-4" style={{ paddingTop: "calc(12px + env(safe-area-inset-top, 0px))" }}>
             <div className="flex items-center justify-between">
               <button
-                onClick={() => setFullscreenFeed(false)}
+                onClick={() => setShowGrid(true)}
                 className="p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-white/10 transition-colors"
               >
                 <X size={20} className="text-white" />
@@ -134,48 +133,47 @@ export function LiveHomeScreen() {
             </div>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="absolute bottom-0 left-0 right-0 z-10 p-4" style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}>
+            <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-full border-2 border-white/50 overflow-hidden bg-gradient-to-br from-gray-600 to-gray-500 flex items-center justify-center shrink-0">
                 <span className="text-white font-bold text-sm">{currentSession.host.name.charAt(0).toUpperCase()}</span>
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-white font-bold text-sm truncate">{currentSession.host.name}</p>
                 <p className="text-white/50 text-[10px] capitalize">{currentSession.category}</p>
               </div>
             </div>
-            <h3 className="text-white text-sm font-medium">{currentSession.title}</h3>
+            <h3 className="text-white text-sm font-medium mb-3">{currentSession.title}</h3>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={goPrev}
+                disabled={currentIndex === 0}
+                className="flex-1 py-2 rounded-lg text-xs font-bold disabled:opacity-30 transition-all bg-white/10 text-white active:bg-white/20"
+              >
+                ← Prev
+              </button>
+              <span className="text-xs text-white/40">{currentIndex + 1}/{allSessions.length}</span>
+              <button
+                onClick={goNext}
+                disabled={currentIndex >= allSessions.length - 1}
+                className="flex-1 py-2 rounded-lg text-xs font-bold disabled:opacity-30 transition-all bg-white/10 text-white active:bg-white/20"
+              >
+                Next →
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Swipe nav */}
-      <div className="shrink-0 flex items-center justify-center gap-6 py-3 bg-neutral-900">
-        <button
-          onClick={goPrev}
-          disabled={currentIndex === 0}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-30 transition-all bg-white/5 text-white/70 hover:bg-white/10"
-        >
-          <ChevronUp size={14} /> Prev
-        </button>
-        <span className="text-xs text-white/40">
-          {currentIndex + 1} / {allSessions.length}
-        </span>
-        <button
-          onClick={goNext}
-          disabled={currentIndex >= allSessions.length - 1}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-30 transition-all bg-white/5 text-white/70 hover:bg-white/10"
-        >
-          Next <ChevronDown size={14} />
-        </button>
       </div>
     </div>
   );
 
+  if (inFeed) {
+    return <>{feedContent}{isPlayerOpen && <LivePlayerScreen onClose={closePlayer} />}</>;
+  }
+
   return (
     <>
-      {feedContent}
-
       <div className="min-h-screen bg-gray-50 dark:bg-surface-dark">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
@@ -256,17 +254,9 @@ export function LiveHomeScreen() {
             <>
               {allSessions.length > 0 && (
                 <section className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Live Now
-                    </h2>
-                    <button
-                      onClick={() => setFullscreenFeed(true)}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold hover:opacity-80 transition-opacity"
-                    >
-                      <Radio size={14} /> Full Screen
-                    </button>
-                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    Live Now
+                  </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {allSessions.map((session) => (
                       <LiveSessionCard

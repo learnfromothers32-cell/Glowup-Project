@@ -5,7 +5,7 @@ import { useLiveStream } from "../../hooks/useLiveStream";
 import LiveCreatorPanel from "../../features/live/components/LiveCreatorPanel";
 import ModerationPanel from "../../features/live/components/ModerationPanel";
 import { useLiveStore } from "../../features/live/store/liveStore";
-import { Shield, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export default function StylistLive() {
   const {
@@ -244,34 +244,6 @@ export default function StylistLive() {
 
   return (
     <div className="flex-1 bg-black flex flex-col overflow-hidden">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-3 sm:px-5 py-2 sm:py-3 bg-neutral-900/50 border-b border-white/5 shrink-0 min-h-[44px] sm:min-h-0">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <h1 className="hidden sm:inline text-base font-bold text-white font-display">Live Studio</h1>
-          {isLive && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-red-500/10 border border-red-500/20">
-              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-[9px] sm:text-[10px] font-semibold text-red-400 uppercase tracking-wider">Live</span>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          {isLive && (
-            <>
-              <div className="hidden sm:inline text-xs text-neutral-500 font-mono">
-                {String(Math.floor(duration / 60)).padStart(2, "0")}:{String(duration % 60).padStart(2, "0")}
-              </div>
-              <div className="text-[10px] sm:text-xs text-neutral-400">{activeViewers.size} viewer{activeViewers.size !== 1 ? "s" : ""}</div>
-              <button onClick={() => setShowModeration(true)} className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white transition-all">
-                <Shield size={12} className="sm:size-[13px]" />
-                <span className="hidden sm:inline">Moderation</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Main content */}
       <div className="flex-1 min-h-0 relative">
         <LiveCreatorPanel
           isLive={isLive} loading={loading} viewerCount={viewerCount}
