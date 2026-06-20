@@ -3,11 +3,11 @@ import React, {
   useReducer,
   useEffect,
   useCallback,
-  useRef,
 } from "react";
+import axios from "axios";
 import type { UserRole, User } from "../types/auth";
 import * as authApi from "../api/auth";
-import { setAccessToken } from "../api/axios";
+import { setAccessToken, API_SERVER_URL } from "../api/axios";
 import { signInWithPopup, signOut } from "firebase/auth";
 import { getFirebaseAuth, getGoogleProvider, getGithubProvider } from "../config/firebase";
 
@@ -92,21 +92,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     isAuthenticated: false,
   });
 
-  // Restore session on mount: validate with server
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-
+  // Restore session on mount: quick health check to wake server, then validate
   useEffect(() => {
-    debounceRef.current = setTimeout(async () => {
+    let cancelled = false;
+    const restore = async () => {
+      try {
+        await axios.get(`${API_SERVER_URL}/api/hello`, { timeout: 8000 });
+      } catch {
+        // Server might be cold — don't wait, show login immediately
+        if (!cancelled) dispatch({ type: "LOGOUT" });
+        return;
+      }
+      if (cancelled) return;
       try {
         const res = await authApi.getMe();
-        dispatch({ type: "SESSION_VALIDATED", payload: { user: res.data.user } });
+        if (!cancelled) dispatch({ type: "SESSION_VALIDATED", payload: { user: res.data.user } });
       } catch (err) {
         console.error("[Auth] getMe failed on mount:", err);
-        dispatch({ type: "LOGOUT" });
+        if (!cancelled) dispatch({ type: "LOGOUT" });
       }
-    }, 100);
-
-    return () => clearTimeout(debounceRef.current);
+    };
+    restore();
+    return () => { cancelled = true; };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
