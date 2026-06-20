@@ -67,80 +67,80 @@ export default function LiveCreatorPanel(props: Props) {
 
   if (!props.isLive) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4 md:p-8 overflow-y-auto">
-        <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8 max-w-3xl w-full py-4">
-          <div className="relative rounded-2xl overflow-hidden bg-neutral-900 shadow-2xl aspect-[9/16] w-full max-w-[180px] sm:max-w-[220px] md:max-w-[260px] ring-1 ring-white/5 shrink-0">
-            {props.stream ? (
+      <div className="absolute inset-0 bg-black flex flex-col overflow-hidden">
+        {/* Full-screen camera preview */}
+        <div className="flex-1 relative min-h-0">
+          {props.stream ? (
+            <>
               <video ref={videoRef} autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover" />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-neutral-500">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-neutral-800 flex items-center justify-center text-lg sm:text-xl">📷</div>
-                <span className="text-xs sm:text-sm">Camera preview</span>
-                {props.cameraDenied && (
-                  <button
-                    onClick={props.onRetryCamera}
-                    className="px-3 py-1 sm:px-4 sm:py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-[11px] sm:text-xs text-neutral-400 transition-colors"
-                  >
-                    Grant access
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="w-full max-w-sm space-y-4 sm:space-y-5">
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white">Go Live</h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">Broadcast to your audience</p>
-            </div>
-
-            <div className="bg-neutral-900 rounded-xl ring-1 ring-white/5 p-4 sm:p-5 space-y-3">
-              <input
-                value={props.streamTitle}
-                onChange={e => props.onTitleChange(e.target.value)}
-                placeholder="Stream title *"
-                className="w-full px-3 sm:px-3.5 py-2 sm:py-2.5 bg-white/5 rounded-lg text-sm text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-pink-500/40 transition-all"
-              />
-              <textarea
-                value={props.streamDescription}
-                onChange={e => props.onDescriptionChange(e.target.value)}
-                placeholder="Description (optional)"
-                rows={2}
-                className="w-full px-3 sm:px-3.5 py-2 sm:py-2.5 bg-white/5 rounded-lg text-sm text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-pink-500/40 resize-none transition-all"
-              />
-              <select
-                value={props.streamCategory}
-                onChange={e => props.onCategoryChange(e.target.value)}
-                className="w-full px-3 sm:px-3.5 py-2 sm:py-2.5 bg-white/5 rounded-lg text-sm text-white outline-none focus:ring-1 focus:ring-pink-500/40 appearance-none cursor-pointer transition-all"
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c.toLowerCase().replace(/\s+/g, "-")} className="bg-neutral-900">{c}</option>
-                ))}
-              </select>
-
-              <div className="space-y-1.5">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+            </>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-neutral-500">
+              <div className="w-16 h-16 rounded-full bg-neutral-800 flex items-center justify-center text-2xl">📷</div>
+              <span className="text-sm">Camera preview</span>
+              {props.cameraDenied && (
                 <button
-                  onClick={() => props.onGoLive(props.streamTitle.trim())}
-                  disabled={!canGoLive}
-                  className="w-full py-2.5 sm:py-3 rounded-lg text-sm font-bold text-white transition-all active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100 disabled:cursor-not-allowed"
-                  style={{ background: "linear-gradient(135deg, #FE2C55, #ff6b8a)" }}
+                  onClick={props.onRetryCamera}
+                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-xs text-neutral-400 transition-colors"
                 >
-                  {props.loading ? (
-                    <span className="inline-flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Starting...
-                    </span>
-                  ) : "Go Live"}
+                  Grant access
                 </button>
-                {goLiveDisabledReason && (
-                  <p className="text-[11px] text-red-400/70 text-center">{goLiveDisabledReason}</p>
-                )}
-                {props.goLiveError && (
-                  <p className="text-[11px] text-red-400/80 text-center">{props.goLiveError}</p>
-                )}
-              </div>
+              )}
             </div>
+          )}
+
+          {/* Overlay header */}
+          <div className="absolute top-0 left-0 right-0 z-10 px-4 pt-4">
+            <h2 className="text-lg font-bold text-white drop-shadow-lg">Go Live</h2>
+            <p className="text-xs text-white/50 mt-0.5 drop-shadow">Broadcast to your audience</p>
           </div>
+        </div>
+
+        {/* Bottom sheet - setup form */}
+        <div className="shrink-0 bg-neutral-900/95 backdrop-blur-xl border-t border-white/5 px-4 py-4 pb-6 space-y-3">
+          <input
+            value={props.streamTitle}
+            onChange={e => props.onTitleChange(e.target.value)}
+            placeholder="Stream title *"
+            className="w-full px-3.5 py-2.5 bg-white/5 rounded-lg text-sm text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-pink-500/40 transition-all"
+          />
+          <textarea
+            value={props.streamDescription}
+            onChange={e => props.onDescriptionChange(e.target.value)}
+            placeholder="Description (optional)"
+            rows={1}
+            className="w-full px-3.5 py-2.5 bg-white/5 rounded-lg text-sm text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-pink-500/40 resize-none transition-all"
+          />
+          <select
+            value={props.streamCategory}
+            onChange={e => props.onCategoryChange(e.target.value)}
+            className="w-full px-3.5 py-2.5 bg-white/5 rounded-lg text-sm text-white outline-none focus:ring-1 focus:ring-pink-500/40 appearance-none cursor-pointer transition-all"
+          >
+            {CATEGORIES.map(c => (
+              <option key={c} value={c.toLowerCase().replace(/\s+/g, "-")} className="bg-neutral-900">{c}</option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => props.onGoLive(props.streamTitle.trim())}
+            disabled={!canGoLive}
+            className="w-full py-3 rounded-lg text-sm font-bold text-white transition-all active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100 disabled:cursor-not-allowed"
+            style={{ background: "linear-gradient(135deg, #FE2C55, #ff6b8a)" }}
+          >
+            {props.loading ? (
+              <span className="inline-flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Starting...
+              </span>
+            ) : "Go Live"}
+          </button>
+          {goLiveDisabledReason && (
+            <p className="text-[11px] text-red-400/70 text-center">{goLiveDisabledReason}</p>
+          )}
+          {props.goLiveError && (
+            <p className="text-[11px] text-red-400/80 text-center">{props.goLiveError}</p>
+          )}
         </div>
       </div>
     );
