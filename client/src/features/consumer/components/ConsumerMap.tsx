@@ -521,7 +521,7 @@ export default function ConsumerMap({
     : stylistsWithCoords;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden relative z-0 dark:bg-surface-dark-secondary dark:border-gray-700/50">
+    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden relative z-0 dark:bg-surface-dark-secondary dark:border-0">
       {/* ── Top controls ──────────────────────────────── */}
       <div className="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700/50">
         <AreaSelector

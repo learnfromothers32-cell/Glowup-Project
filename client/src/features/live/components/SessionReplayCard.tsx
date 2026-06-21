@@ -24,7 +24,7 @@ export function SessionReplayCard({ session, onWatch }: Props) {
   return (
     <motion.button
       onClick={() => onWatch(session)}
-      className="group relative w-full text-left bg-white dark:bg-[#1a1a2e] rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+      className="group relative w-full text-left bg-white dark:bg-[#1a1a2e] rounded-2xl border border-gray-100 dark:border-0 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
     >

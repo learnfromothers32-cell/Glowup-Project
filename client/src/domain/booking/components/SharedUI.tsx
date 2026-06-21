@@ -10,16 +10,16 @@ interface StatCardProps {
 
 export function StatCard({ label, value, icon: Icon, color }: StatCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-surface-dark-secondary rounded-xl border border-gray-100 dark:border-gray-700/50 p-4 hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-200">
       <div className="flex items-center justify-between mb-2.5">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color.bg}`}>
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color.bg} dark:opacity-90`}>
           <Icon size={16} className={color.icon} />
         </div>
         <span className={`text-2xl font-bold tabular-nums ${color.text}`}>
           {value}
         </span>
       </div>
-      <p className="text-xs font-medium text-gray-500">{label}</p>
+      <p className="text-xs font-medium text-gray-500 dark:text-text-dark-secondary">{label}</p>
     </div>
   );
 }
@@ -46,7 +46,7 @@ export function Modal({ children, onClose, wide }: ModalProps) {
         exit={{ scale: 0.95, y: 16, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         onClick={(e) => e.stopPropagation()}
-        className={`relative bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col ${
+        className={`relative bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-2xl dark:shadow-2xl dark:shadow-black/40 overflow-hidden max-h-[85vh] flex flex-col ${
           wide ? "w-full max-w-lg" : "w-full max-w-md"
         }`}
       >
@@ -65,11 +65,11 @@ interface EmptyStateProps {
 export function EmptyState({ icon: Icon, title, sub }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-5">
-        <Icon size={28} className="text-gray-300" />
+      <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-surface-dark-tertiary flex items-center justify-center mb-5">
+        <Icon size={28} className="text-gray-300 dark:text-text-dark-muted" />
       </div>
-      <p className="text-base font-semibold text-gray-700 mb-1">{title}</p>
-      <p className="text-sm text-gray-400 max-w-[280px] leading-relaxed">{sub}</p>
+      <p className="text-base font-semibold text-gray-700 dark:text-text-dark-primary mb-1">{title}</p>
+      <p className="text-sm text-gray-400 dark:text-text-dark-secondary max-w-[280px] leading-relaxed">{sub}</p>
     </div>
   );
 }
@@ -110,7 +110,7 @@ export function FilterPills({ filters, active, onChange, counts }: FilterPillsPr
             className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
               on
                 ? "bg-gray-900 text-white shadow-sm dark:bg-white dark:text-gray-900"
-                : "bg-white text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-700"
+                : "bg-white dark:bg-surface-dark-secondary text-gray-500 dark:text-text-dark-secondary border border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-text-dark-primary"
             }`}
           >
             {label}

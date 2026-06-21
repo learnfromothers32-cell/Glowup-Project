@@ -13,7 +13,7 @@ export default function StylistLayout() {
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="min-h-screen bg-[#F4F7FC] dark:bg-surface-dark flex">
+    <div className="min-h-screen bg-warm-50 dark:bg-surface-dark flex">
       {/* ── Desktop Sidebar (always visible on lg screens) ── */}
       {!isLivePage && (
         <div className="hidden lg:block">
@@ -30,7 +30,7 @@ export default function StylistLayout() {
             onClick={closeSidebar}
           />
           {/* sidebar panel */}
-          <nav className="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-white dark:bg-surface-dark-secondary shadow-2xl border-r border-gray-100 dark:border-gray-700 overflow-y-auto">
+          <          nav className="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-white dark:bg-surface-dark-secondary shadow-2xl border-r border-gray-100 dark:border-gray-700/50 overflow-y-auto">
             <Sidebar onClose={closeSidebar} />
           </nav>
         </div>
@@ -48,7 +48,7 @@ export default function StylistLayout() {
           className={
             isLivePage
               ? "flex-1 flex flex-col overflow-hidden"
-              : "flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-6"
+              : "flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 lg:pb-6"
           }
         >
           <Outlet />

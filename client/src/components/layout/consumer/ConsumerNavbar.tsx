@@ -174,17 +174,17 @@ export default function ConsumerNavbar() {
       {/* ── Main Header ─────────────────────────────────── */}
       <header className="fixed top-0 inset-x-0 z-50">
         {/* Glassmorphism backdrop */}
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-gray-200/60 dark:bg-surface-dark-secondary/85 dark:border-gray-700/60" />
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-gray-200/60 dark:bg-surface-dark-secondary/85 dark:border-0" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-16 flex items-center justify-between gap-3">
+          <div className="h-16 flex items-center justify-between gap-2 lg:gap-4">
             {/* ─── LEFT: Logo + Nav ───────────────────────── */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 min-w-0">
               <button
                 onClick={() => { navigate("/app"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                className="flex items-center gap-2 shrink-0 mr-4 group"
+                className="flex items-center gap-2 shrink-0 mr-2 lg:mr-4 group"
               >
-                <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow shrink-0">
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-lg font-bold tracking-tight text-gray-900 hidden sm:inline">
@@ -193,13 +193,13 @@ export default function ConsumerNavbar() {
               </button>
 
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center gap-0.5">
+              <nav className="hidden md:flex items-center gap-0.5 lg:gap-1 xl:gap-2">
                 {navLinks.map(({ to, label, icon: Icon }) => (
                   <Link
                     key={to}
                     to={to}
                     className={`
-                      relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                      relative flex items-center gap-1.5 px-2.5 lg:px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
                       ${
                         isActive(to)
                           ? "text-gray-900 dark:text-gray-100"
@@ -207,19 +207,8 @@ export default function ConsumerNavbar() {
                       }
                     `}
                   >
-                    <Icon size={16} />
-                    {label}
-                    {isActive(to) && (
-                      <motion.div
-                        layoutId="navIndicator"
-                        className="absolute inset-0 bg-gray-100 rounded-lg -z-10 dark:bg-gray-800"
-                        transition={{
-                          type: "spring",
-                          stiffness: 380,
-                          damping: 30,
-                        }}
-                      />
-                    )}
+                    <Icon size={16} className="shrink-0" />
+                    <span className="hidden lg:inline">{label}</span>
                   </Link>
                 ))}
 
@@ -227,7 +216,7 @@ export default function ConsumerNavbar() {
                 <Link
                   to="/app/vibe-match"
                   className={`
-                    ml-1 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200
+                    ml-1 lg:ml-2 flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200
                     ${
                       isActive("/app/vibe-match")
                         ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
@@ -235,31 +224,31 @@ export default function ConsumerNavbar() {
                     }
                   `}
                 >
-                  <Zap size={15} className="text-amber-400" />
-                  Vibe Match
+                  <Zap size={15} className="text-amber-400 shrink-0" />
+                  <span className="hidden lg:inline">Vibe Match</span>
                 </Link>
               </nav>
             </div>
 
             {/* ─── CENTER: Search (desktop) ───────────────── */}
-            <div className="hidden md:flex flex-1 max-w-sm mx-4">
+            <div className="hidden md:flex flex-1 justify-center">
               <button
                 onClick={() => setSearchModalOpen(true)}
-                className="group relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200/80 dark:border-gray-700/80 text-sm text-gray-400 dark:text-text-dark-muted text-left transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white dark:hover:bg-surface-dark-secondary hover:shadow-sm dark:hover:shadow-sm dark:hover:shadow-black/20 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 dark:focus:border-brand-500"
+                className="group relative w-full max-w-sm lg:max-w-md xl:max-w-lg flex items-center gap-3 px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200/80 dark:border-gray-700/80 text-sm text-gray-400 dark:text-text-dark-muted text-left transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white dark:hover:bg-surface-dark-secondary hover:shadow-sm dark:hover:shadow-sm dark:hover:shadow-black/20 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 dark:focus:border-brand-500"
               >
                 <Search
                   size={16}
-                  className="text-gray-400 dark:text-text-dark-muted group-hover:text-gray-500 dark:group-hover:text-text-dark-secondary transition-colors"
+                  className="text-gray-400 dark:text-text-dark-muted group-hover:text-gray-500 dark:group-hover:text-text-dark-secondary transition-colors shrink-0"
                 />
-                <span className="flex-1">Search stylists, services…</span>
-                <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-[11px] font-medium text-gray-400 dark:text-text-dark-muted shadow-sm">
+                <span className="flex-1 truncate">Search stylists, services…</span>
+                <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-[11px] font-medium text-gray-400 dark:text-text-dark-muted shadow-sm shrink-0">
                   <span className="text-xs">⌘</span>K
                 </kbd>
               </button>
             </div>
 
             {/* ─── RIGHT: Actions ─────────────────────────── */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               {/* Mobile search */}
               <button
                 onClick={() => setSearchModalOpen(true)}
@@ -552,7 +541,7 @@ export default function ConsumerNavbar() {
               className="fixed top-0 right-0 bottom-0 z-50 w-[300px] bg-white shadow-2xl md:hidden overflow-y-auto dark:bg-surface-dark dark:shadow-black/60"
             >
               {/* Close + Logo */}
-              <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-0">
                 <Link to="/app" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
                     <Sparkles className="w-3.5 h-3.5 text-white" />
@@ -570,7 +559,7 @@ export default function ConsumerNavbar() {
               </div>
 
               {/* User card */}
-              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-0">
                 <div className="flex items-center gap-3">
                   {user?.avatar ? (
                     <img src={user.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -634,7 +623,7 @@ export default function ConsumerNavbar() {
               </div>
 
               {/* Account links */}
-              <div className="px-3 py-3 border-t border-gray-100 dark:border-gray-800">
+              <div className="px-3 py-3 border-t border-gray-100 dark:border-0">
                 <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                   Account
                 </p>

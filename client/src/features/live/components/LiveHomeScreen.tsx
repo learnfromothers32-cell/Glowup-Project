@@ -224,7 +224,7 @@ export function LiveHomeScreen() {
             ))}
           </div>
 
-          <div className="flex items-center gap-1 mb-6 border-b border-gray-100 dark:border-gray-700/50">
+          <div className="flex items-center gap-1 mb-6 border-b border-gray-100 dark:border-0">
             {[
               { key: "live", label: "Live Now", icon: Radio },
               { key: "upcoming", label: "Upcoming", icon: Clock },
@@ -343,7 +343,7 @@ export function LiveHomeScreen() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mt-6 p-4 bg-white dark:bg-[#1a1a2e] rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm"
+              className="mt-6 p-4 bg-white dark:bg-[#1a1a2e] rounded-2xl border border-gray-100 dark:border-0 shadow-sm"
             >
               <LiveNotifications
                 notifications={notifications}

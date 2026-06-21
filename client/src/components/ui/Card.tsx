@@ -15,8 +15,8 @@ export function Card({ className, hover, elevated, padding = 'md', children, ...
       className={cn(
         'rounded-xl border bg-white transition-all duration-200',
         elevated
-          ? 'shadow-card border-gray-50 dark:bg-surface-dark-secondary dark:border-gray-700/30'
-          : 'shadow-soft border-gray-100 dark:bg-surface-dark-secondary dark:border-gray-700/50 dark:shadow-none',
+          ? 'shadow-card border-gray-50 dark:bg-surface-dark-secondary dark:border-0'
+          : 'shadow-soft border-gray-100 dark:bg-surface-dark-secondary dark:border-0 dark:shadow-none',
         hover && 'hover:shadow-card hover:border-gray-200 dark:hover:border-gray-600/50 dark:hover:bg-surface-dark-tertiary cursor-pointer',
         paddings[padding],
         className,

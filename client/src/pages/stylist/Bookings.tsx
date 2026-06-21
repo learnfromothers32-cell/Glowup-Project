@@ -130,7 +130,7 @@ export default function StylistBookings() {
     return (
       <div className="space-y-3">
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-24 w-36 sm:w-auto sm:flex-1 rounded-xl bg-white border border-gray-100 animate-pulse shrink-0" />)}
+          {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-24 w-36 sm:w-auto sm:flex-1 rounded-xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-700/50 animate-pulse shrink-0" />)}
         </div>
         {[1, 2, 3, 4].map((i) => <div key={i} className="h-20 rounded-xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-700/50 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />)}
       </div>
@@ -153,8 +153,8 @@ export default function StylistBookings() {
       </AnimatePresence>
       <div className="pb-6">
         <div className="pt-2 pb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight mb-1">Bookings</h1>
-          <p className="text-sm text-gray-400">Manage client appointments and requests</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary tracking-tight font-display mb-1">Bookings</h1>
+          <p className="text-sm text-text-muted dark:text-text-dark-muted">Manage client appointments and requests</p>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 lg:grid-cols-6 sm:gap-3 sm:overflow-visible sm:pb-0">
@@ -166,14 +166,14 @@ export default function StylistBookings() {
           <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-red-50", text: "text-red-600", icon: "text-red-400" }} />
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
           <div className="flex-1 min-w-0">
             <FilterPills filters={FILTERS} active={activeFilter} onChange={(f) => setActiveFilter(f as FilterKey)} counts={counts} />
           </div>
           <div className="relative shrink-0">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
             <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search client or service…"
-              className="w-full sm:w-48 pl-9 pr-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-gray-900 placeholder:text-gray-400 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all" />
+              className="w-full sm:w-48 pl-9 pr-3 py-2.5 rounded-xl input-field text-sm" />
           </div>
         </div>
 
@@ -219,7 +219,7 @@ export default function StylistBookings() {
 
                       {b.totalPrice > 0 && (
                         <p className={`hidden sm:block text-sm font-bold shrink-0 ${isCancelled ? "text-gray-300" : "text-gray-900"}`}>
-                          ${b.totalPrice}
+                          GH₵{b.totalPrice}
                         </p>
                       )}
                     </div>
@@ -291,7 +291,7 @@ export default function StylistBookings() {
                         </>
                       )}
                       {b.totalPrice > 0 && (
-                        <span className="sm:hidden shrink-0 text-xs font-semibold text-gray-700">${b.totalPrice}</span>
+                          <span className="sm:hidden shrink-0 text-xs font-semibold text-gray-700">GH₵{b.totalPrice}</span>
                       )}
                     </div>
                   </div>

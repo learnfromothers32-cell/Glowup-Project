@@ -99,7 +99,7 @@ export default function IntentBar({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm dark:bg-[var(--color-surface)] dark:border-gray-700/80">
+    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm dark:bg-[var(--color-surface)] dark:border-0">
       {/* ── Search + AI Button (always visible) ──────────── */}
       <div className="flex items-center gap-3 p-3 pb-0 sm:pb-2">
         {/* Search */}

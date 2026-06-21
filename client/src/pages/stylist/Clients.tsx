@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Phone, Mail, Calendar, Star, Tag, Loader2, MessageSquare, DollarSign } from 'lucide-react';
+import { Search, Star, Loader2, MessageSquare, DollarSign, Calendar, X } from 'lucide-react';
 import { logger } from '../../utils/logger';
 import { getMyClients, getClientDetail, updateClient } from '../../api/clients';
 import { createConversation } from '../../api/conversations';
 import { useNavigate } from 'react-router-dom';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 
 interface ClientUser {
   _id: string;
@@ -94,18 +96,22 @@ export default function Clients() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary font-display mb-1">My Clients</h1>
-      <p className="text-[#7A7168] text-sm mb-6">View and manage your client relationships</p>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary font-display">My Clients</h1>
+          <p className="text-sm text-warm-600 dark:text-text-dark-secondary mt-0.5">View and manage your client relationships</p>
+        </div>
+      </div>
 
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted dark:text-text-dark-muted" />
           <input type="text" placeholder="Search clients..." value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 border border-[#E8E0D8] rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#8B7355]" />
+            className="input-field text-sm" />
         </div>
         <select value={sort} onChange={e => setSort(e.target.value)}
-          className="border border-[#E8E0D8] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#8B7355]">
+          className="input-field text-sm w-auto min-w-[140px]">
           <option value="visits">Most Visits</option>
           <option value="recent">Most Recent</option>
           <option value="spent">Highest Spent</option>
@@ -114,118 +120,156 @@ export default function Clients() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-[#7A7168]" /></div>
-      ) : clients.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <UsersIcon className="w-12 h-12 mx-auto mb-3" />
-          <p>No clients yet</p>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-warm-500 dark:text-text-dark-muted" />
         </div>
+      ) : clients.length === 0 ? (
+        <Card className="text-center py-16">
+          <div className="w-14 h-14 rounded-full bg-warm-100 dark:bg-surface-dark-tertiary flex items-center justify-center mx-auto mb-4">
+            <UsersIcon className="w-7 h-7 text-warm-500 dark:text-text-dark-muted" />
+          </div>
+          <p className="text-body-sm font-semibold text-text-primary mb-1">No clients yet</p>
+          <p className="text-caption text-text-muted">Clients will appear here after their first booking</p>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {clients.map(client => (
-            <motion.div key={client._id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl shadow-sm border border-[#E8E0D8] p-4 hover:shadow-md transition-shadow">
+            <Card key={client._id} hover padding="md" className="relative">
               <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#8B7355] flex items-center justify-center text-white text-sm font-medium">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-gold-500 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm">
                     {client.userId?.name?.charAt(0) || '?'}
                   </div>
-                  <div>
-                    <h3 className="font-medium text-[#1A1A1A]">{client.userId?.name}</h3>
-                    <p className="text-xs text-gray-400">{client.userId?.email}</p>
+                  <div className="min-w-0">
+                    <h3 className="text-body-sm font-semibold text-text-primary dark:text-text-dark-primary truncate">{client.userId?.name}</h3>
+                    <p className="text-caption text-text-muted dark:text-text-dark-muted truncate">{client.userId?.email}</p>
                   </div>
                 </div>
-                <button onClick={() => toggleFavorite(client)} className={`p-1 rounded transition-colors ${client.favorite ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'}`}>
+                <button
+                  onClick={() => toggleFavorite(client)}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                    client.favorite
+                      ? 'text-amber-400 bg-amber-50 dark:bg-amber-950/30'
+                      : 'text-gray-300 dark:text-text-dark-muted hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/20'
+                  }`}
+                  aria-label={client.favorite ? 'Remove from favorites' : 'Add to favorites'}
+                >
                   <Star className="w-4 h-4" fill={client.favorite ? 'currentColor' : 'none'} />
                 </button>
               </div>
-              <div className="mt-3 flex items-center gap-3 text-xs text-gray-500 flex-wrap">
-                <span className="flex items-center gap-1 shrink-0"><Calendar className="w-3 h-3" /> {client.totalVisits} visits</span>
-                <span className="flex items-center gap-1 shrink-0"><DollarSign className="w-3 h-3" /> GH₵{client.totalSpent.toFixed(0)}</span>
+              <div className="mt-3 flex items-center gap-3 text-caption text-text-muted dark:text-text-dark-secondary flex-wrap">
+                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {client.totalVisits} visit{client.totalVisits !== 1 ? 's' : ''}</span>
+                <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /> GH₵{client.totalSpent.toFixed(0)}</span>
                 {client.lastVisit && (
-                  <span className="text-gray-400 shrink-0">Last: {new Date(client.lastVisit).toLocaleDateString()}</span>
+                  <span className="text-text-muted dark:text-text-dark-muted">Last {new Date(client.lastVisit).toLocaleDateString()}</span>
                 )}
               </div>
               {client.tags?.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {client.tags.map((tag, i) => (
-                    <span key={i} className="text-xs bg-[#FAF8F4] text-[#7A7168] px-2 py-0.5 rounded">{tag}</span>
+                    <span key={i} className="text-caption bg-warm-100 dark:bg-surface-dark-tertiary text-warm-600 dark:text-text-dark-secondary px-2 py-0.5 rounded-full font-medium">{tag}</span>
                   ))}
                 </div>
               )}
-              <div className="mt-3 flex gap-2">
-                <button onClick={() => openDetail(client)} className="flex-1 text-xs bg-[#FAF8F4] text-[#1A1A1A] py-1.5 rounded hover:bg-[#F0ECE6] transition-colors">View Profile</button>
-                <button onClick={() => handleMessage(client.userId?._id)} className="px-3 text-xs bg-[#FAF8F4] text-[#7A7168] py-1.5 rounded hover:bg-[#F0ECE6] transition-colors">
-                  <MessageSquare className="w-3 h-3" />
-                </button>
+              <div className="mt-3 flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-700/50">
+                <Button variant="secondary" size="sm" onClick={() => openDetail(client)} className="flex-1">
+                  View Profile
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleMessage(client.userId?._id)} aria-label="Send message">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </Button>
               </div>
-            </motion.div>
+            </Card>
           ))}
         </div>
       )}
 
       {selected && detailData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setSelected(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" onClick={() => setSelected(null)}>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-modal animate-slide-up"
+            onClick={e => e.stopPropagation()}
+          >
             {detailLoading ? (
-              <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin" /></div>
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-warm-500 dark:text-text-dark-muted" />
+              </div>
             ) : (
               <div className="p-6">
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-[#8B7355] flex items-center justify-center text-white text-lg font-medium">
-                      {detailData.client?.userId?.name?.charAt(0)}
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-500 to-gold-500 flex items-center justify-center text-white text-lg font-bold shadow-sm">
+                      {detailData.client?.userId?.name?.charAt(0) || '?'}
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-[#1A1A1A]">{detailData.client?.userId?.name}</h2>
-                      <p className="text-sm text-gray-500">{detailData.client?.userId?.email}</p>
+                      <h2 className="text-h4 text-text-primary dark:text-text-dark-primary">{detailData.client?.userId?.name}</h2>
+                      <p className="text-body-sm text-text-secondary dark:text-text-dark-secondary">{detailData.client?.userId?.email}</p>
                     </div>
                   </div>
-                  <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600">&times;</button>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary transition-colors"
+                    aria-label="Close"
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-6">
-                  <div className="bg-[#FAF8F4] rounded-lg p-3 text-center">
-                    <p className="text-lg sm:text-2xl font-bold text-[#1A1A1A]">{detailData.client?.totalVisits || 0}</p>
-                    <p className="text-xs text-gray-500">Total Visits</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                  <div className="bg-warm-50 dark:bg-surface-dark-tertiary rounded-xl p-4 text-center">
+                    <p className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary">{detailData.client?.totalVisits || 0}</p>
+                    <p className="text-caption text-text-muted dark:text-text-dark-secondary mt-0.5">Total Visits</p>
                   </div>
-                  <div className="bg-[#FAF8F4] rounded-lg p-3 text-center">
-                    <p className="text-lg sm:text-2xl font-bold text-[#1A1A1A]">GH₵{(detailData.client?.totalSpent || 0).toFixed(0)}</p>
-                    <p className="text-xs text-gray-500">Total Spent</p>
+                  <div className="bg-warm-50 dark:bg-surface-dark-tertiary rounded-xl p-4 text-center">
+                    <p className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary">GH₵{(detailData.client?.totalSpent || 0).toFixed(0)}</p>
+                    <p className="text-caption text-text-muted dark:text-text-dark-secondary mt-0.5">Total Spent</p>
                   </div>
-                  <div className="bg-[#FAF8F4] rounded-lg p-3 text-center">
-                    <p className="text-lg sm:text-2xl font-bold text-[#1A1A1A]">{detailData.bookings?.length || 0}</p>
-                    <p className="text-xs text-gray-500">Bookings</p>
+                  <div className="bg-warm-50 dark:bg-surface-dark-tertiary rounded-xl p-4 text-center">
+                    <p className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary">{detailData.bookings?.length || 0}</p>
+                    <p className="text-caption text-text-muted dark:text-text-dark-secondary mt-0.5">Bookings</p>
                   </div>
                 </div>
 
                 <div className="mb-4">
-                  <label className="text-sm font-medium text-[#1A1A1A] block mb-1">Notes</label>
+                  <label className="label block mb-1.5">Notes</label>
                   <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)}
-                    className="w-full border border-[#E8E0D8] rounded-lg px-3 py-2 text-sm min-h-[80px] focus:outline-none focus:ring-1 focus:ring-[#8B7355]" />
+                    className="input-field text-sm min-h-[80px] resize-none" />
                 </div>
                 <div className="mb-4">
-                  <label className="text-sm font-medium text-[#1A1A1A] block mb-1">Tags (comma separated)</label>
+                  <label className="label block mb-1.5">Tags (comma separated)</label>
                   <input value={editTags} onChange={e => setEditTags(e.target.value)}
-                    className="w-full border border-[#E8E0D8] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#8B7355]" />
+                    className="input-field text-sm" />
                 </div>
-                <button onClick={handleSaveNotes} className="w-full bg-[#1A1A1A] text-white py-2 rounded-lg text-sm hover:bg-[#333] transition-colors">Save Notes</button>
+                <Button onClick={handleSaveNotes} className="w-full">
+                  Save Notes
+                </Button>
 
-                <h3 className="font-medium text-[#1A1A1A] mt-6 mb-3">Booking History</h3>
+                <h3 className="text-body-sm font-semibold text-text-primary dark:text-text-dark-primary mt-6 mb-3">Booking History</h3>
                 <div className="space-y-2">
-                  {detailData.bookings?.map((b: any) => (
-                    <div key={b._id} className="flex items-center justify-between p-3 bg-[#FAF8F4] rounded-lg gap-2">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-[#1A1A1A] truncate">{b.serviceId?.name || 'Service'}</p>
-                        <p className="text-xs text-gray-500 truncate">{new Date(b.startTime).toLocaleDateString()} at {new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  {detailData.bookings?.length > 0 ? (
+                    detailData.bookings.map((b: any) => (
+                      <div key={b._id} className="flex items-center justify-between p-3 bg-warm-50 dark:bg-surface-dark-tertiary rounded-xl gap-2">
+                        <div className="min-w-0">
+                          <p className="text-body-sm font-medium text-text-primary dark:text-text-dark-primary truncate">{b.serviceId?.name || 'Service'}</p>
+                          <p className="text-caption text-text-muted dark:text-text-dark-muted truncate">
+                            {new Date(b.startTime).toLocaleDateString()} at{' '}
+                            {new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <span className={`text-caption px-2 py-1 rounded-lg font-medium shrink-0 ${
+                          b.status === 'completed'
+                            ? 'bg-success/10 text-success dark:text-success'
+                            : b.status === 'cancelled'
+                            ? 'bg-error/10 text-error dark:text-error'
+                            : 'bg-warning/10 text-warning dark:text-warning'
+                        }`}>
+                          {b.status}
+                        </span>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded ${b.status === 'completed' ? 'bg-green-100 text-green-700' : b.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                        {b.status}
-                      </span>
-                    </div>
-                  ))}
-                  {(!detailData.bookings || detailData.bookings.length === 0) && (
-                    <p className="text-sm text-gray-400 text-center py-4">No booking history</p>
+                    ))
+                  ) : (
+                    <p className="text-body-sm text-text-muted dark:text-text-dark-muted text-center py-4">No booking history</p>
                   )}
                 </div>
               </div>

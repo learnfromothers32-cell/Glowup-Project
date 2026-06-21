@@ -4,7 +4,7 @@ import ConsumerFooter from "./ConsumerFooter";
 
 export default function ConsumerLayout() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-surface-dark flex flex-col">
+    <div className="min-h-screen bg-warm-50 dark:bg-surface-dark flex flex-col">
       <style>{`
         @media (prefers-reduced-motion: reduce) {
           .consumer-fade-in { opacity: 1 !important; transform: none !important; }

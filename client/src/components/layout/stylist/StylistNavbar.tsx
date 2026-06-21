@@ -120,7 +120,7 @@ export default function StylistNavbar({ onMenuToggle }: StylistNavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/92 dark:bg-surface-dark-secondary/92 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
+    <header className="sticky top-0 z-50 bg-white/92 dark:bg-surface-dark-secondary/92 backdrop-blur-md border-b border-gray-200/60 dark:border-gray-700/50">
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
         {/* Left */}
         <div className="flex items-center gap-4">

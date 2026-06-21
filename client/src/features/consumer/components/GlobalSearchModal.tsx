@@ -168,7 +168,7 @@ export default function GlobalSearchModal({
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-2xl bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-2xl dark:shadow-2xl dark:shadow-black/50 overflow-hidden mx-4 border border-gray-200/80 dark:border-gray-700/80"
+        className="relative w-full max-w-2xl bg-white dark:bg-surface-dark-secondary rounded-2xl shadow-2xl dark:shadow-2xl dark:shadow-black/50 overflow-hidden mx-4 border border-gray-200/80 dark:border-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search header */}

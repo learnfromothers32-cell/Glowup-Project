@@ -43,7 +43,7 @@ export function Modal({ open, onClose, title, children, size = 'md', className }
       <div
         className={cn(
           'relative w-full bg-white rounded-2xl shadow-modal animate-slide-up',
-          'dark:bg-surface-dark-secondary dark:border dark:border-gray-700/50',
+          'dark:bg-surface-dark-secondary dark:border-0',
           sizes[size],
           className,
         )}

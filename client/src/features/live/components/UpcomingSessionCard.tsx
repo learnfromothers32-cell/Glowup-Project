@@ -21,7 +21,7 @@ export function UpcomingSessionCard({ session, onRemind }: Props) {
   });
 
   return (
-    <div className="bg-white dark:bg-[#1a1a2e] rounded-2xl border border-gray-100 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200 p-4">
+    <div className="bg-white dark:bg-[#1a1a2e] rounded-2xl border border-gray-100 dark:border-0 shadow-sm hover:shadow-md transition-all duration-200 p-4">
       <div className="flex items-start gap-3">
         <button
           onClick={(e) => { e.stopPropagation(); navigate(`/app/stylist/${session.host.id}`); }}
