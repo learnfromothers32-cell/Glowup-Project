@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/authUtils";
 import { useGamification } from "../../hooks/useGamification";
 import { updateProfile as updateProfileApi, getMe, uploadAvatar } from "../../api/auth";
+import { Card } from "../../components/ui/Card";
+import { Avatar } from "../../components/ui/Avatar";
+import { Button } from "../../components/ui/Button";
 import {
   ArrowLeft, Mail, Phone, MapPin, Calendar, Heart,
   Trophy, X, Camera, Check, Loader2, ChevronRight,
