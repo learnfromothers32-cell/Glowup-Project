@@ -18,6 +18,7 @@ import { getStylists } from "../../api/stylists";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import StylistCard from "../../features/consumer/components/StylistCard";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { Button } from "../../components/ui/Button";
 
 type SortOption = "recommended" | "rating" | "distance" | "price" | "reviews";
 type ViewMode = "grid" | "list";
@@ -163,7 +164,7 @@ function ListCard({ stylist, index }: { stylist: Stylist; index: number }) {
 
 export default function BrowseStylists() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [allStylists, setAllStylists] = useState<Stylist[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -172,15 +173,14 @@ export default function BrowseStylists() {
   const view = (searchParams.get("view") as ViewMode) || "grid";
 
   const setParam = (key: string, value: string) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (value === "all" && key === "category") {
-        next.delete(key);
-      } else {
-        next.set(key, value);
-      }
-      return next;
-    });
+    const next = new URLSearchParams(searchParams);
+    if (value === "all" && key === "category") {
+      next.delete(key);
+    } else {
+      next.set(key, value);
+    }
+    const qs = next.toString();
+    navigate(qs ? `/app/browse?${qs}` : "/app/browse", { replace: true });
   };
 
   useEffect(() => {
