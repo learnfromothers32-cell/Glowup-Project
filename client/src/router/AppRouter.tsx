@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/authUtils";
 import { AuthProvider } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
@@ -78,7 +78,7 @@ const StylistConsultationForms = lazy(() => import("../pages/stylist/Consultatio
 const StylistQueue = lazy(() => import("../pages/stylist/QueueManagement"));
 const StylistArticles = lazy(() => import("../pages/stylist/Articles"));
 
-const PUBLIC_LIVE_PATHS = ["live/", "live-stylists"];
+const PUBLIC_LIVE_PATHS = ["live/", "live-stylists", "blog/beauty"];
 
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -111,6 +111,11 @@ function RouteSuspense({ children }: { children: React.ReactNode }) {
       {children}
     </Suspense>
   );
+}
+
+function BeautyRedirect() {
+  const { slug } = useParams();
+  return <Navigate to={`/app/blog/beauty${slug ? `/${slug}` : ""}`} replace />;
 }
 
 function AppRoutes() {
@@ -190,6 +195,8 @@ function AppRoutes() {
         <Route path="live-stylists" element={<LiveStylists />} />
         <Route path="live/:stylistId" element={<LiveRoom />} />
         <Route path="search" element={<SearchResultsPage />} />
+        <Route path="blog/beauty" element={<BeautyTipsPage />} />
+        <Route path="blog/beauty/:slug" element={<BeautyArticle />} />
         <Route path=":service" element={<ServicePage />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>
@@ -198,8 +205,8 @@ function AppRoutes() {
 
       <Route path="/about" element={<About />} />
       <Route path="/blog" element={<Blog />} />
-      <Route path="/blog/beauty" element={<BeautyTipsPage />} />
-      <Route path="/blog/beauty/:slug" element={<BeautyArticle />} />
+      <Route path="/blog/beauty" element={<BeautyRedirect />} />
+      <Route path="/blog/beauty/:slug" element={<BeautyRedirect />} />
       <Route path="/careers" element={<Careers />} />
       <Route path="/press-kit" element={<PressKit />} />
       <Route path="/help" element={<HelpCenter />} />
