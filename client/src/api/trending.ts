@@ -40,6 +40,8 @@ export interface CommentData {
   userName: string;
   userAvatar?: string;
   text: string;
+  likes: number;
+  isLiked: boolean;
   createdAt: string;
 }
 
@@ -96,6 +98,15 @@ export const createComment = async (
     userName,
     userAvatar,
   });
+  return data.data;
+};
+
+export const toggleCommentLike = async (
+  commentId: string,
+): Promise<{ likes: number; isLiked: boolean }> => {
+  const { data } = await api.post<{ data: { likes: number; isLiked: boolean } }>(
+    `/comments/${commentId}/like`,
+  );
   return data.data;
 };
 

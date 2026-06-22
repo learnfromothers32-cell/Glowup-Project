@@ -5,6 +5,7 @@ import {
   trackTrendingEvent,
   getComments,
   createComment,
+  toggleCommentLike,
   reportTransformation,
   getUserEngagements,
   toggleEngagement,
@@ -84,6 +85,7 @@ export default function TrendingFeed() {
     const stored = localStorage.getItem("trending_bookmarks");
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
   const currentIndexRef = useRef(0);
   const [floatingHearts, setFloatingHearts] = useState<FloatingHeart[]>([]);
@@ -379,6 +381,7 @@ export default function TrendingFeed() {
       const result = await getComments(postId, 1, 20);
       setCommentsMap((prev) => ({ ...prev, [postId]: result.comments }));
       setCommentsTotal(result.total);
+      setLikedComments(new Set(result.comments.filter((c) => c.isLiked).map((c) => c.id)));
       setItems((prev) =>
         prev.map((item) =>
           item.id === postId
@@ -418,6 +421,66 @@ export default function TrendingFeed() {
       trackTrendingEvent(activePostId, "comment").catch(() => undefined);
     } catch {
       // Comment failed silently
+    }
+  };
+
+  const handleCommentLike = async (commentId: string) => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    const wasLiked = likedComments.has(commentId);
+
+    setLikedComments((prev) => {
+      const next = new Set(prev);
+      if (wasLiked) {
+        next.delete(commentId);
+      } else {
+        next.add(commentId);
+      }
+      return next;
+    });
+
+    setCommentsMap((prev) => {
+      if (!activePostId) return prev;
+      return {
+        ...prev,
+        [activePostId]: (prev[activePostId] || []).map((c) =>
+          c.id === commentId
+            ? {
+                ...c,
+                isLiked: !wasLiked,
+                likes: wasLiked ? Math.max(0, c.likes - 1) : c.likes + 1,
+              }
+            : c,
+        ),
+      };
+    });
+
+    try {
+      await toggleCommentLike(commentId);
+    } catch {
+      setLikedComments((prev) => {
+        const next = new Set(prev);
+        if (wasLiked) {
+          next.add(commentId);
+        } else {
+          next.delete(commentId);
+        }
+        return next;
+      });
+      setCommentsMap((prev) => {
+        if (!activePostId) return prev;
+        return {
+          ...prev,
+          [activePostId]: (prev[activePostId] || []).map((c) =>
+            c.id === commentId
+              ? { ...c, isLiked: wasLiked, likes: wasLiked ? c.likes + 1 : Math.max(0, c.likes - 1) }
+              : c,
+          ),
+        };
+      });
     }
   };
 
@@ -915,8 +978,20 @@ export default function TrendingFeed() {
                           </div>
                           <p className="text-white/80 text-sm mt-0.5 break-words">{comment.text}</p>
                         </div>
-                        <button className="shrink-0 self-start mt-1.5 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-                          <Heart size={14} className="text-white/30 hover:text-white/60" />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleCommentLike(comment.id); }}
+                          className="shrink-0 self-start mt-1.5 flex flex-col items-center gap-0.5 transition-opacity"
+                        >
+                          {likedComments.has(comment.id) || comment.isLiked ? (
+                            <Heart size={14} className="fill-red-500 text-red-500" />
+                          ) : (
+                            <Heart size={14} className="text-white/30 hover:text-red-400 transition-colors" />
+                          )}
+                          {comment.likes > 0 && (
+                            <span className="text-[10px] text-white/40 tabular-nums leading-none">
+                              {comment.likes}
+                            </span>
+                          )}
                         </button>
                       </div>
                     ))}

@@ -7,6 +7,8 @@ export interface ITransformationComment extends Document {
   userName: string;
   userAvatar?: string;
   text: string;
+  likes: number;
+  likedBy: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +21,8 @@ const commentSchema = new Schema<ITransformationComment>(
     userName: { type: String, required: true },
     userAvatar: { type: String },
     text: { type: String, required: true, trim: true, maxlength: 500 },
+    likes: { type: Number, default: 0 },
+    likedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 );
