@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import * as favoritesApi from "../api/favorites";
+import { logger } from "../utils/logger";
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<Stylist[]>([]);
@@ -11,7 +12,8 @@ export function useFavorites() {
       try {
         const data = await favoritesApi.getFavorites();
         setFavorites(data || []);
-      } catch {
+      } catch (err) {
+        logger.error("useFavorites: failed to load favorites", err);
         setFavorites([]);
       } finally {
         setLoading(false);
@@ -24,14 +26,18 @@ export function useFavorites() {
     try {
       await favoritesApi.addFavorite(stylist.id);
       setFavorites(prev => prev.some(s => s.id === stylist.id) ? prev : [...prev, stylist]);
-    } catch {}
+    } catch (err) {
+      logger.error("useFavorites: failed to add favorite", err);
+    }
   }, []);
 
   const removeFavorite = useCallback(async (stylistId: string) => {
     try {
       await favoritesApi.removeFavorite(stylistId);
       setFavorites(prev => prev.filter(s => s.id !== stylistId));
-    } catch {}
+    } catch (err) {
+      logger.error("useFavorites: failed to remove favorite", err);
+    }
   }, []);
 
   const toggleFavorite = useCallback(async (stylist: Stylist) => {

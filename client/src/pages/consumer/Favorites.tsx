@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, MapPin, Star, ArrowLeft } from "lucide-react";
 import { useFavorites } from "../../hooks/useFavorites";
-import { getStylists } from "../../api/stylists";
 import type { Stylist } from "@/domain/stylist/stylist.types";
+import { mapToUIStylist } from "@/domain/stylist/stylist.adapter";
 import { getLocationString } from "@/utils/location";
 import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -30,23 +30,15 @@ function FavoritesSkeleton() {
 
 export default function Favorites() {
   const navigate = useNavigate();
-  const { favorites, removeFavorite } = useFavorites();
-  const [stylists, setStylists] = useState<Stylist[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { favorites, removeFavorite, loading } = useFavorites();
+  const [stylists, setStylists] = useState<Stylist[] | null>(null);
 
-  useEffect(() => {
-    getStylists().then((all) => {
-      const favIds = new Set(favorites.map((s) => s.id));
-      const matched = all.filter((s) => favIds.has(s.id));
-      setStylists(matched);
-      setLoading(false);
-    });
-  }, [favorites]);
+  const displayStylists = stylists ?? favorites.map(mapToUIStylist);
 
   const handleRemove = (stylistId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     removeFavorite(stylistId);
-    setStylists((prev) => prev.filter((s) => s.id !== stylistId));
+    setStylists((prev) => (prev ?? favorites.map(mapToUIStylist)).filter((s) => s.id !== stylistId));
   };
 
   if (loading) {
@@ -78,12 +70,12 @@ export default function Favorites() {
         <div>
           <h1 className="text-2xl font-bold text-text-primary dark:text-text-dark-primary">Favorites</h1>
           <p className="text-sm text-text-secondary dark:text-text-dark-secondary">
-            {stylists.length} saved stylist{stylists.length !== 1 ? "s" : ""}
+            {displayStylists.length} saved stylist{displayStylists.length !== 1 ? "s" : ""}
           </p>
         </div>
       </div>
 
-      {stylists.length === 0 ? (
+      {displayStylists.length === 0 ? (
         <div className="text-center py-16">
           <div className="w-16 h-16 mx-auto bg-gray-50 dark:bg-surface-dark-tertiary rounded-full flex items-center justify-center mb-4">
             <Heart size={24} className="text-text-muted dark:text-text-dark-muted" />
@@ -103,7 +95,7 @@ export default function Favorites() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-          {stylists.map((stylist) => (
+          {displayStylists.map((stylist) => (
             <div
               key={stylist.id}
               className="bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 overflow-hidden shadow-sm hover:shadow-md transition group cursor-pointer"
