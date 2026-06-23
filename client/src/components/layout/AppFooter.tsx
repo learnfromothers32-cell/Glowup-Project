@@ -58,7 +58,7 @@ const CONSUMER_GROUPS: FooterGroup[] = [
       { label: "Vibe Match", href: "/app/vibe-match", badge: "AI" },
       { label: "Trending", href: "/app/trending" },
       { label: "Rewards", href: "/app/rewards" },
-      { label: "Live Sessions", href: "/app/live-stylists" },
+      { label: "Live Sessions", href: "/app/live" },
     ],
   },
   {
