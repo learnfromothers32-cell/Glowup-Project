@@ -195,8 +195,8 @@ function NewsletterForm() {
   return (
     <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
-          <Mail size={13} className="text-amber-500" />
+        <div className="w-7 h-7 rounded-lg bg-brand-500/10 flex items-center justify-center">
+          <Mail size={13} className="text-brand-400" />
         </div>
         <p className="text-sm font-semibold text-neutral-200">Stay in the loop</p>
       </div>
@@ -208,7 +208,7 @@ function NewsletterForm() {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 py-2.5 px-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium"
+          className="flex items-center gap-2 py-2.5 px-3 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-medium"
         >
           <Check size={14} />
           You're subscribed! Check your inbox.
@@ -221,12 +221,12 @@ function NewsletterForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
             required
-            className="flex-1 min-w-0 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/20 focus:ring-2 focus:ring-amber-500/20 transition-colors"
+            className="flex-1 min-w-0 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/20 focus:ring-2 focus:ring-brand-500/20 transition-colors"
           />
           <button
             type="submit"
             disabled={loading}
-            className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.08] text-neutral-300 text-sm font-medium hover:bg-white/[0.12] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 transition-all disabled:opacity-50"
+            className="shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.08] text-neutral-300 text-sm font-medium hover:bg-white/[0.12] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60 transition-all disabled:opacity-50"
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-neutral-500 border-t-white rounded-full animate-spin" />
@@ -259,7 +259,7 @@ function NavGroup({ heading, links }: FooterGroup) {
             >
               {label}
               {badge && (
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-500 uppercase tracking-wider">
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-400 uppercase tracking-wider">
                   {badge}
                 </span>
               )}
@@ -282,7 +282,7 @@ function SocialBtn({ label, href, icon }: SocialLink) {
       className="w-9 h-9 flex items-center justify-center rounded-xl
         text-neutral-500 border border-white/[0.06] bg-white/[0.02]
         hover:text-white hover:border-white/20 hover:bg-white/[0.06]
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60
         transition-all duration-200"
     >
       {icon}
@@ -318,16 +318,16 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
             <div className="max-w-md">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Sparkles size={13} className="text-amber-500" />
+                <div className="w-6 h-6 rounded-lg bg-brand-500/10 flex items-center justify-center">
+                  <Sparkles size={13} className="text-brand-400" />
                 </div>
-                <span className="text-[11px] uppercase tracking-[0.14em] font-bold text-amber-500">
+                <span className="text-[11px] uppercase tracking-[0.14em] font-bold text-brand-400">
                   Ready to glow?
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight tracking-tight">
                 Book your next look in{" "}
-                <span className="text-amber-400">seconds.</span>
+                <span className="text-brand-400">seconds.</span>
               </h2>
               <p className="text-sm text-neutral-500 mt-2 leading-relaxed">
                 Join thousands of people discovering top stylists and transforming their style.
@@ -337,7 +337,7 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
             <div className="flex items-center gap-3 shrink-0">
               <Link
                 to={isConsumer ? "/app/vibe-match" : "/signup"}
-                className="inline-flex items-center gap-2.5 bg-white text-gray-900 text-sm font-semibold px-6 py-3 rounded-xl hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 transition-colors duration-200 shadow-lg shadow-white/10"
+                className="inline-flex items-center gap-2.5 bg-white text-gray-900 text-sm font-semibold px-6 py-3 rounded-xl hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60 transition-colors duration-200 shadow-lg shadow-white/10"
               >
                 {isConsumer ? "Find Your Vibe" : "Get Started"}
                 <ArrowRight size={14} />
@@ -417,7 +417,7 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 inline-flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:border-white/15 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 transition-all duration-200"
+                    className="flex-1 inline-flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:border-white/15 hover:text-white hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60 transition-all duration-200"
                   >
                     <span className="shrink-0 text-neutral-300">{icon}</span>
                     <div className="text-left min-w-0">
@@ -472,7 +472,7 @@ export default function AppFooter({ variant = "landing" }: AppFooterProps) {
             {/* Right: made with love */}
             <div className="flex items-center gap-1.5 text-xs text-neutral-600">
               <span>Made with</span>
-              <Heart size={10} fill="#ef4444" className="text-red-500" />
+              <Heart size={10} fill="#f43f5e" className="text-brand-500" />
               <span>in Accra</span>
             </div>
           </div>
