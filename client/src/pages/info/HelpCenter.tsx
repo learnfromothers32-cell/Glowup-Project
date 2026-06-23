@@ -98,7 +98,7 @@ export default function HelpCenter() {
         transition={pageTransition}
         className="min-h-screen bg-neutral-950"
       >
-      <LandingNavbar />
+      <ConsumerNavbar />
       <main className="pt-28 pb-24">
         {/* Hero */}
         <div className="relative overflow-hidden">
