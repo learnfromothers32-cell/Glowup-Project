@@ -21,10 +21,10 @@ import { useAuth } from "../../context/authUtils";
 import AuthModal from "../../features/consumer/components/AuthModal";
 import { io } from "socket.io-client";
 import { getSocketUrl } from "../../services/socket";
-import { Clock, ChevronRight, Sparkles, MapPin, ArrowRight } from "lucide-react";
+import { Clock, Sparkles, MapPin, ArrowRight, Zap, Hourglass, MoveRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
+
 import { Skeleton } from "../../components/ui/Skeleton";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../components/ui/Toast";
@@ -250,69 +250,94 @@ export default function Home() {
       <LiveStrip liveStylists={liveStylists} />
 
       {nextBooking && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 dark:from-brand-600 dark:to-brand-900 shadow-lg shadow-brand-200/50 dark:shadow-brand-900/30">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
-            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5 blur-2xl" />
-            <div className="relative p-5">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-500 via-brand-600 to-rose-600 dark:from-brand-600 dark:via-brand-700 dark:to-rose-800 shadow-xl shadow-brand-200/60 dark:shadow-brand-900/40">
+            {/* Decorative blobs */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/8 blur-3xl" />
+            <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-white/5 blur-2xl" />
+            <div className="absolute top-1/2 right-0 w-24 h-24 rounded-full bg-rose-400/10 blur-3xl" />
+
+            <div className="relative p-5 sm:p-6">
               <div className="flex items-start gap-4">
-                <div className="shrink-0 w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/20">
+                {/* Avatar with ring */}
+                <div className="shrink-0 w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/25 shadow-lg">
                   {nextBooking.stylistImage ? (
                     <img src={nextBooking.stylistImage} alt="" className="w-full h-full rounded-2xl object-cover" />
                   ) : (
-                    <span className="text-xl font-black text-white">{nextBooking.stylistName?.[0] || 'Q'}</span>
+                    <span className="text-2xl font-black text-white drop-shadow-sm">{nextBooking.stylistName?.[0] || 'Q'}</span>
                   )}
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-white/70">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
+                      </span>
                       Live Queue
                     </span>
-                    <Badge variant="gray" className="!bg-white/20 !text-white !border-white/20 !backdrop-blur-sm text-[10px] font-bold">
+                    <span className="inline-flex items-center justify-center min-w-[28px] h-[18px] px-1.5 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-black text-white tabular-nums border border-white/15">
                       #{nextBooking.queuePosition}
-                    </Badge>
+                    </span>
                   </div>
-                  <h3 className="text-lg font-bold text-white mt-1 leading-tight">
+
+                  <h3 className="text-xl font-bold text-white mt-1 leading-tight drop-shadow-sm">
                     {nextBooking.stylistName || 'Your appointment'}
                   </h3>
                   {nextBooking.serviceName && (
-                    <p className="text-sm text-white/70 mt-0.5">{nextBooking.serviceName}</p>
+                    <p className="text-sm text-white/70 mt-0.5 font-medium">{nextBooking.serviceName}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <Clock size={12} className="text-white/60" />
-                      <span className="text-xs font-semibold text-white/80">
-                        ~{nextBooking.estimatedWaitMinutes} min wait
+
+                  {/* Wait time + time */}
+                  <div className="flex items-center gap-3 mt-3">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 backdrop-blur-sm border border-white/10">
+                      <Hourglass size={11} className="text-white/60" />
+                      <span className="text-[11px] font-semibold text-white/90">
+                        ~{nextBooking.estimatedWaitMinutes} min
                       </span>
                     </div>
                     {nextBooking.startTime && (
-                      <div className="flex items-center gap-1.5">
-                        <MapPin size={12} className="text-white/60" />
-                        <span className="text-xs text-white/60">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 backdrop-blur-sm border border-white/10">
+                        <Clock size={11} className="text-white/60" />
+                        <span className="text-[11px] font-semibold text-white/90">
                           {new Date(nextBooking.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                         </span>
                       </div>
                     )}
                   </div>
-                  <div className="mt-3 flex items-center gap-2.5">
-                    <div className="flex-1 h-2 rounded-full bg-white/15 overflow-hidden">
+
+                  {/* Progress bar */}
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="flex-1 h-2.5 rounded-full bg-white/15 overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.max(8, 100 - (nextBooking.queuePosition - 1) * 15)}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        className="h-full rounded-full bg-gradient-to-r from-white/90 to-white/60"
+                        transition={{ duration: 1.2, ease: "easeOut" }}
+                        className="h-full rounded-full bg-gradient-to-r from-white/90 via-white/70 to-white/50"
                       />
                     </div>
-                    <span className="text-[11px] font-bold text-white/80 tabular-nums shrink-0">
+                    <span className="text-xs font-bold text-white/90 tabular-nums shrink-0 flex items-center gap-1">
+                      <Zap size={11} className="text-amber-300" />
                       {nextBooking.queuePosition === 1 ? 'Next up' : `${nextBooking.queuePosition - 1} ahead`}
                     </span>
                   </div>
                 </div>
               </div>
-              <Link to="/app/queue" className="mt-3 flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all group border border-white/10">
-                <span className="text-xs font-semibold text-white/80">View full queue details</span>
-                <ArrowRight size={14} className="text-white/60 group-hover:translate-x-0.5 transition-transform" />
+
+              {/* View queue link */}
+              <Link
+                to="/app/queue"
+                className="mt-4 flex items-center justify-between w-full px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/18 backdrop-blur-sm transition-all group border border-white/12"
+              >
+                <span className="text-xs font-semibold text-white/80 flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-lg bg-white/10 flex items-center justify-center">
+                    <MoveRight size={10} className="text-white/60" />
+                  </span>
+                  View full queue details
+                </span>
+                <ArrowRight size={14} className="text-white/50 group-hover:translate-x-1 group-hover:text-white/80 transition-all" />
               </Link>
             </div>
           </div>
