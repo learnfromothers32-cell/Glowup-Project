@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { logger } from "../../../utils/logger";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Radio,
-  CalendarPlus,
   Clock,
   History,
   Bell,
   ChevronRight,
-  ChevronUp,
-  ChevronDown,
   Users,
   X,
 } from "lucide-react";
@@ -19,7 +15,6 @@ import { LiveSessionCard } from "./LiveSessionCard";
 import { UpcomingSessionCard } from "./UpcomingSessionCard";
 import { SessionReplayCard } from "./SessionReplayCard";
 import { LiveNotifications } from "./LiveNotifications";
-import { ScheduleSessionForm } from "./ScheduleSessionForm";
 import { LivePlayerScreen } from "./LivePlayerScreen";
 import type { LiveSession } from "../types/live.types";
 
@@ -39,7 +34,6 @@ type Tab = "live" | "upcoming" | "recordings";
 export function LiveHomeScreen() {
   const [category, setCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<Tab>("live");
-  const [showSchedule, setShowSchedule] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -74,9 +68,6 @@ export function LiveHomeScreen() {
         s.id === id ? { ...s, reminder: !s.reminder } : s
       )
     );
-  };
-  const handleSchedule = (data: any) => {
-    logger.log("Schedule session:", data);
   };
 
   useEffect(() => {
@@ -197,13 +188,6 @@ export function LiveHomeScreen() {
                     {notifications.filter((n) => !n.read).length}
                   </span>
                 )}
-              </button>
-              <button
-                onClick={() => setShowSchedule(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white hover:bg-brand-600 rounded-xl text-sm font-semibold transition-colors"
-              >
-                <CalendarPlus size={16} />
-                Schedule
               </button>
             </div>
           </div>
@@ -354,13 +338,6 @@ export function LiveHomeScreen() {
           )}
         </div>
       </div>
-
-      {showSchedule && (
-        <ScheduleSessionForm
-          onClose={() => setShowSchedule(false)}
-          onSubmit={handleSchedule}
-        />
-      )}
 
       {isPlayerOpen && <LivePlayerScreen onClose={closePlayer} />}
     </>

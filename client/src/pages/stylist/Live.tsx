@@ -4,8 +4,10 @@ import { logger } from "../../utils/logger";
 import { useLiveStream } from "../../hooks/useLiveStream";
 import LiveCreatorPanel from "../../features/live/components/LiveCreatorPanel";
 import ModerationPanel from "../../features/live/components/ModerationPanel";
+import { ScheduleSessionForm } from "../../features/live/components/ScheduleSessionForm";
 import { useLiveStore } from "../../features/live/store/liveStore";
-import { Sparkles } from "lucide-react";
+import { scheduleLive } from "../../api/live";
+import { CalendarPlus, Sparkles } from "lucide-react";
 
 export default function StylistLive() {
   const {
@@ -20,6 +22,7 @@ export default function StylistLive() {
   const [duration, setDuration] = useState(0);
   const [cameraDenied, setCameraDenied] = useState(false);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [showSchedule, setShowSchedule] = useState(false);
   const [showModeration, setShowModeration] = useState(false);
   const [recentGift, setRecentGift] = useState<typeof giftNotifications[0] | null>(null);
   const [webrtcConnected, setWebrtcConnected] = useState(false);
@@ -201,6 +204,15 @@ export default function StylistLive() {
     await endLive();
   };
 
+  const handleScheduleSubmit = async (data: { title: string; description: string; category: string; scheduledAt: string; durationMinutes: number }) => {
+    try {
+      await scheduleLive(data);
+      setShowSchedule(false);
+    } catch (err) {
+      logger.error("[Schedule] Failed:", err);
+    }
+  };
+
   const toggleMic = () => {
     if (streamRef.current) {
       streamRef.current.getAudioTracks().forEach(t => (t.enabled = isMuted));
@@ -244,6 +256,18 @@ export default function StylistLive() {
 
   return (
     <div className="flex-1 bg-black flex flex-col overflow-hidden">
+      {!isLive && (
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-black/80 border-b border-gray-800">
+          <h2 className="text-white font-bold text-lg">Live Studio</h2>
+          <button
+            onClick={() => setShowSchedule(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-white hover:bg-brand-600 rounded-xl text-sm font-semibold transition-colors"
+          >
+            <CalendarPlus size={16} />
+            Schedule
+          </button>
+        </div>
+      )}
       <div className="flex-1 min-h-0 relative">
         <LiveCreatorPanel
           isLive={isLive} loading={loading} viewerCount={viewerCount}
@@ -286,6 +310,13 @@ export default function StylistLive() {
         users={moderationUsers}
         onMuteUser={handleModerationMute} onBlockUser={handleModerationBlock}
       />
+
+      {showSchedule && (
+        <ScheduleSessionForm
+          onClose={() => setShowSchedule(false)}
+          onSubmit={handleScheduleSubmit}
+        />
+      )}
     </div>
   );
 }

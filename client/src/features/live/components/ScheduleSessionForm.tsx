@@ -18,7 +18,7 @@ interface Props {
 export function ScheduleSessionForm({ onClose, onSubmit }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<LiveCategory>("wellness");
+  const [category, setCategory] = useState<LiveCategory>("hairstyling");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState(30);
@@ -68,7 +68,7 @@ export function ScheduleSessionForm({ onClose, onSubmit }: Props) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Morning Mobility & Stretch"
+              placeholder="e.g., Braid Tutorial & Tips"
               maxLength={100}
               required
               className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-surface-dark-tertiary rounded-2xl text-sm text-text-primary dark:text-text-dark-primary placeholder-gray-400 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600"
