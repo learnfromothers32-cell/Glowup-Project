@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 import { fadeSlideUp, pageTransition } from "../../utils/animations";
 import { Link } from "react-router-dom";
 import { Sparkles, ArrowRight, MapPin, Briefcase, Clock, Heart, Zap, Globe, Users } from "lucide-react";
-import LandingNavbar from "../../components/layout/LandingNavbar";
-import AppFooter from "../../components/layout/AppFooter";
+import ConsumerNavbar from "../../components/layout/consumer/ConsumerNavbar";
+import ConsumerFooter from "../../components/layout/consumer/ConsumerFooter";
 
 const VALUES = [
   { icon: Heart, title: "Put Users First", desc: "Every decision starts with what's best for our community of stylists and clients." },
@@ -43,7 +43,7 @@ export default function Careers() {
         transition={pageTransition}
         className="min-h-screen bg-neutral-950"
       >
-      <LandingNavbar />
+      <ConsumerNavbar />
       <main className="pt-28 pb-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero */}
@@ -132,7 +132,7 @@ export default function Careers() {
           </FadeIn>
         </div>
       </main>
-      <AppFooter variant="landing" />
+      <ConsumerFooter />
     </motion.div>
   );
 }

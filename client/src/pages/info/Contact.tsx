@@ -2,8 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { fadeSlideUp, pageTransition } from "../../utils/animations";
 import { Sparkles, Send, Check, Mail, Phone, MapPin, Clock } from "lucide-react";
-import LandingNavbar from "../../components/layout/LandingNavbar";
-import AppFooter from "../../components/layout/AppFooter";
+import ConsumerNavbar from "../../components/layout/consumer/ConsumerNavbar";
+import ConsumerFooter from "../../components/layout/consumer/ConsumerFooter";
 
 const CONTACT_INFO = [
   { icon: Mail, label: "Email", value: "asantekelvin229@gmail.com", href: "mailto:asantekelvin229@gmail.com", desc: "We reply within 24 hours" },
@@ -40,7 +40,7 @@ export default function Contact() {
         transition={pageTransition}
         className="min-h-screen bg-neutral-950"
       >
-      <LandingNavbar />
+      <ConsumerNavbar />
       <main className="pt-28 pb-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
@@ -148,7 +148,7 @@ export default function Contact() {
           </div>
         </div>
       </main>
-      <AppFooter variant="landing" />
+      <ConsumerFooter />
     </motion.div>
   );
 }

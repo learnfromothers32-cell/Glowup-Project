@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 import { fadeSlideUp, pageTransition } from "../../utils/animations";
 import { Link } from "react-router-dom";
 import { Sparkles, ArrowRight, Users, Calendar, MapPin, Award, Quote } from "lucide-react";
-import LandingNavbar from "../../components/layout/LandingNavbar";
-import AppFooter from "../../components/layout/AppFooter";
+import ConsumerNavbar from "../../components/layout/consumer/ConsumerNavbar";
+import ConsumerFooter from "../../components/layout/consumer/ConsumerFooter";
 
 const STATS = [
   { value: "10K+", label: "Active Users", icon: Users },
@@ -52,7 +52,7 @@ export default function About() {
         transition={pageTransition}
         className="min-h-screen bg-neutral-950"
       >
-      <LandingNavbar />
+      <ConsumerNavbar />
 
       <main className="pt-28 pb-24">
         {/* Hero */}
@@ -151,7 +151,7 @@ export default function About() {
         </section>
       </main>
 
-      <AppFooter variant="landing" />
+      <ConsumerFooter />
     </motion.div>
   );
 }

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { fadeSlideUp, pageTransition } from "../../utils/animations";
 import { Cookie } from "lucide-react";
-import LandingNavbar from "../../components/layout/LandingNavbar";
-import AppFooter from "../../components/layout/AppFooter";
+import ConsumerNavbar from "../../components/layout/consumer/ConsumerNavbar";
+import ConsumerFooter from "../../components/layout/consumer/ConsumerFooter";
 
 const SECTIONS = [
   { id: "what", title: "1. What Are Cookies" },
@@ -61,7 +61,7 @@ export default function CookiePolicy() {
         transition={pageTransition}
         className="min-h-screen bg-neutral-950"
       >
-      <LandingNavbar />
+      <ConsumerNavbar />
       <main className="pt-28 pb-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
@@ -109,7 +109,7 @@ export default function CookiePolicy() {
           </div>
         </div>
       </main>
-      <AppFooter variant="landing" />
+      <ConsumerFooter />
     </motion.div>
   );
 }

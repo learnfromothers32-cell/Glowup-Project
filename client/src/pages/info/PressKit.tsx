@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { fadeSlideUp, pageTransition } from "../../utils/animations";
 import { Sparkles, Download, Mail, Image, FileText, Palette } from "lucide-react";
-import LandingNavbar from "../../components/layout/LandingNavbar";
-import AppFooter from "../../components/layout/AppFooter";
+import ConsumerNavbar from "../../components/layout/consumer/ConsumerNavbar";
+import ConsumerFooter from "../../components/layout/consumer/ConsumerFooter";
 
 const BRAND_COLORS = [
   { name: "Amber", hex: "#F59E0B" },
@@ -45,7 +45,7 @@ export default function PressKit() {
         transition={pageTransition}
         className="min-h-screen bg-neutral-950"
       >
-      <LandingNavbar />
+      <ConsumerNavbar />
       <main className="pt-28 pb-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
@@ -137,7 +137,7 @@ export default function PressKit() {
           </FadeIn>
         </div>
       </main>
-      <AppFooter variant="landing" />
+      <ConsumerFooter />
     </motion.div>
   );
 }
