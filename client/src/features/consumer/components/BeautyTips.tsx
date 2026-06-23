@@ -178,8 +178,8 @@ export default function BeautyTips() {
     <section className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center">
-            <BookOpen size={15} className="text-pink-600" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
+            <BookOpen size={15} className="text-brand-500" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-gray-900 tracking-tight">
@@ -193,7 +193,7 @@ export default function BeautyTips() {
 
         <Link
           to="/blog/beauty"
-          className="flex items-center gap-1 text-xs font-medium text-pink-500 hover:text-pink-600 transition-colors"
+          className="flex items-center gap-1 text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors"
         >
           View all
           <ChevronRight size={12} />
@@ -214,7 +214,7 @@ export default function BeautyTips() {
               onClick={() => setActiveCategory(cat)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 ${
                 isActive
-                  ? "bg-gray-900 text-white shadow-sm dark:bg-indigo-500"
+                  ? "bg-gray-900 text-white shadow-sm dark:bg-brand-600"
                   : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
               }`}
             >
@@ -240,7 +240,7 @@ export default function BeautyTips() {
           <p className="text-sm text-gray-400">No tips in this category yet.</p>
           <button
             onClick={() => setActiveCategory("All")}
-            className="mt-2 text-xs font-medium text-pink-500 hover:text-pink-600"
+            className="mt-2 text-xs font-medium text-brand-500 hover:text-brand-600"
           >
             View all tips
           </button>
@@ -345,7 +345,7 @@ export default function BeautyTips() {
                         }}
                         className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-sm transition-all ${
                           isBookmarked
-                            ? "bg-pink-500/90 text-white"
+                            ? "bg-brand-500/90 text-white"
                             : "bg-black/30 text-white/80 hover:bg-black/50"
                         }`}
                       >
@@ -386,21 +386,21 @@ export default function BeautyTips() {
       )}
 
       {bookmarks.size > 0 && (
-        <div className="flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-xl px-4 py-3">
+        <div className="flex items-center justify-between bg-gradient-to-r from-brand-50 to-brand-100 border border-brand-100 rounded-xl px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <Flame size={16} className="text-amber-500" />
+            <Flame size={16} className="text-brand-500" />
             <div>
-              <p className="text-xs font-semibold text-amber-800">
+              <p className="text-xs font-semibold text-brand-700">
                 {bookmarks.size} tip{bookmarks.size > 1 ? "s" : ""} saved
               </p>
-              <p className="text-[11px] text-amber-600/70">
+              <p className="text-[11px] text-brand-500/70">
                 Tap the bookmark to save or remove
               </p>
             </div>
           </div>
           <Link
             to={`/blog/beauty?bookmarked=true`}
-            className="text-xs font-semibold text-amber-700 hover:text-amber-800 transition-colors"
+            className="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors"
           >
             View saved
           </Link>

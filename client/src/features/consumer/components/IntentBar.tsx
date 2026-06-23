@@ -113,7 +113,7 @@ export default function IntentBar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search stylists, services..."
-            className="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm text-gray-900 placeholder:text-gray-400 bg-gray-50 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all dark:bg-gray-800/60 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:bg-gray-800 dark:focus:ring-indigo-500/30 dark:focus:border-indigo-400"
+            className="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm text-gray-900 placeholder:text-gray-400 bg-gray-50 rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all dark:bg-gray-800/60 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:bg-gray-800 dark:focus:ring-brand-500/30 dark:focus:border-brand-400"
           />
         </form>
 
@@ -127,8 +127,8 @@ export default function IntentBar({
     whitespace-nowrap transition-all duration-300 shrink-0 select-none overflow-hidden
     ${
       sparked
-        ? "bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md"
-        : "bg-gradient-to-r from-violet-50 to-pink-50 text-violet-700 border border-violet-100 hover:from-violet-100 hover:to-pink-100 hover:border-violet-200 dark:from-violet-500/20 dark:to-pink-500/20 dark:text-violet-300 dark:border-violet-800 dark:hover:from-violet-500/30 dark:hover:to-pink-500/30 dark:hover:border-violet-700"
+        ? "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-md"
+        : "bg-gradient-to-r from-brand-50 to-brand-100 text-brand-700 border border-brand-100 hover:from-brand-100 hover:to-brand-200 hover:border-brand-200 dark:from-brand-500/20 dark:to-brand-600/20 dark:text-brand-300 dark:border-brand-800 dark:hover:from-brand-500/30 dark:hover:to-brand-600/30 dark:hover:border-brand-700"
     }
   `}
         >
@@ -144,7 +144,7 @@ export default function IntentBar({
             {sparked ? "" : "AI"}
           </span>
           {!sparked && (
-            <span className="relative z-10 text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-100 text-violet-500 leading-none dark:bg-violet-900/60 dark:text-violet-300">
+            <span className="relative z-10 text-[9px] font-bold px-1.5 py-0.5 rounded bg-brand-100 text-brand-500 leading-none dark:bg-brand-900/60 dark:text-brand-300">
               AI Vibe Match
             </span>
           )}
@@ -219,7 +219,7 @@ export default function IntentBar({
                   whitespace-nowrap transition-all duration-200 shrink-0 select-none
                   ${
                     isActive
-                      ? "bg-gray-900 text-white shadow-sm dark:bg-indigo-600 dark:text-white"
+                      ? "bg-gray-900 text-white shadow-sm dark:bg-brand-600 dark:text-white"
                       : "bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-100 dark:hover:border-gray-600"
                   }
                 `}
