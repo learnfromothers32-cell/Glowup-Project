@@ -7,11 +7,11 @@ import LandingNavbar from "../../components/layout/LandingNavbar";
 import AppFooter from "../../components/layout/AppFooter";
 
 const TOPICS = [
-  { icon: Book, label: "Getting Started", desc: "Set up your profile, make your first booking", color: "from-blue-500/20 to-blue-600/10", textColor: "text-blue-400" },
-  { icon: MessageCircle, label: "Bookings & Payments", desc: "Pricing, refunds, cancellations & billing", color: "from-green-500/20 to-green-600/10", textColor: "text-green-400" },
-  { icon: Shield, label: "Account & Security", desc: "Password, privacy, two-factor auth", color: "from-purple-500/20 to-purple-600/10", textColor: "text-purple-400" },
-  { icon: CreditCard, label: "Stylist Services", desc: "For beauty professionals on GlowUp", color: "from-amber-500/20 to-amber-600/10", textColor: "text-amber-400" },
-  { icon: Smartphone, label: "Troubleshooting", desc: "App crashes, login issues & errors", color: "from-red-500/20 to-red-600/10", textColor: "text-red-400" },
+  { icon: Book, label: "Getting Started", desc: "Set up your profile, make your first booking", gradient: "from-brand-500/10 to-brand-600/5", iconBg: "bg-brand-500/10", iconColor: "text-brand-400" },
+  { icon: MessageCircle, label: "Bookings & Payments", desc: "Pricing, refunds, cancellations & billing", gradient: "from-brand-400/10 to-brand-500/5", iconBg: "bg-brand-400/10", iconColor: "text-brand-400" },
+  { icon: Shield, label: "Account & Security", desc: "Password, privacy, two-factor auth", gradient: "from-rose-500/10 to-rose-600/5", iconBg: "bg-rose-500/10", iconColor: "text-rose-400" },
+  { icon: CreditCard, label: "Stylist Services", desc: "For beauty professionals on GlowUp", gradient: "from-brand-600/10 to-brand-700/5", iconBg: "bg-brand-600/10", iconColor: "text-brand-400" },
+  { icon: Smartphone, label: "Troubleshooting", desc: "App crashes, login issues & errors", gradient: "from-brand-300/10 to-brand-400/5", iconBg: "bg-brand-300/10", iconColor: "text-brand-400" },
 ];
 
 const ARTICLES = [
@@ -65,7 +65,7 @@ export default function HelpCenter() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search for help, e.g. 'how to book'..."
-                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-2xl py-4 pl-11 pr-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-amber-500/30 focus:ring-1 focus:ring-amber-500/10 transition-all"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-2xl py-4 pl-11 pr-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-brand-500/40 focus:ring-2 focus:ring-brand-500/15 transition-all"
                 />
               </div>
             </div>
@@ -75,15 +75,15 @@ export default function HelpCenter() {
           <FadeIn delay={0.1}>
             <h2 className="text-sm font-semibold text-white mb-5">Browse by topic</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
-              {TOPICS.map(({ icon: Icon, label, desc, color, textColor }) => (
+              {TOPICS.map(({ icon: Icon, label, desc, gradient, iconBg, iconColor }) => (
                 <button
                   key={label}
-                  className="group relative overflow-hidden p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-white/10 transition-all text-left"
+                  className="group relative overflow-hidden p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-brand-500/20 transition-all text-left"
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                   <div className="relative">
-                    <div className={`w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-3 group-hover:bg-white/[0.08] transition-colors`}>
-                      <Icon size={16} className={textColor} />
+                    <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon size={16} className={iconColor} />
                     </div>
                     <p className="text-sm font-semibold text-white mb-0.5">{label}</p>
                     <p className="text-xs text-neutral-500">{desc}</p>
@@ -100,15 +100,17 @@ export default function HelpCenter() {
               {ARTICLES.map(({ title, reads, icon: Icon }) => (
                 <button
                   key={title}
-                  className="w-full flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/10 transition-all group"
+                  className="w-full flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:bg-brand-500/[0.03] hover:border-brand-500/20 transition-all group"
                 >
                   <div className="flex items-center gap-3">
-                    <Icon size={14} className="text-amber-400" />
+                    <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center group-hover:bg-brand-500/20 transition-colors">
+                      <Icon size={14} className="text-brand-400" />
+                    </div>
                     <span className="text-sm text-neutral-300 group-hover:text-white transition-colors">{title}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-neutral-600">{reads} reads</span>
-                    <ChevronRight size={14} className="text-neutral-600 group-hover:text-amber-400 transition-colors" />
+                    <ChevronRight size={14} className="text-neutral-600 group-hover:text-brand-400 transition-colors" />
                   </div>
                 </button>
               ))}
@@ -117,10 +119,16 @@ export default function HelpCenter() {
 
           {/* CTA */}
           <FadeIn>
-            <div className="p-8 sm:p-10 rounded-2xl bg-gradient-to-br from-amber-500/5 via-neutral-900 to-neutral-950 border border-amber-500/10 text-center">
+            <div className="p-8 sm:p-10 rounded-2xl bg-gradient-to-br from-brand-500/10 via-neutral-900 to-neutral-950 border border-brand-500/15 text-center">
+              <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mx-auto mb-4">
+                <MessageCircle size={20} className="text-brand-400" />
+              </div>
               <p className="text-white font-semibold mb-1">Still need help?</p>
               <p className="text-sm text-neutral-500 mb-5">Our support team typically responds within 2 hours.</p>
-              <Link to="/contact" className="inline-flex items-center gap-2 bg-white text-neutral-900 text-sm font-semibold px-6 py-3 rounded-xl hover:bg-neutral-100 transition-all shadow-lg shadow-white/10">
+              <Link
+                to="/contact"
+                className="inline-flex items-center gap-2 bg-brand-500 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-brand-600 active:bg-brand-700 transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30"
+              >
                 Contact Support <ArrowRight size={14} />
               </Link>
             </div>
