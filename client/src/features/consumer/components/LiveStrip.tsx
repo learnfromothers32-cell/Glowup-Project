@@ -138,7 +138,7 @@ export default function LiveStrip({ liveStylists }: LiveStripProps) {
         </div>
         {!isEmpty && (
           <button
-            onClick={() => navigate("/app/live-stylists")}
+            onClick={() => navigate("/app/live")}
             className="text-[10px] sm:text-xs font-medium text-gray-400 hover:text-gray-700 transition-colors flex items-center gap-0.5 sm:gap-1 flex-shrink-0"
           >
             <span className="hidden sm:inline">See all</span>

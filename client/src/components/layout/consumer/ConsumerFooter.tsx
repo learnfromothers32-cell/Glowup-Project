@@ -54,7 +54,7 @@ const DISCOVER_LINKS = [
   { label: "Vibe Match", to: "/app/vibe-match", badge: "AI" },
   { label: "Trending", to: "/app/trending" },
   { label: "Rewards", to: "/app/rewards" },
-  { label: "Live Sessions", to: "/app/live-stylists" },
+  { label: "Live Sessions", to: "/app/live" },
   { label: "Queue", to: "/app/queue" },
 ];
 
