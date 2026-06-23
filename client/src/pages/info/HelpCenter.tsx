@@ -1,42 +1,94 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { fadeSlideUp, pageTransition } from "../../utils/animations";
 import { Link } from "react-router-dom";
-import { Sparkles, Search, Book, MessageCircle, Shield, CreditCard, Smartphone, ChevronRight, ArrowRight } from "lucide-react";
+import {
+  Sparkles, Search, Book, MessageCircle, Shield, CreditCard,
+  ChevronRight, ArrowRight, HelpCircle, ChevronDown, FileText,
+  LifeBuoy, Mail, Bot,
+} from "lucide-react";
 import LandingNavbar from "../../components/layout/LandingNavbar";
 import AppFooter from "../../components/layout/AppFooter";
 
 const TOPICS = [
-  { icon: Book, label: "Getting Started", desc: "Set up your profile, make your first booking", gradient: "from-brand-500/10 to-brand-600/5", iconBg: "bg-brand-500/10", iconColor: "text-brand-400" },
-  { icon: MessageCircle, label: "Bookings & Payments", desc: "Pricing, refunds, cancellations & billing", gradient: "from-brand-400/10 to-brand-500/5", iconBg: "bg-brand-400/10", iconColor: "text-brand-400" },
-  { icon: Shield, label: "Account & Security", desc: "Password, privacy, two-factor auth", gradient: "from-rose-500/10 to-rose-600/5", iconBg: "bg-rose-500/10", iconColor: "text-rose-400" },
-  { icon: CreditCard, label: "Stylist Services", desc: "For beauty professionals on GlowUp", gradient: "from-brand-600/10 to-brand-700/5", iconBg: "bg-brand-600/10", iconColor: "text-brand-400" },
-  { icon: Smartphone, label: "Troubleshooting", desc: "App crashes, login issues & errors", gradient: "from-brand-300/10 to-brand-400/5", iconBg: "bg-brand-300/10", iconColor: "text-brand-400" },
+  { icon: Book, label: "Getting Started", desc: "Profile setup, first booking, and navigating the app", gradient: "from-brand-500 to-rose-500" },
+  { icon: MessageCircle, label: "Bookings & Payments", desc: "Pricing, refunds, cancellations, and billing", gradient: "from-brand-400 to-rose-400" },
+  { icon: Shield, label: "Account & Security", desc: "Password, privacy, and two-factor authentication", gradient: "from-rose-500 to-pink-500" },
+  { icon: CreditCard, label: "Stylist Services", desc: "Tools and resources for beauty professionals", gradient: "from-brand-600 to-rose-600" },
+  { icon: Smartphone, label: "Troubleshooting", desc: "App crashes, login issues, and error fixes", gradient: "from-brand-300 to-rose-300" },
+  { icon: Bot, label: "AI & Vibe Match", desc: "How our AI matching and recommendations work", gradient: "from-brand-500 to-pink-400" },
 ];
 
 const ARTICLES = [
-  { title: "How to book your first appointment", reads: "12k", icon: Book },
-  { title: "Understanding our refund policy", reads: "8.5k", icon: Shield },
-  { title: "How Vibe Match AI works", reads: "6.2k", icon: Sparkles },
-  { title: "Setting up your stylist profile", reads: "5.1k", icon: CreditCard },
-  { title: "Live session guidelines for viewers", reads: "4.8k", icon: Smartphone },
+  { title: "How to book your first appointment", reads: "12k", tag: "Guide" },
+  { title: "Understanding our refund policy", reads: "8.5k", tag: "Policy" },
+  { title: "How Vibe Match AI works", reads: "6.2k", tag: "AI" },
+  { title: "Setting up your stylist profile", reads: "5.1k", tag: "Stylist" },
+  { title: "Live session guidelines for viewers", reads: "4.8k", tag: "Live" },
+  { title: "Managing notifications & preferences", reads: "3.9k", tag: "Settings" },
+];
+
+const FAQS = [
+  { q: "How do I book my first appointment?", a: "Browse stylists in your area, select a service, pick a time slot that works for you, and confirm your booking. You'll receive a confirmation notification once the stylist accepts." },
+  { q: "Can I cancel or reschedule a booking?", a: "Yes. Go to My Bookings, select the appointment, and choose cancel or reschedule. Cancellations made 24+ hours before are free. Late cancellations may incur a small fee." },
+  { q: "How does Vibe Match work?", a: "Vibe Match uses your style preferences, past bookings, and reviews to recommend stylists you'll love. The more you use GlowUp, the smarter your matches become." },
+  { q: "Is my payment information secure?", a: "Absolutely. We use industry-standard encryption and never store your full card details. All payments are processed through secure, PCI-compliant gateways." },
+  { q: "How do I become a stylist on GlowUp?", a: "Sign up as a stylist, complete your profile with portfolio images and services, and set your availability. Our team reviews and approves your profile within 48 hours." },
 ];
 
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>
   );
 }
 
+function FaqItem({ question, answer, open, onToggle }: { question: string; answer: string; open: boolean; onToggle: () => void }) {
+  return (
+    <div className="border-b border-white/[0.06] last:border-0">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4 py-5 text-left group"
+      >
+        <span className="text-sm text-neutral-300 group-hover:text-white transition-colors">{question}</span>
+        <ChevronDown
+          size={16}
+          className={`shrink-0 text-neutral-600 transition-transform duration-300 ${open ? "rotate-180 text-brand-400" : ""}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden"
+          >
+            <p className="text-sm text-neutral-500 pb-5 leading-relaxed">{answer}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function HelpCenter() {
   const [query, setQuery] = useState("");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const filteredArticles = ARTICLES.filter(
+    a => a.title.toLowerCase().includes(query.toLowerCase()) || a.tag.toLowerCase().includes(query.toLowerCase())
+  );
+  const filteredFaqs = FAQS.filter(
+    f => f.q.toLowerCase().includes(query.toLowerCase())
+  );
+  const hasSearch = query.trim().length > 0;
 
   return (
     <motion.div
@@ -48,91 +100,224 @@ export default function HelpCenter() {
       >
       <LandingNavbar />
       <main className="pt-28 pb-24">
+        {/* Hero */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-500/8 via-transparent to-transparent" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-16 sm:pb-20">
+            <FadeIn>
+              <div className="text-center max-w-2xl mx-auto">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold tracking-wide mb-6">
+                  <Sparkles size={12} />
+                  Help Center
+                </div>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-4 leading-[1.1]">
+                  How can we{" "}
+                  <span className="bg-gradient-to-r from-brand-400 via-rose-400 to-brand-300 bg-clip-text text-transparent">help</span>?
+                </h1>
+                <p className="text-neutral-400 text-sm sm:text-base mb-8 max-w-md mx-auto">
+                  Search our knowledge base or browse topics to find answers fast.
+                </p>
+                <div className="relative max-w-xl mx-auto">
+                  <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search articles, topics, or questions..."
+                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-2xl py-4 pl-13 pr-5 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-brand-500/40 focus:ring-2 focus:ring-brand-500/15 focus:bg-white/[0.06] transition-all shadow-sm"
+                    style={{ paddingLeft: "3.25rem" }}
+                  />
+                  <kbd className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.06] border border-white/[0.06] text-[10px] font-medium text-neutral-500">
+                    <span>⌘</span>K
+                  </kbd>
+                </div>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Hero */}
-          <FadeIn>
-            <div className="text-center max-w-2xl mx-auto mb-16">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium tracking-wide mb-6">
-                <Sparkles size={12} />
-                Help Center
+          {hasSearch && filteredArticles.length === 0 && filteredFaqs.length === 0 ? (
+            <FadeIn>
+              <div className="text-center py-16">
+                <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-4">
+                  <Search size={24} className="text-brand-400" />
+                </div>
+                <p className="text-white font-semibold mb-1">No results found</p>
+                <p className="text-sm text-neutral-500">Try different keywords or browse topics below</p>
               </div>
-              <h1 className="text-4xl sm:text-5xl font-bold text-white tracking-tight mb-4">How can we help?</h1>
-              <p className="text-neutral-400 mb-8">Search our help articles or browse by topic below.</p>
-              <div className="relative max-w-lg mx-auto">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search for help, e.g. 'how to book'..."
-                  className="w-full bg-white/[0.05] border border-white/[0.08] rounded-2xl py-4 pl-11 pr-4 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-brand-500/40 focus:ring-2 focus:ring-brand-500/15 transition-all"
-                />
-              </div>
-            </div>
-          </FadeIn>
-
-          {/* Topics */}
-          <FadeIn delay={0.1}>
-            <h2 className="text-sm font-semibold text-white mb-5">Browse by topic</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
-              {TOPICS.map(({ icon: Icon, label, desc, gradient, iconBg, iconColor }) => (
-                <button
-                  key={label}
-                  className="group relative overflow-hidden p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-brand-500/20 transition-all text-left"
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                  <div className="relative">
-                    <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                      <Icon size={16} className={iconColor} />
+            </FadeIn>
+          ) : hasSearch ? (
+            <>
+              {filteredArticles.length > 0 && (
+                <FadeIn>
+                  <div className="mb-12">
+                    <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-[0.12em] mb-4">
+                      Articles ({filteredArticles.length})
+                    </h2>
+                    <div className="space-y-1">
+                      {filteredArticles.map(({ title, reads, tag }) => (
+                        <button
+                          key={title}
+                          className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.03] transition-all group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText size={14} className="text-neutral-600 group-hover:text-brand-400 transition-colors" />
+                            <span className="text-sm text-neutral-300 group-hover:text-white transition-colors">{title}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-white/[0.04] text-neutral-600">{tag}</span>
+                            <span className="text-xs text-neutral-600">{reads}</span>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                    <p className="text-sm font-semibold text-white mb-0.5">{label}</p>
-                    <p className="text-xs text-neutral-500">{desc}</p>
                   </div>
-                </button>
-              ))}
-            </div>
-          </FadeIn>
-
-          {/* Popular Articles */}
-          <FadeIn delay={0.15}>
-            <h2 className="text-sm font-semibold text-white mb-5">Popular articles</h2>
-            <div className="space-y-2 mb-16">
-              {ARTICLES.map(({ title, reads, icon: Icon }) => (
-                <button
-                  key={title}
-                  className="w-full flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:bg-brand-500/[0.03] hover:border-brand-500/20 transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center group-hover:bg-brand-500/20 transition-colors">
-                      <Icon size={14} className="text-brand-400" />
+                </FadeIn>
+              )}
+              {filteredFaqs.length > 0 && (
+                <FadeIn delay={0.1}>
+                  <div className="mb-16">
+                    <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-[0.12em] mb-4">
+                      FAQs ({filteredFaqs.length})
+                    </h2>
+                    <div className="rounded-2xl border border-white/[0.06] px-6">
+                      {filteredFaqs.map((faq, i) => (
+                        <FaqItem
+                          key={i}
+                          question={faq.q}
+                          answer={faq.a}
+                          open={openFaq === i}
+                          onToggle={() => setOpenFaq(openFaq === i ? null : i)}
+                        />
+                      ))}
                     </div>
-                    <span className="text-sm text-neutral-300 group-hover:text-white transition-colors">{title}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-neutral-600">{reads} reads</span>
-                    <ChevronRight size={14} className="text-neutral-600 group-hover:text-brand-400 transition-colors" />
+                </FadeIn>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Topics */}
+              <FadeIn delay={0.1}>
+                <div className="mb-16">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-1 h-4 rounded-full bg-brand-500" />
+                    <h2 className="text-sm font-semibold text-white">Browse by topic</h2>
                   </div>
-                </button>
-              ))}
-            </div>
-          </FadeIn>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {TOPICS.map(({ icon: Icon, label, desc, gradient }) => (
+                      <button
+                        key={label}
+                        className="group relative p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all text-left overflow-hidden"
+                      >
+                        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-[0.06] transition-opacity duration-500`} />
+                        <div className="relative flex items-start gap-4">
+                          <div className="w-11 h-11 rounded-xl bg-brand-500/10 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-brand-500/20 transition-all duration-300">
+                            <Icon size={18} className="text-brand-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-white mb-0.5 group-hover:text-brand-300 transition-colors">{label}</p>
+                            <p className="text-xs text-neutral-500 leading-relaxed">{desc}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </FadeIn>
 
-          {/* CTA */}
-          <FadeIn>
-            <div className="p-8 sm:p-10 rounded-2xl bg-gradient-to-br from-brand-500/10 via-neutral-900 to-neutral-950 border border-brand-500/15 text-center">
-              <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center mx-auto mb-4">
-                <MessageCircle size={20} className="text-brand-400" />
-              </div>
-              <p className="text-white font-semibold mb-1">Still need help?</p>
-              <p className="text-sm text-neutral-500 mb-5">Our support team typically responds within 2 hours.</p>
-              <Link
-                to="/contact"
-                className="inline-flex items-center gap-2 bg-brand-500 text-white text-sm font-semibold px-6 py-3 rounded-xl hover:bg-brand-600 active:bg-brand-700 transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30"
-              >
-                Contact Support <ArrowRight size={14} />
-              </Link>
-            </div>
-          </FadeIn>
+              {/* Popular Articles */}
+              <FadeIn delay={0.15}>
+                <div className="mb-16">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-4 rounded-full bg-brand-500" />
+                      <h2 className="text-sm font-semibold text-white">Popular articles</h2>
+                    </div>
+                    <button className="text-xs text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1">
+                      View all <ChevronRight size={12} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {ARTICLES.map(({ title, reads, tag }) => (
+                      <button
+                        key={title}
+                        className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.10] transition-all group text-left"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center shrink-0 group-hover:bg-brand-500/20 transition-colors">
+                            <FileText size={14} className="text-brand-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-sm text-neutral-300 group-hover:text-white transition-colors block truncate">{title}</span>
+                            <span className="text-[10px] text-neutral-600 mt-0.5 block">{reads} reads</span>
+                          </div>
+                        </div>
+                        <ChevronRight size={14} className="shrink-0 text-neutral-600 group-hover:text-brand-400 transition-colors" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </FadeIn>
+
+              {/* FAQ */}
+              <FadeIn delay={0.2}>
+                <div className="mb-16">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-1 h-4 rounded-full bg-brand-500" />
+                    <h2 className="text-sm font-semibold text-white">Frequently asked questions</h2>
+                  </div>
+                  <div className="rounded-2xl border border-white/[0.06] px-6">
+                    {FAQS.map((faq, i) => (
+                      <FaqItem
+                        key={i}
+                        question={faq.q}
+                        answer={faq.a}
+                        open={openFaq === i}
+                        onToggle={() => setOpenFaq(openFaq === i ? null : i)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </FadeIn>
+
+              {/* CTA */}
+              <FadeIn delay={0.25}>
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-500/10 via-neutral-900 to-neutral-950 border border-brand-500/15 p-8 sm:p-10 mb-8">
+                  <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-brand-500/10 blur-3xl" />
+                  <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-rose-500/10 blur-3xl" />
+                  <div className="relative flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center shrink-0">
+                        <LifeBuoy size={22} className="text-brand-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-semibold text-base mb-1">Still need help?</p>
+                        <p className="text-sm text-neutral-500">Our support team typically responds within 2 hours.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Link
+                        to="/contact"
+                        className="inline-flex items-center gap-2 bg-brand-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-brand-600 active:bg-brand-700 transition-all shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40"
+                      >
+                        Contact Support <ArrowRight size={14} />
+                      </Link>
+                      <a
+                        href="mailto:support@glowup.com"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/[0.08] text-sm text-neutral-300 hover:text-white hover:border-white/[0.15] transition-all"
+                      >
+                        <Mail size={14} />
+                        <span className="hidden sm:inline">Email</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+            </>
+          )}
         </div>
       </main>
       <AppFooter variant="landing" />
