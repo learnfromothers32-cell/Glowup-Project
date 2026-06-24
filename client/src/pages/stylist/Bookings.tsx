@@ -157,23 +157,27 @@ export default function StylistBookings() {
           <p className="text-sm text-text-muted dark:text-text-dark-muted">Manage client appointments and requests</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
-          <StatCard label="Pending" value={counts.pending} icon={Clock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} />
-          <StatCard label="In Progress" value={counts.inProgress} icon={Play} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} />
-          <StatCard label="Today" value={counts.today} icon={CalendarCheck} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-primary dark:text-text-dark-primary", icon: "text-text-muted dark:text-text-dark-muted" }} />
-          <StatCard label="Upcoming" value={counts.upcoming} icon={CalendarClock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} />
-          <StatCard label="Completed" value={counts.past} icon={CheckCircle} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-secondary dark:text-text-dark-secondary", icon: "text-text-muted dark:text-text-dark-muted" }} />
-          <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-muted dark:text-text-dark-muted", icon: "text-text-muted dark:text-text-dark-muted" }} />
+        {/* ── Stats Row ── */}
+        <div className="flex gap-2 overflow-x-auto overflow-y-hidden sm:grid sm:grid-cols-3 lg:grid-cols-6 pb-1 sm:pb-0 mb-3 sm:mb-5">
+          <StatCard label="Pending" value={counts.pending} icon={Clock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[120px] sm:min-w-0" />
+          <StatCard label="In Progress" value={counts.inProgress} icon={Play} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[120px] sm:min-w-0" />
+          <StatCard label="Today" value={counts.today} icon={CalendarCheck} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-primary dark:text-text-dark-primary", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[120px] sm:min-w-0" />
+          <StatCard label="Upcoming" value={counts.upcoming} icon={CalendarClock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[120px] sm:min-w-0" />
+          <StatCard label="Completed" value={counts.past} icon={CheckCircle} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-secondary dark:text-text-dark-secondary", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[120px] sm:min-w-0" />
+          <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-muted dark:text-text-dark-muted", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[120px] sm:min-w-0" />
         </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
-          <div className="flex-1 min-w-0 max-w-full">
-            <FilterPills filters={FILTERS} active={activeFilter} onChange={(f) => setActiveFilter(f as FilterKey)} counts={counts} />
-          </div>
-          <div className="relative shrink-0">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search client or service…"
-              className="w-full sm:w-48 pl-9 pr-3 py-2.5 input-field-sm" />
+        {/* ── Filters + Search ── */}
+        <div className="bg-white dark:bg-surface-dark-secondary rounded-xl border border-gray-100 dark:border-gray-700/40 p-2 sm:p-3 mb-3 sm:mb-5">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 max-w-full">
+              <FilterPills filters={FILTERS} active={activeFilter} onChange={(f) => setActiveFilter(f as FilterKey)} counts={counts} />
+            </div>
+            <div className="relative shrink-0">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…"
+                className="w-32 sm:w-44 pl-8 pr-2.5 py-2 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200 dark:border-gray-600 text-xs text-text-primary dark:text-text-dark-primary placeholder:text-text-muted outline-none focus:border-brand-300 dark:focus:border-brand-700 transition-all" />
+            </div>
           </div>
         </div>
 
@@ -192,12 +196,14 @@ export default function StylistBookings() {
                 <motion.div key={b._id} onClick={() => setDetail(b)}
                   initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                    className={`group bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 cursor-pointer hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 ${isCancelled ? "opacity-60" : ""} ${isPending ? "border border-gray-100 dark:border-gray-700/40 border-l-4 border-l-brand-500 dark:border-l-brand-400" : ""}`}>
-                   <div className="p-2.5 sm:p-3">
-                    <div className="flex items-center gap-2 sm:gap-3 w-full">
-                      <div className="hidden sm:flex flex-col items-center w-14 shrink-0 leading-tight">
-                        <p className="text-sm font-bold text-text-primary dark:text-text-dark-primary tabular-nums">{fmtISO(b.startTime).split(" ")[0]}</p>
-                        <p className="text-[10px] text-text-muted dark:text-text-dark-muted font-medium">{fmtISO(b.startTime).split(" ")[1]}</p>
+                    <div className="p-2.5 sm:p-3">
+                     <div className="flex items-center gap-2 sm:gap-3 w-full">
+                      <div className="flex flex-col items-center w-10 sm:w-14 shrink-0 leading-tight">
+                        <p className="text-[11px] sm:text-sm font-bold text-text-primary dark:text-text-dark-primary tabular-nums">{fmtISO(b.startTime).split(" ")[0]}</p>
+                        <p className="text-[9px] sm:text-[10px] text-text-muted dark:text-text-dark-muted font-medium">{fmtISO(b.startTime).split(" ")[1]}</p>
                       </div>
+
+                      <div className="h-8 sm:h-10 w-px bg-gray-100 dark:bg-gray-700/40 shrink-0" />
 
                       <div className="shrink-0">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gray-100 dark:bg-surface-dark-tertiary flex items-center justify-center ring-1 ring-gray-100 dark:ring-gray-700/40">
@@ -206,28 +212,23 @@ export default function StylistBookings() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <p className={`text-xs sm:text-sm font-semibold truncate max-w-[140px] sm:max-w-none ${isCancelled ? "text-text-muted dark:text-text-dark-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>{clientName}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className={`text-xs sm:text-sm font-semibold truncate max-w-[130px] sm:max-w-none ${isCancelled ? "text-text-muted dark:text-text-dark-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>{clientName}</p>
                           <StatusBadge status={b.status} date={dateStr} />
                         </div>
-                        <p className="text-[11px] sm:text-xs text-text-secondary dark:text-text-dark-secondary truncate">{serviceName}</p>
-                        <div className="flex sm:hidden items-center gap-1.5 mt-0.5">
-                          <span className="text-xs text-text-muted dark:text-text-dark-muted">{fmtISO(b.startTime)}</span>
-                          {b.totalPrice > 0 && (
-                            <span className="text-xs font-semibold text-text-secondary dark:text-text-dark-secondary">· GH₵{b.totalPrice}</span>
-                          )}
-                        </div>
+                        <p className="text-[10px] sm:text-xs text-text-secondary dark:text-text-dark-secondary truncate mt-0.5">
+                          {serviceName}{b.totalPrice > 0 ? " · GH₵" + b.totalPrice : ""}
+                        </p>
                       </div>
 
                       {b.totalPrice > 0 && (
-                        <p className={`hidden sm:block text-sm font-bold shrink-0 ${isCancelled ? "text-gray-300 dark:text-gray-600" : "text-text-primary dark:text-text-dark-primary"}`}>
+                        <p className={`hidden sm:block text-xs font-bold shrink-0 ${isCancelled ? "text-gray-300 dark:text-gray-600" : "text-text-primary dark:text-text-dark-primary"}`}>
                           GH₵{b.totalPrice}
                         </p>
                       )}
                     </div>
 
                     <div className="hidden sm:flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/40 justify-end">
-                      {/* desktop actions */}
                       {isPending && (
                         <>
                           <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
