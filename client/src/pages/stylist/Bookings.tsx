@@ -157,13 +157,13 @@ export default function StylistBookings() {
           <p className="text-sm text-text-muted dark:text-text-dark-muted">Manage client appointments and requests</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
-          <StatCard label="Pending" value={counts.pending} icon={Clock} color={{ bg: "bg-amber-50 dark:bg-amber-950/20", text: "text-amber-700 dark:text-amber-400", icon: "text-amber-500 dark:text-amber-400" }} />
-          <StatCard label="In Progress" value={counts.inProgress} icon={Play} color={{ bg: "bg-orange-50 dark:bg-orange-950/20", text: "text-orange-700 dark:text-orange-400", icon: "text-orange-500 dark:text-orange-400" }} />
-          <StatCard label="Today" value={counts.today} icon={CalendarCheck} color={{ bg: "bg-green-50 dark:bg-green-950/20", text: "text-green-700 dark:text-green-400", icon: "text-green-500 dark:text-green-400" }} />
-          <StatCard label="Upcoming" value={counts.upcoming} icon={CalendarClock} color={{ bg: "bg-blue-50 dark:bg-blue-950/20", text: "text-blue-700 dark:text-blue-400", icon: "text-blue-500 dark:text-blue-400" }} />
-          <StatCard label="Completed" value={counts.past} icon={CheckCircle} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-secondary dark:text-text-dark-secondary", icon: "text-text-muted dark:text-text-dark-muted" }} />
-          <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-red-50 dark:bg-red-950/20", text: "text-red-600 dark:text-red-400", icon: "text-red-400 dark:text-red-400" }} />
+        <div className="flex gap-2 overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-6 pb-1 sm:pb-0 mb-6">
+          <StatCard label="Pending" value={counts.pending} icon={Clock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[130px] sm:min-w-0" />
+          <StatCard label="In Progress" value={counts.inProgress} icon={Play} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[130px] sm:min-w-0" />
+          <StatCard label="Today" value={counts.today} icon={CalendarCheck} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-primary dark:text-text-dark-primary", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[130px] sm:min-w-0" />
+          <StatCard label="Upcoming" value={counts.upcoming} icon={CalendarClock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[130px] sm:min-w-0" />
+          <StatCard label="Completed" value={counts.past} icon={CheckCircle} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-secondary dark:text-text-dark-secondary", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[130px] sm:min-w-0" />
+          <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-muted dark:text-text-dark-muted", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[130px] sm:min-w-0" />
         </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
@@ -191,7 +191,7 @@ export default function StylistBookings() {
               return (
                 <motion.div key={b._id} onClick={() => setDetail(b)}
                   initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  className={`group bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 cursor-pointer hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 ${isCancelled ? "opacity-60" : ""} ${isPending ? "border-l-4 border-l-amber-400 dark:border-l-amber-600 border border-gray-100 dark:border-gray-700/40" : ""}`}>
+                  className={`group bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 cursor-pointer hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 ${isCancelled ? "opacity-60" : ""} ${isPending ? "border-l-4 border-l-brand-500 dark:border-l-brand-400 border border-gray-100 dark:border-gray-700/40" : ""}`}>
                   <div className="p-3 sm:p-4">
                     <div className="flex items-center gap-3 w-full">
                       <div className="hidden sm:flex flex-col items-center w-14 shrink-0 leading-tight">
@@ -230,7 +230,7 @@ export default function StylistBookings() {
                       {isPending && (
                         <>
                           <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-green-300 text-[11px] font-semibold text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-brand-300 text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                             {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <CheckIcon size={12} />} Confirm
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); handleCancel(b._id); }} disabled={actionLoading === b._id}
@@ -241,14 +241,14 @@ export default function StylistBookings() {
                       )}
                       {b.status === "confirmed" && (
                         <button onClick={(e) => { e.stopPropagation(); handleStartService(b._id); }} disabled={actionLoading === b._id}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-blue-300 bg-blue-50 dark:bg-blue-950/20 text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-brand-300 bg-brand-50 dark:bg-brand-950/20 text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                           {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} Start Service
                         </button>
                       )}
                       {b.status === "in-progress" && (
                         <div className="flex items-center gap-2">
                           {elapsed[b._id] && (
-                            <span className="flex items-center gap-1 text-[11px] font-mono text-orange-600 dark:text-orange-400 font-semibold">
+                            <span className="flex items-center gap-1 text-[11px] font-mono text-brand-600 dark:text-brand-400 font-semibold">
                               <Timer size={12} /> {elapsed[b._id]}
                             </span>
                           )}
@@ -264,7 +264,7 @@ export default function StylistBookings() {
                       {isPending && (
                         <>
                           <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
-                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-green-300 bg-green-50 dark:bg-green-950/20 text-[11px] font-semibold text-green-700 dark:text-green-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-brand-300 bg-brand-50 dark:bg-brand-950/20 text-[11px] font-semibold text-brand-600 dark:text-brand-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
                             {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <CheckIcon size={12} />} Confirm
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); handleCancel(b._id); }} disabled={actionLoading === b._id}
@@ -275,14 +275,14 @@ export default function StylistBookings() {
                       )}
                       {b.status === "confirmed" && (
                         <button onClick={(e) => { e.stopPropagation(); handleStartService(b._id); }} disabled={actionLoading === b._id}
-                          className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-blue-300 bg-blue-50 dark:bg-blue-950/20 text-[11px] font-semibold text-blue-700 dark:text-blue-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                          className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-brand-300 bg-brand-50 dark:bg-brand-950/20 text-[11px] font-semibold text-brand-600 dark:text-brand-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
                           {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} Start Service
                         </button>
                       )}
                       {b.status === "in-progress" && (
                         <div className="flex items-center gap-2 flex-1">
                           {elapsed[b._id] && (
-                            <span className="flex items-center gap-1 text-[11px] font-mono text-orange-600 dark:text-orange-400 font-semibold shrink-0">
+                            <span className="flex items-center gap-1 text-[11px] font-mono text-brand-600 dark:text-brand-400 font-semibold shrink-0">
                               <Timer size={12} /> {elapsed[b._id]}
                             </span>
                           )}

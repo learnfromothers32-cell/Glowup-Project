@@ -95,7 +95,7 @@ export default function BookingDetailModal({
           {booking.totalPrice > 0 && (
             <div className="p-3 rounded-2xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-100 dark:border-gray-700/40">
               <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted dark:text-text-dark-muted mb-1">Price</p>
-              <p className="text-sm font-semibold text-text-primary dark:text-text-dark-primary">${booking.totalPrice}</p>
+              <p className="text-sm font-semibold text-text-primary dark:text-text-dark-primary">GH₵{booking.totalPrice}</p>
             </div>
           )}
         </div>

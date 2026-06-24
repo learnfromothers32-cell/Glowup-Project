@@ -6,11 +6,12 @@ interface StatCardProps {
   value: number;
   icon: LucideIcon;
   color: { bg: string; text: string; border?: string; icon: string };
+  className?: string;
 }
 
-export function StatCard({ label, value, icon: Icon, color }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, color, className = "" }: StatCardProps) {
   return (
-    <div className="bg-white dark:bg-surface-dark-secondary rounded-xl border border-gray-100 dark:border-gray-700/50 p-4 hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-200">
+    <div className={`bg-white dark:bg-surface-dark-secondary rounded-xl border border-gray-100 dark:border-gray-700/50 p-3 sm:p-4 hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-200 ${className}`}>
       <div className="flex items-center justify-between mb-2.5">
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color.bg} dark:opacity-90`}>
           <Icon size={16} className={color.icon} />
@@ -66,10 +67,10 @@ export function EmptyState({ icon: Icon, title, sub }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-surface-dark-tertiary flex items-center justify-center mb-5">
-        <Icon size={28} className="text-gray-300 dark:text-text-dark-muted" />
+        <Icon size={28} className="text-text-muted dark:text-text-dark-muted" />
       </div>
-      <p className="text-base font-semibold text-gray-700 dark:text-text-dark-primary mb-1">{title}</p>
-      <p className="text-sm text-gray-400 dark:text-text-dark-secondary max-w-[280px] leading-relaxed">{sub}</p>
+      <p className="text-base font-semibold text-text-primary dark:text-text-dark-primary mb-1">{title}</p>
+      <p className="text-sm text-text-secondary dark:text-text-dark-secondary max-w-[280px] leading-relaxed">{sub}</p>
     </div>
   );
 }
