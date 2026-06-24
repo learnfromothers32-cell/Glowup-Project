@@ -65,7 +65,7 @@ export default function SuccessView({
         transition={{ delay: 0.3 }}
         className="relative bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200 dark:border-gray-600 rounded-2xl overflow-hidden mb-6"
       >
-        <div className="h-1 bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400" />
+        <div className="h-1 bg-gradient-to-r from-brand-400 via-gold-400 to-brand-500" />
         <div className="p-5">
           <div className="flex items-center gap-3 mb-4">
             {stylist.image && (

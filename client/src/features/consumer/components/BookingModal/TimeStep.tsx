@@ -74,7 +74,7 @@ export default function TimeStep({
                   <p className="text-[11px] font-semibold text-text-muted dark:text-text-dark-muted uppercase tracking-wider mb-2">
                     {periodLabel}
                   </p>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {slots.map(({ time, label }) => {
                       const unavailable = unavailableSlots[selectedDate ?? ""]?.includes(time) ?? false;
                       const isSelected = selectedTime === time;

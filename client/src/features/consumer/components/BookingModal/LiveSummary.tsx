@@ -54,7 +54,7 @@ export default function LiveSummary({
             <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
               {stylist.rating && (
                 <span className="flex items-center gap-0.5">
-                  <Star size={10} fill="#f59e0b" stroke="#f59e0b" />
+                  <Star size={10} fill="#d4a76a" stroke="#d4a76a" />
                   {stylist.rating}
                 </span>
               )}
