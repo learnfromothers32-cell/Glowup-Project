@@ -11,7 +11,6 @@ import { useStylistBookingsQuery, useUpdateBookingStatusMutation } from "@/domai
 import { useQueryClient } from "@tanstack/react-query";
 import { connectQueue, onBookingStatusChanged, offBookingStatusChanged } from "@/services/socket";
 import { StatusBadge, todayStr, initials } from "@/domain/booking/components/StatusBadge";
-import { EmptyState } from "@/domain/booking/components/SharedUI";
 import BookingDetailModal from "@/domain/booking/components/BookingDetailModal";
 import type { Booking } from "@/domain/booking/booking.types";
 
@@ -70,17 +69,18 @@ function StatCard({ label, value, icon: Icon, color, subtitle }: {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 p-4 hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-200"
+      className="bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 p-3 sm:p-4 hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-200"
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
-          <Icon size={18} className="text-white" />
+      <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${color}`}>
+          <Icon size={14} className="sm:hidden text-white" />
+          <Icon size={18} className="hidden sm:block text-white" />
         </div>
-        <span className="text-2xl font-bold tabular-nums text-text-primary dark:text-text-dark-primary">
+        <span className="text-lg sm:text-2xl font-bold tabular-nums text-text-primary dark:text-text-dark-primary">
           {value}
         </span>
       </div>
-      <p className="text-xs font-medium text-text-secondary dark:text-text-dark-secondary">{label}</p>
+      <p className="text-[11px] sm:text-xs font-medium text-text-secondary dark:text-text-dark-secondary">{label}</p>
       {subtitle && (
         <p className="text-[10px] text-text-muted dark:text-text-dark-muted mt-0.5">{subtitle}</p>
       )}
@@ -290,11 +290,23 @@ export default function StylistBookings() {
         />
       </div>
 
-      {/* ── Filters + Search ── */}
-      <div className="bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 p-3 mb-5 shadow-sm w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      {/* ── Mobile search (above pills) ── */}
+      <div className="relative mb-3 sm:hidden">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name or service..."
+          className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white dark:bg-surface-dark-secondary border border-gray-200 dark:border-gray-600 text-sm text-text-primary dark:text-text-dark-primary placeholder:text-text-muted outline-none focus:border-stylist-300 dark:focus:border-stylist-700 transition-all"
+        />
+      </div>
+
+      {/* ── Filters + Desktop Search ── */}
+      <div className="bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 p-2 sm:p-3 mb-5 shadow-sm">
+        <div className="flex items-center gap-2">
           {/* Filter pills */}
-          <div className="w-full sm:flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto overflow-y-hidden" style={{ scrollbarWidth: "none" }}>
+          <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto overflow-y-hidden" style={{ scrollbarWidth: "none" }}>
             {FILTERS.map(({ key, label, icon: Icon }) => {
               const isActive = activeFilter === key;
               const count = counts[key] ?? 0;
@@ -302,14 +314,15 @@ export default function StylistBookings() {
                 <button
                   key={key}
                   onClick={() => setActiveFilter(key)}
-                  className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                  className={`shrink-0 inline-flex items-center gap-1 px-2.5 sm:gap-1.5 sm:px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
                     isActive
                       ? "bg-gray-900 text-white shadow-sm dark:bg-white dark:text-gray-900"
                       : "bg-gray-50 dark:bg-surface-dark-tertiary text-text-secondary dark:text-text-dark-secondary border border-gray-100 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-surface-dark"
                   }`}
                 >
                   <Icon size={13} />
-                  {label}
+                  <span className="hidden sm:inline">{label}</span>
+                  <span className="sm:hidden">{label.slice(0, 4)}</span>
                   {count > 0 && (
                     <span className={`text-[10px] font-bold min-w-[18px] h-[18px] px-1.5 rounded-full inline-flex items-center justify-center ${
                       isActive ? "bg-white/20 text-white" : "bg-gray-200 dark:bg-gray-600 text-text-secondary dark:text-text-dark-secondary"
@@ -322,15 +335,15 @@ export default function StylistBookings() {
             })}
           </div>
 
-          {/* Search */}
-          <div className="relative w-full sm:w-56 shrink-0">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
+          {/* Desktop search */}
+          <div className="relative shrink-0 hidden sm:block">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or service..."
-              className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200 dark:border-gray-600 text-sm text-text-primary dark:text-text-dark-primary placeholder:text-text-muted outline-none focus:border-stylist-300 dark:focus:border-stylist-700 focus:ring-1 focus:ring-stylist-200 dark:focus:ring-stylist-800 transition-all"
+              placeholder="Search..."
+              className="w-40 lg:w-48 pl-8 pr-2.5 py-2 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200 dark:border-gray-600 text-xs text-text-primary dark:text-text-dark-primary placeholder:text-text-muted outline-none focus:border-stylist-300 dark:focus:border-stylist-700 transition-all"
             />
           </div>
         </div>
@@ -345,11 +358,15 @@ export default function StylistBookings() {
         </div>
       ) : filtered.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <EmptyState
-            icon={CalendarIcon}
-            title="No bookings found"
-            sub={search ? "No results match your search. Try a different name or service." : "No bookings match this filter yet."}
-          />
+          <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-center">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-gray-100 dark:bg-surface-dark-tertiary flex items-center justify-center mb-4">
+              <CalendarIcon size={24} className="text-text-muted dark:text-text-dark-muted" />
+            </div>
+            <p className="text-sm sm:text-base font-semibold text-text-primary dark:text-text-dark-primary mb-1">No bookings found</p>
+            <p className="text-xs sm:text-sm text-text-secondary dark:text-text-dark-secondary max-w-[280px] leading-relaxed">
+              {search ? "No results match your search. Try a different name or service." : "No bookings match this filter yet."}
+            </p>
+          </div>
         </motion.div>
       ) : (
         <div className="space-y-6">

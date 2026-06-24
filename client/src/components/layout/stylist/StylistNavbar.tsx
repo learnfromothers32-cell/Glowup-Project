@@ -121,26 +121,26 @@ export default function StylistNavbar({ onMenuToggle }: StylistNavbarProps) {
 
   return (
     <header className="sticky top-0 z-50 bg-white/92 dark:bg-surface-dark-secondary/92 backdrop-blur-md border-b border-gray-200/60 dark:border-gray-700/50">
-      <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+      <div className="flex items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16">
         {/* Left */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={onMenuToggle}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary transition-colors"
+            className="lg:hidden p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary transition-colors"
           >
-            <Menu size={20} className="text-gray-900 dark:text-text-dark-primary" />
+            <Menu size={18} className="sm:size-[20px] text-gray-900 dark:text-text-dark-primary" />
           </button>
 
           <button
             onClick={() => navigate("/stylist/dashboard")}
-            className="text-lg font-bold tracking-tight text-gray-900 dark:text-text-dark-primary"
+            className="text-base sm:text-lg font-bold tracking-tight text-gray-900 dark:text-text-dark-primary"
           >
-            GlowUp Studio
+            GlowUp
           </button>
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => navigate("/stylist/bookings")}
             className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-gray-500 dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary transition-colors"
