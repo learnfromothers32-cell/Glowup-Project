@@ -285,7 +285,7 @@ export default function StylistNavbar({ onMenuToggle }: StylistNavbarProps) {
               {user?.avatar ? (
                 <img src={user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-800 to-gray-600 dark:from-indigo-500 dark:to-violet-600 text-white flex items-center justify-center text-[10px] font-bold">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-800 to-gray-600 dark:from-brand-500 dark:to-brand-700 text-white flex items-center justify-center text-[10px] font-bold">
                   {initials}
                 </div>
               )}

@@ -261,8 +261,8 @@ export default function StylistDashboard() {
         {[
           { label: "Today's Bookings", value: todayBookings.length, sub: `${todayBookings.filter(b => b.status === "confirmed" || b.status === "in-progress").length} active`, icon: CalendarDays, color: "bg-brand-500" },
           { label: "Total Revenue", value: `₵${totalRevenue.toLocaleString()}`, sub: `${completedBookings.length} completed`, icon: DollarSign, color: "bg-success" },
-          { label: "Total Clients", value: uniqueClientCount, sub: `${bookings.length} total bookings`, icon: Users, color: "bg-purple-500" },
-          { label: "Rating", value: avgRating > 0 ? avgRating.toFixed(1) : "—", sub: reviewCount > 0 ? `${reviewCount} reviews` : "No reviews yet", icon: Star, color: "bg-amber-500" },
+          { label: "Total Clients", value: uniqueClientCount, sub: `${bookings.length} total bookings`, icon: Users, color: "bg-brand-500" },
+          { label: "Rating", value: avgRating > 0 ? avgRating.toFixed(1) : "—", sub: reviewCount > 0 ? `${reviewCount} reviews` : "No reviews yet", icon: Star, color: "bg-gold-500" },
         ].map(({ label, value, sub, icon: Icon, color }, i) => (
           <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Card hover padding="md" className="overflow-hidden">
@@ -347,10 +347,10 @@ export default function StylistDashboard() {
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { label: "Bookings", icon: Calendar, to: "/stylist/bookings", color: "bg-brand-500" },
-                  { label: "Services", icon: Package, to: "/stylist/services", color: "bg-success" },
-                  { label: "Portfolio", icon: Image, to: "/stylist/portfolio", color: "bg-purple-500" },
-                  { label: "Analytics", icon: BarChart3, to: "/stylist/analytics", color: "bg-amber-500" },
-                  { label: "Live", icon: Radio, to: "/stylist/live", color: "bg-error" },
+                  { label: "Services", icon: Package, to: "/stylist/services", color: "bg-brand-600" },
+                  { label: "Portfolio", icon: Image, to: "/stylist/portfolio", color: "bg-gold-500" },
+                  { label: "Analytics", icon: BarChart3, to: "/stylist/analytics", color: "bg-brand-400" },
+                  { label: "Live", icon: Radio, to: "/stylist/live", color: "bg-brand-500" },
                   { label: "Profile", icon: Activity, to: "/stylist/profile", color: "bg-gray-500" },
                 ].map(({ label, icon: Icon, to, color }) => (
                   <Link key={label} to={to} className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-gray-100 dark:border-gray-700/40 hover:border-gray-200 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-surface-dark-tertiary transition-all group">
@@ -408,8 +408,8 @@ export default function StylistDashboard() {
             <div className="p-5 sm:p-6">
               {weeklyEarnings.every(d => d.amount === 0) ? (
                 <div className="text-center py-8">
-                  <div className="w-14 h-14 rounded-full bg-amber-50 dark:bg-amber-950/20 flex items-center justify-center mx-auto mb-3">
-                    <BarChart3 size={24} className="text-amber-300" />
+                  <div className="w-14 h-14 rounded-full bg-brand-50 dark:bg-brand-950/20 flex items-center justify-center mx-auto mb-3">
+                    <BarChart3 size={24} className="text-brand-300" />
                   </div>
                   <p className="text-body-sm font-semibold text-text-primary mb-1">No earnings this week yet</p>
                   <p className="text-caption text-text-muted">Complete bookings to start earning!</p>
@@ -445,7 +445,7 @@ export default function StylistDashboard() {
             <div className="p-5 sm:p-6 border-b border-gray-100 dark:border-gray-700/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Star size={16} className="text-amber-500" />
+                  <Star size={16} className="text-gold-500" />
                   <h2 className="text-h4 text-text-primary">Reviews</h2>
                   {reviewCount > 0 && <Badge variant="warning">{reviewCount}</Badge>}
                 </div>
@@ -473,7 +473,7 @@ export default function StylistDashboard() {
                           <p className="text-caption font-semibold text-text-primary truncate">{rev.clientId?.name || "Anonymous"}</p>
                         </div>
                         <div className="flex items-center gap-0.5">
-                          <Star size={9} fill="#f59e0b" stroke="#f59e0b" />
+                          <Star size={9} fill="#d4a76a" stroke="#d4a76a" />
                           <span className="text-[11px] font-bold text-text-primary">{rev.rating}</span>
                         </div>
                       </div>
@@ -491,8 +491,8 @@ export default function StylistDashboard() {
       {/* Footer */}
       <div className="flex items-center justify-between text-caption text-text-muted">
         <div className="flex items-center gap-3">
-          {pendingCount > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />{pendingCount} pending</span>}
-          {reviewCount > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />{reviewCount} review{reviewCount !== 1 ? "s" : ""}</span>}
+          {pendingCount > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-brand-500" />{pendingCount} pending</span>}
+          {reviewCount > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-gold-500" />{reviewCount} review{reviewCount !== 1 ? "s" : ""}</span>}
         </div>
         <button onClick={() => fetchData(true)} disabled={refreshing} className="flex items-center gap-1 hover:text-text-primary transition-colors">
           <RefreshCcw size={11} className={refreshing ? "animate-spin" : ""} /> Refresh
