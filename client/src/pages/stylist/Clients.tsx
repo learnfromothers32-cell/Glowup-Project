@@ -204,7 +204,7 @@ export default function Clients() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in" onClick={() => setSelected(null)}>
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative w-full sm:max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto bg-white dark:bg-surface-dark-secondary rounded-t-2xl sm:rounded-2xl shadow-modal animate-slide-up"
+            className="relative w-full sm:max-w-lg lg:max-w-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto bg-white dark:bg-surface-dark-secondary rounded-t-2xl sm:rounded-2xl shadow-modal animate-slide-up"
             onClick={e => e.stopPropagation()}
           >
             {detailLoading ? (
@@ -212,83 +212,118 @@ export default function Clients() {
                 <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 animate-spin text-text-muted" />
               </div>
             ) : (
-              <div className="p-4 sm:p-6">
-                <div className="flex items-start justify-between gap-3 mb-5 sm:mb-6">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-stylist-500 to-stylist-500 flex items-center justify-center text-white text-base sm:text-lg font-bold shadow-sm shrink-0">
-                      {detailData.client?.userId?.name?.charAt(0) || '?'}
-                    </div>
-                    <div className="min-w-0">
-                      <h2 className="text-base sm:text-h4 font-bold text-text-primary dark:text-text-dark-primary truncate">{detailData.client?.userId?.name}</h2>
-                      <p className="text-xs sm:text-body-sm text-text-secondary dark:text-text-dark-secondary truncate">{detailData.client?.userId?.email}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary transition-colors shrink-0"
-                    aria-label="Close"
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
-                  <div className="bg-gray-50 dark:bg-surface-dark-tertiary rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
-                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-text-primary dark:text-text-dark-primary">{detailData.client?.totalVisits || 0}</p>
-                    <p className="text-[10px] sm:text-caption text-text-muted dark:text-text-dark-secondary mt-0.5">Visits</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-surface-dark-tertiary rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
-                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-text-primary dark:text-text-dark-primary">GH₵{(detailData.client?.totalSpent || 0).toFixed(0)}</p>
-                    <p className="text-[10px] sm:text-caption text-text-muted dark:text-text-dark-secondary mt-0.5">Spent</p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-surface-dark-tertiary rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center">
-                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-text-primary dark:text-text-dark-primary">{detailData.bookings?.length || 0}</p>
-                    <p className="text-[10px] sm:text-caption text-text-muted dark:text-text-dark-secondary mt-0.5">Bookings</p>
-                  </div>
-                </div>
-
-                <div className="mb-3 sm:mb-4">
-                  <label className="label block mb-1 text-xs sm:text-sm">Notes</label>
-                  <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)}
-                    className="input-field text-sm min-h-[72px] sm:min-h-[80px] resize-none w-full" />
-                </div>
-                <div className="mb-3 sm:mb-4">
-                  <label className="label block mb-1 text-xs sm:text-sm">Tags (comma separated)</label>
-                  <input value={editTags} onChange={e => setEditTags(e.target.value)}
-                    className="input-field text-sm w-full" />
-                </div>
-                <Button onClick={handleSaveNotes} className="w-full h-10 sm:h-auto text-sm sm:text-base">
-                  Save Notes
-                </Button>
-
-                <h3 className="text-sm sm:text-body-sm font-semibold text-text-primary dark:text-text-dark-primary mt-5 sm:mt-6 mb-3">Booking History</h3>
-                <div className="space-y-2">
-                  {detailData.bookings?.length > 0 ? (
-                    detailData.bookings.map((b: any) => (
-                      <div key={b._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-surface-dark-tertiary rounded-xl sm:rounded-2xl gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-body-sm font-medium text-text-primary dark:text-text-dark-primary truncate">{b.serviceId?.name || 'Service'}</p>
-                          <p className="text-caption text-text-muted dark:text-text-dark-muted truncate">
-                            {new Date(b.startTime).toLocaleDateString()} at{' '}
-                            {new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                        <span className={`text-caption px-2 py-1 rounded-xl font-medium shrink-0 ${
-                          b.status === 'completed'
-                            ? 'bg-success/10 text-success dark:text-success'
-                            : b.status === 'cancelled'
-                            ? 'bg-error/10 text-error dark:text-error'
-                            : 'bg-warning/10 text-warning dark:text-warning'
-                        }`}>
-                          {b.status}
-                        </span>
+              <>
+                <div className="sticky top-0 z-10 bg-white dark:bg-surface-dark-secondary border-b border-gray-100 dark:border-gray-700/40 px-4 sm:px-6 py-3 sm:py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-stylist-500 to-pink-500 flex items-center justify-center text-white text-base sm:text-lg font-bold shadow-sm shrink-0">
+                        {detailData.client?.userId?.name?.charAt(0) || '?'}
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-xs sm:text-body-sm text-text-muted dark:text-text-dark-muted text-center py-4">No booking history</p>
+                      <div className="min-w-0">
+                        <h2 className="text-sm sm:text-lg font-bold text-text-primary dark:text-text-dark-primary truncate">{detailData.client?.userId?.name}</h2>
+                        <p className="text-xs text-text-secondary dark:text-text-dark-secondary truncate">{detailData.client?.userId?.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => handleMessage(detailData.client?.userId?._id)}
+                        className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl"
+                        aria-label="Send message"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Button>
+                      <button
+                        onClick={() => setSelected(null)}
+                        className="p-2 rounded-xl text-text-muted hover:text-text-primary hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary transition-colors"
+                        aria-label="Close"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  </div>
+                  {(detailData.client?.userId?.phone || detailData.client?.userId?.location) && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-caption text-text-muted dark:text-text-dark-muted">
+                      {detailData.client?.userId?.phone && <span>📞 {detailData.client?.userId?.phone}</span>}
+                      {detailData.client?.userId?.location && <span>📍 {detailData.client?.userId?.location}</span>}
+                    </div>
                   )}
                 </div>
-              </div>
+
+                <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="bg-gradient-to-br from-stylist-500/5 to-stylist-500/10 dark:from-stylist-500/10 dark:to-stylist-500/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center border border-stylist-500/10">
+                      <p className="text-base sm:text-xl lg:text-2xl font-bold text-stylist-600 dark:text-stylist-400">{detailData.client?.totalVisits || 0}</p>
+                      <p className="text-[10px] sm:text-caption text-text-muted dark:text-text-dark-secondary mt-0.5 font-medium">Total Visits</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 dark:from-emerald-500/10 dark:to-emerald-500/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center border border-emerald-500/10">
+                      <p className="text-base sm:text-xl lg:text-2xl font-bold text-emerald-600 dark:text-emerald-400">GH₵{(detailData.client?.totalSpent || 0).toFixed(0)}</p>
+                      <p className="text-[10px] sm:text-caption text-text-muted dark:text-text-dark-secondary mt-0.5 font-medium">Total Spent</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-amber-500/5 to-amber-500/10 dark:from-amber-500/10 dark:to-amber-500/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 text-center border border-amber-500/10">
+                      <p className="text-base sm:text-xl lg:text-2xl font-bold text-amber-600 dark:text-amber-400">{detailData.bookings?.length || 0}</p>
+                      <p className="text-[10px] sm:text-caption text-text-muted dark:text-text-dark-secondary mt-0.5 font-medium">Bookings</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-surface-dark-tertiary rounded-xl sm:rounded-2xl p-4 sm:p-5 space-y-3 sm:space-y-4">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-text-primary dark:text-text-dark-primary mb-1.5">Notes</label>
+                      <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)}
+                        className="input-field text-sm min-h-[72px] sm:min-h-[80px] resize-none w-full bg-white dark:bg-surface-dark-secondary" />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-text-primary dark:text-text-dark-primary mb-1.5">Tags</label>
+                      <input value={editTags} onChange={e => setEditTags(e.target.value)} placeholder="e.g. bridal, repeat, vip"
+                        className="input-field text-sm w-full bg-white dark:bg-surface-dark-secondary" />
+                      <p className="text-caption text-text-muted dark:text-text-dark-muted mt-1">Separate tags with commas</p>
+                    </div>
+                    <Button onClick={handleSaveNotes} className="w-full h-10 sm:h-11 text-sm sm:text-base font-semibold">
+                      Save Changes
+                    </Button>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm sm:text-base font-bold text-text-primary dark:text-text-dark-primary">Booking History</h3>
+                      <span className="text-caption text-text-muted dark:text-text-dark-muted">{detailData.bookings?.length || 0} booking{(detailData.bookings?.length || 0) !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {detailData.bookings?.length > 0 ? (
+                        detailData.bookings.map((b: any) => (
+                          <div key={b._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-surface-dark-tertiary rounded-xl sm:rounded-2xl gap-2 hover:bg-gray-100 dark:hover:bg-surface-dark-secondary transition-colors">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full shrink-0 bg-stylist-400" />
+                                <p className="text-xs sm:text-sm font-semibold text-text-primary dark:text-text-dark-primary truncate">{b.serviceId?.name || 'Service'}</p>
+                              </div>
+                              <p className="text-caption text-text-muted dark:text-text-dark-muted mt-0.5 ml-4">
+                                {new Date(b.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · {new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                            <span className={`text-caption px-2.5 py-1 rounded-full font-semibold shrink-0 ${
+                              b.status === 'completed'
+                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
+                                : b.status === 'cancelled'
+                                ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
+                                : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
+                            }`}>
+                              {b.status}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 sm:py-10">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-surface-dark-tertiary flex items-center justify-center mx-auto mb-3">
+                            <Calendar className="w-5 h-5 text-text-muted" />
+                          </div>
+                          <p className="text-xs sm:text-sm text-text-muted dark:text-text-dark-muted">No booking history yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
