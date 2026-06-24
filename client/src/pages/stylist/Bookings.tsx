@@ -412,68 +412,64 @@ export default function StylistBookings() {
                       >
                         {/* Mobile layout */}
                         <div className="sm:hidden p-3.5 w-full">
-                          {/* Top row: time + status */}
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-2.5">
-                              <div className="text-center min-w-[48px]">
-                                <div className="text-lg font-bold text-text-primary dark:text-text-dark-primary tabular-nums leading-none">{tf.time}</div>
-                                <div className="text-[10px] font-medium text-text-muted dark:text-text-dark-muted mt-0.5">{tf.ampm}</div>
-                              </div>
-                              <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-7 h-7 rounded-lg ${isCancelled ? "bg-gray-200 dark:bg-gray-700" : "bg-stylist-100 dark:bg-stylist-900/40"} flex items-center justify-center`}>
-                                    <span className={`text-[10px] font-bold ${isCancelled ? "text-gray-400" : "text-stylist-600 dark:text-stylist-400"}`}>
-                                      {initials(clientName)}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <p className={`text-sm font-semibold leading-tight ${isCancelled ? "text-text-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>
-                                      {clientName}
-                                    </p>
-                                    <p className="text-[11px] text-text-secondary dark:text-text-dark-secondary truncate max-w-[160px]">
-                                      {serviceName}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
+                          {/* Row 1: Time + Status */}
+                          <div className="flex items-center justify-between mb-2.5">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${
+                                isInProgress ? "bg-emerald-500 animate-pulse" :
+                                isPending ? "bg-amber-400" :
+                                isConfirmed ? "bg-blue-400" :
+                                isCancelled ? "bg-red-300" : "bg-gray-300"
+                              }`} />
+                              <span className="text-sm font-bold text-text-primary dark:text-text-dark-primary tabular-nums">{tf.time} {tf.ampm}</span>
+                              {dur && (
+                                <span className="text-[11px] text-text-muted dark:text-text-dark-muted font-medium">({dur})</span>
+                              )}
                             </div>
                             <StatusBadge status={b.status} date={dateStr} />
                           </div>
 
-                          {/* Price + duration */}
-                          <div className="flex items-center gap-3 mb-3">
-                            {dur && (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-text-muted dark:text-text-dark-muted">
-                                <Timer size={11} />
-                                {dur}
-                              </span>
-                            )}
-                            {b.totalPrice > 0 && (
-                              <span className="text-[11px] font-semibold text-text-primary dark:text-text-dark-primary">
-                                GH₵{b.totalPrice}
-                              </span>
-                            )}
-                            {isInProgress && elapsed[b._id] && (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 ml-auto">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                {elapsed[b._id]}
-                              </span>
-                            )}
+                          {/* Row 2: Client name + service */}
+                          <div className="flex items-center gap-2.5 mb-1">
+                            <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center ${
+                              isCancelled ? "bg-gray-100 dark:bg-gray-800" : "bg-stylist-100 dark:bg-stylist-900/40"
+                            }`}>
+                              <span className={`text-xs font-bold ${
+                                isCancelled ? "text-gray-400" : "text-stylist-600 dark:text-stylist-400"
+                              }`}>{initials(clientName)}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-semibold ${isCancelled ? "text-text-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>
+                                {clientName}
+                              </p>
+                              <p className="text-[12px] text-text-secondary dark:text-text-dark-secondary truncate">
+                                {serviceName}{b.totalPrice > 0 ? ` · GH₵${b.totalPrice}` : ""}
+                              </p>
+                            </div>
                           </div>
+
+                          {/* Elapsed timer for in-progress */}
+                          {isInProgress && elapsed[b._id] && (
+                            <div className="mb-2">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-1 rounded-lg">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                {elapsed[b._id]} elapsed
+                              </span>
+                            </div>
+                          )}
 
                           {/* Actions */}
                           {(isPending || isConfirmed || isInProgress) && (
-                            <div className="flex items-center gap-2 pt-2.5 border-t border-gray-100 dark:border-gray-700/40">
+                            <div className="flex items-center gap-2 pt-2.5 mt-2 border-t border-gray-100 dark:border-gray-700/40">
                               {isPending && (
                                 <>
                                   <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
-                                    className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                    className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
                                     {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <CheckIcon size={15} />}
                                     Confirm
                                   </button>
                                   <button onClick={(e) => { e.stopPropagation(); handleCancel(b._id); }} disabled={actionLoading === b._id}
-                                    className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/10 text-red-600 dark:text-red-400 text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-950/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                    className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/10 text-red-600 dark:text-red-400 text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-950/20 active:scale-[0.97] transition-all disabled:opacity-50">
                                     {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
                                     Cancel
                                   </button>
@@ -481,21 +477,15 @@ export default function StylistBookings() {
                               )}
                               {isConfirmed && (
                                 <button onClick={(e) => { e.stopPropagation(); handleStartService(b._id); }} disabled={actionLoading === b._id}
-                                  className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-gradient-to-r from-violet-500 to-stylist-500 text-white text-sm font-semibold hover:from-violet-600 hover:to-stylist-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                  className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-stylist-500 text-white text-sm font-semibold hover:from-violet-600 hover:to-stylist-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
                                   {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
-                                  Start Service
+                                  Start
                                 </button>
                               )}
                               {isInProgress && (
                                 <div className="flex items-center gap-2 flex-1">
-                                  {elapsed[b._id] && (
-                                    <span className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-1.5 rounded-lg shrink-0">
-                                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                      {elapsed[b._id]}
-                                    </span>
-                                  )}
                                   <button onClick={(e) => { e.stopPropagation(); handleComplete(b._id); }} disabled={actionLoading === b._id}
-                                    className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white text-sm font-semibold hover:from-emerald-600 hover:to-green-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                    className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white text-sm font-semibold hover:from-emerald-600 hover:to-green-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
                                     {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <StopCircle size={15} />}
                                     Complete
                                   </button>
