@@ -223,7 +223,7 @@ export default function Clients() {
 
       {selected && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
           onClick={closeDetail}
         >
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
