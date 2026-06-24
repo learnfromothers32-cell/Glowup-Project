@@ -101,7 +101,7 @@ interface FilterPillsProps {
 
 export function FilterPills({ filters, active, onChange, counts }: FilterPillsProps) {
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+    <div className="flex items-center gap-1.5 overflow-x-auto overflow-y-hidden pb-1" style={{ scrollbarWidth: "none" }}>
       {filters.map(({ key, label }) => {
         const on = active === key;
         return (

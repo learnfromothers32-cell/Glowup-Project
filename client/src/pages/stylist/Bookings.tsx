@@ -129,7 +129,7 @@ export default function StylistBookings() {
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="flex gap-3 overflow-x-auto overflow-y-hidden pb-2">
           {[1, 2, 3, 4, 5].map((i) => <div key={i} className="h-24 w-36 sm:w-auto sm:flex-1 rounded-2xl skeleton-pulse shrink-0" />)}
         </div>
         {[1, 2, 3, 4].map((i) => <div key={i} className="h-20 rounded-2xl skeleton-pulse" style={{ animationDelay: `${i * 0.1}s` }} />)}
@@ -138,7 +138,7 @@ export default function StylistBookings() {
   }
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative overflow-x-hidden">
       <AnimatePresence>
         {toast.visible && (
           <motion.div
@@ -157,13 +157,13 @@ export default function StylistBookings() {
           <p className="text-sm text-text-muted dark:text-text-dark-muted">Manage client appointments and requests</p>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto sm:grid sm:grid-cols-3 lg:grid-cols-6 pb-1 sm:pb-0 mb-6">
-          <StatCard label="Pending" value={counts.pending} icon={Clock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[130px] sm:min-w-0" />
-          <StatCard label="In Progress" value={counts.inProgress} icon={Play} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[130px] sm:min-w-0" />
-          <StatCard label="Today" value={counts.today} icon={CalendarCheck} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-primary dark:text-text-dark-primary", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[130px] sm:min-w-0" />
-          <StatCard label="Upcoming" value={counts.upcoming} icon={CalendarClock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} className="min-w-[130px] sm:min-w-0" />
-          <StatCard label="Completed" value={counts.past} icon={CheckCircle} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-secondary dark:text-text-dark-secondary", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[130px] sm:min-w-0" />
-          <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-muted dark:text-text-dark-muted", icon: "text-text-muted dark:text-text-dark-muted" }} className="min-w-[130px] sm:min-w-0" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
+          <StatCard label="Pending" value={counts.pending} icon={Clock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} />
+          <StatCard label="In Progress" value={counts.inProgress} icon={Play} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} />
+          <StatCard label="Today" value={counts.today} icon={CalendarCheck} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-primary dark:text-text-dark-primary", icon: "text-text-muted dark:text-text-dark-muted" }} />
+          <StatCard label="Upcoming" value={counts.upcoming} icon={CalendarClock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} />
+          <StatCard label="Completed" value={counts.past} icon={CheckCircle} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-secondary dark:text-text-dark-secondary", icon: "text-text-muted dark:text-text-dark-muted" }} />
+          <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-muted dark:text-text-dark-muted", icon: "text-text-muted dark:text-text-dark-muted" }} />
         </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
@@ -207,7 +207,7 @@ export default function StylistBookings() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <p className={`text-xs sm:text-sm font-semibold truncate max-w-[100px] sm:max-w-none ${isCancelled ? "text-text-muted dark:text-text-dark-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>{clientName}</p>
+                          <p className={`text-xs sm:text-sm font-semibold truncate max-w-[120px] sm:max-w-none ${isCancelled ? "text-text-muted dark:text-text-dark-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>{clientName}</p>
                           <StatusBadge status={b.status} date={dateStr} />
                         </div>
                         <p className="text-[11px] sm:text-xs text-text-secondary dark:text-text-dark-secondary truncate">{serviceName}</p>
