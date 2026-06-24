@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Users, Heart, Gift, Mic, MicOff, Camera, CameraOff, SwitchCamera, LogOut } from "lucide-react";
+import { Send, Users, Heart, Gift, Mic, MicOff, Camera, CameraOff, SwitchCamera, LogOut, Shield } from "lucide-react";
 
 interface Props {
   isLive: boolean;
@@ -18,6 +18,7 @@ interface Props {
   onToggleBeauty: () => void;
   onShare: () => void;
   onInviteGuest: () => void;
+  onModeration?: () => void;
   isMuted: boolean;
   isVideoOff: boolean;
   duration: number;
@@ -243,6 +244,15 @@ export default function LiveCreatorPanel(props: Props) {
           >
             <SwitchCamera size={16} />
           </button>
+          {props.onModeration && (
+            <button
+              onClick={props.onModeration}
+              className="p-1.5 sm:p-2 rounded-xl bg-white/5 text-text-muted dark:text-text-dark-muted hover:bg-emerald-500/20 hover:text-emerald-400 transition-all"
+              title="Moderation"
+            >
+              <Shield size={14} className="sm:size-[16px]" />
+            </button>
+          )}
         </div>
 
         <div className="flex-1 flex items-center bg-white/5 rounded-xl px-2 sm:px-3 py-1 sm:py-1.5 ring-1 ring-white/5 focus-within:ring-brand-500/30 transition-all">
