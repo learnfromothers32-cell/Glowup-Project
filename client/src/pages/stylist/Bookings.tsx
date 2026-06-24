@@ -1,23 +1,28 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, CheckCircle as CheckIcon, XCircle, Play, StopCircle, Timer, Loader2, Calendar as CalendarIcon } from "lucide-react";
+import {
+  Search, CheckCircle as CheckIcon, XCircle, Play, StopCircle,
+  Timer, Loader2, Calendar as CalendarIcon, RefreshCcw,
+  Clock, ChevronRight, BarChart3, DollarSign,
+  ArrowRight, CheckCheck,
+} from "lucide-react";
 import { logger } from "@/utils/logger";
 import { useStylistBookingsQuery, useUpdateBookingStatusMutation } from "@/domain/booking/booking.hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import { connectQueue, onBookingStatusChanged, offBookingStatusChanged } from "@/services/socket";
-import { StatusBadge, todayStr } from "@/domain/booking/components/StatusBadge";
-import { EmptyState, FilterPills } from "@/domain/booking/components/SharedUI";
+import { StatusBadge, todayStr, initials } from "@/domain/booking/components/StatusBadge";
+import { EmptyState } from "@/domain/booking/components/SharedUI";
 import BookingDetailModal from "@/domain/booking/components/BookingDetailModal";
 import type { Booking } from "@/domain/booking/booking.types";
 
 type FilterKey = "pending" | "today" | "upcoming" | "past" | "cancelled" | "all";
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "pending", label: "Pending" },
-  { key: "today", label: "Today" },
-  { key: "upcoming", label: "Upcoming" },
-  { key: "past", label: "Past" },
-  { key: "cancelled", label: "Cancelled" },
+const FILTERS: { key: FilterKey; label: string; icon: typeof Clock }[] = [
+  { key: "pending", label: "Pending", icon: Clock },
+  { key: "today", label: "Today", icon: CalendarIcon },
+  { key: "upcoming", label: "Upcoming", icon: ArrowRight },
+  { key: "past", label: "Past", icon: CheckCheck },
+  { key: "cancelled", label: "Cancelled", icon: XCircle },
 ];
 
 function fmtTime12(iso: string) {
@@ -48,6 +53,41 @@ function fmtDuration(b: Booking): string | null {
   return null;
 }
 
+function getClientName(b: Booking): string {
+  if (typeof b.clientId === "object" && b.clientId !== null) return (b.clientId as any).name || "Client";
+  return "Client";
+}
+
+function getServiceName(b: Booking): string {
+  if (typeof b.serviceId === "object" && b.serviceId !== null) return (b.serviceId as any).name || "Service";
+  return "Service";
+}
+
+function StatCard({ label, value, icon: Icon, color, subtitle }: {
+  label: string; value: string | number; icon: typeof DollarSign; color: string; subtitle?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 p-4 hover:shadow-sm hover:border-gray-200 dark:hover:border-gray-600 transition-all duration-200"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+          <Icon size={18} className="text-white" />
+        </div>
+        <span className="text-2xl font-bold tabular-nums text-text-primary dark:text-text-dark-primary">
+          {value}
+        </span>
+      </div>
+      <p className="text-xs font-medium text-text-secondary dark:text-text-dark-secondary">{label}</p>
+      {subtitle && (
+        <p className="text-[10px] text-text-muted dark:text-text-dark-muted mt-0.5">{subtitle}</p>
+      )}
+    </motion.div>
+  );
+}
+
 export default function StylistBookings() {
   const { data: bookings = [], isLoading } = useStylistBookingsQuery();
   const updateStatus = useUpdateBookingStatusMutation();
@@ -58,10 +98,10 @@ export default function StylistBookings() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: "", visible: false });
 
-  const flash = (msg: string) => {
+  const flash = useCallback((msg: string) => {
     setToast({ message: msg, visible: true });
     setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
-  };
+  }, []);
 
   const today = todayStr();
 
@@ -75,6 +115,11 @@ export default function StylistBookings() {
     return { pending, inProgress, today: todayCount, upcoming, past, cancelled, all: bookings.length };
   }, [bookings, today]);
 
+  const totalRevenue = useMemo(
+    () => bookings.filter((b) => b.status === "completed").reduce((sum, b) => sum + (b.totalPrice || 0), 0),
+    [bookings]
+  );
+
   const filtered = useMemo(() => {
     let list = [...bookings];
     if (activeFilter === "pending") list = list.filter((b) => b.status === "pending");
@@ -86,9 +131,9 @@ export default function StylistBookings() {
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((b) => {
-        const clientName = typeof b.clientId === "object" ? (b.clientId as any).name || "" : "";
-        const svcName = typeof b.serviceId === "object" ? (b.serviceId as any).name || "" : "";
-        return clientName.toLowerCase().includes(q) || svcName.toLowerCase().includes(q);
+        const clientName = getClientName(b).toLowerCase();
+        const svcName = getServiceName(b).toLowerCase();
+        return clientName.includes(q) || svcName.includes(q);
       });
     }
     list.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
@@ -142,6 +187,7 @@ export default function StylistBookings() {
 
   const queryClient = useQueryClient();
   const [elapsed, setElapsed] = useState<Record<string, string>>({});
+
   useEffect(() => {
     connectQueue();
     const handleBookingEvent = () => queryClient.invalidateQueries({ queryKey: ["bookings"] });
@@ -169,151 +215,288 @@ export default function StylistBookings() {
     return () => clearInterval(id);
   }, [bookings]);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-7 w-48 skeleton-pulse rounded-lg" />
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="space-y-2">
-            <div className="h-4 w-24 skeleton-pulse rounded-lg" />
-            <div className="h-[140px] rounded-2xl skeleton-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
-            <div className="h-[140px] rounded-2xl skeleton-pulse" style={{ animationDelay: `${i * 0.15}s` }} />
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const isLoadingOrEmpty = isLoading && bookings.length === 0;
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen pb-8">
       <AnimatePresence>
         {toast.visible && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium shadow-lg shadow-black/20 dark:bg-white dark:text-gray-900"
+            initial={{ opacity: 0, y: -24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -24, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold shadow-2xl shadow-black/25 dark:shadow-black/40 flex items-center gap-2.5"
           >
+            <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <CheckIcon size={12} className="text-emerald-400" />
+            </div>
             {toast.message}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="pb-6">
-        {/* ── Header + summary ── */}
-        <div className="pt-2 pb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-text-dark-primary tracking-tight font-display mb-1">Bookings</h1>
-          <p className="text-sm text-text-muted dark:text-text-dark-muted">
-            {counts.today > 0 ? `${counts.today} booking${counts.today > 1 ? "s" : ""} today` : "No bookings today"}
-            {counts.pending > 0 ? ` · ${counts.pending} pending` : ""}
-            {counts.cancelled > 0 ? ` · ${counts.cancelled} cancelled` : ""}
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary dark:text-text-dark-primary tracking-tight font-display">
+            Bookings
+          </h1>
+          <p className="text-sm text-text-secondary dark:text-text-dark-secondary mt-1">
+            {counts.today > 0
+              ? `${counts.today} booking${counts.today > 1 ? "s" : ""} today`
+              : "No bookings today"}
+            {counts.pending > 0 && ` · ${counts.pending} pending`}
+            {counts.inProgress > 0 && ` · ${counts.inProgress} in progress`}
           </p>
         </div>
+        <button
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["bookings"] })}
+          className="self-start sm:self-center inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-surface-dark-secondary border border-gray-200 dark:border-gray-600 text-sm font-medium text-text-secondary dark:text-text-dark-secondary hover:border-gray-300 dark:hover:border-gray-500 hover:text-text-primary dark:hover:text-text-dark-primary transition-all"
+        >
+          <RefreshCcw size={14} />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
 
-        {/* ── Filters + Search ── */}
-        <div className="bg-white dark:bg-surface-dark-secondary rounded-xl border border-gray-100 dark:border-gray-700/40 p-2 sm:p-3 mb-3 sm:mb-5">
-          {/* Mobile search - full width */}
-          <div className="relative mb-2 sm:hidden">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or service\u2026"
-              className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200 dark:border-gray-600 text-sm text-text-primary dark:text-text-dark-primary placeholder:text-text-muted outline-none focus:border-stylist-300 dark:focus:border-stylist-700 transition-all" />
+      {/* ── Stats Row ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <StatCard
+          label="Today"
+          value={counts.today}
+          icon={CalendarIcon}
+          color="bg-violet-500"
+          subtitle={counts.inProgress > 0 ? `${counts.inProgress} active` : undefined}
+        />
+        <StatCard
+          label="Pending"
+          value={counts.pending}
+          icon={Clock}
+          color="bg-amber-500"
+          subtitle="Awaiting confirmation"
+        />
+        <StatCard
+          label="In Progress"
+          value={counts.inProgress}
+          icon={BarChart3}
+          color="bg-emerald-500"
+        />
+        <StatCard
+          label="Revenue"
+          value={`GH₵${totalRevenue.toLocaleString()}`}
+          icon={DollarSign}
+          color="bg-blue-500"
+          subtitle="From completed bookings"
+        />
+      </div>
+
+      {/* ── Filters + Search ── */}
+      <div className="bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 p-3 mb-5 shadow-sm w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Filter pills */}
+          <div className="w-full sm:flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto overflow-y-hidden" style={{ scrollbarWidth: "none" }}>
+            {FILTERS.map(({ key, label, icon: Icon }) => {
+              const isActive = activeFilter === key;
+              const count = counts[key] ?? 0;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveFilter(key)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                    isActive
+                      ? "bg-gray-900 text-white shadow-sm dark:bg-white dark:text-gray-900"
+                      : "bg-gray-50 dark:bg-surface-dark-tertiary text-text-secondary dark:text-text-dark-secondary border border-gray-100 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-surface-dark"
+                  }`}
+                >
+                  <Icon size={13} />
+                  {label}
+                  {count > 0 && (
+                    <span className={`text-[10px] font-bold min-w-[18px] h-[18px] px-1.5 rounded-full inline-flex items-center justify-center ${
+                      isActive ? "bg-white/20 text-white" : "bg-gray-200 dark:bg-gray-600 text-text-secondary dark:text-text-dark-secondary"
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
-          {/* Pills + Desktop search */}
-          <div className="flex items-center gap-2">
-            <div className="flex-1 min-w-0 max-w-full">
-              <FilterPills filters={FILTERS} active={activeFilter} onChange={(f) => setActiveFilter(f as FilterKey)} counts={counts} />
-            </div>
-            <div className="relative shrink-0 hidden sm:block">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search\u2026"
-                className="w-44 pl-8 pr-2.5 py-2 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200 dark:border-gray-600 text-xs text-text-primary dark:text-text-dark-primary placeholder:text-text-muted outline-none focus:border-stylist-300 dark:focus:border-stylist-700 transition-all" />
-            </div>
+
+          {/* Search */}
+          <div className="relative w-full sm:w-56 shrink-0">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-text-dark-muted pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name or service..."
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-gray-50 dark:bg-surface-dark-tertiary border border-gray-200 dark:border-gray-600 text-sm text-text-primary dark:text-text-dark-primary placeholder:text-text-muted outline-none focus:border-stylist-300 dark:focus:border-stylist-700 focus:ring-1 focus:ring-stylist-200 dark:focus:ring-stylist-800 transition-all"
+            />
           </div>
         </div>
+      </div>
 
-        {/* ── Bookings ── */}
-        {filtered.length === 0 ? (
-          <EmptyState icon={CalendarIcon} title="No bookings" sub="No bookings match your current filter. Try adjusting your search or filter." />
-        ) : (
-          <div className="space-y-6">
-            {sections.map((section) => (
-              <div key={section.title}>
-                {/* Section header */}
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <h2 className="text-sm font-bold text-text-primary dark:text-text-dark-primary uppercase tracking-wider">{section.title}</h2>
-                  <span className="text-xs font-medium text-text-muted dark:text-text-dark-muted bg-gray-100 dark:bg-surface-dark-tertiary px-2 py-0.5 rounded-full">{section.bookings.length}</span>
-                </div>
+      {/* ── Bookings List ── */}
+      {isLoadingOrEmpty ? (
+        <div className="space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-[100px] rounded-2xl skeleton-pulse" style={{ animationDelay: `${i * 0.08}s` }} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <EmptyState
+            icon={CalendarIcon}
+            title="No bookings found"
+            sub={search ? "No results match your search. Try a different name or service." : "No bookings match this filter yet."}
+          />
+        </motion.div>
+      ) : (
+        <div className="space-y-6">
+          {sections.map((section, sectionIdx) => (
+            <motion.div
+              key={section.title}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: sectionIdx * 0.05 }}
+            >
+              {/* Section Header */}
+              <div className="flex items-center gap-2.5 mb-3 px-1">
+                <div className={`w-1 h-5 rounded-full ${
+                  section.title === "In Progress" ? "bg-emerald-500" :
+                  section.title === "Today" ? "bg-violet-500" :
+                  section.title === "Upcoming" ? "bg-blue-500" :
+                  section.title === "Completed" ? "bg-gray-400" : "bg-red-400"
+                }`} />
+                <h2 className="text-sm font-bold text-text-primary dark:text-text-dark-primary">
+                  {section.title}
+                </h2>
+                <span className="text-xs font-medium text-text-muted dark:text-text-dark-muted bg-gray-100 dark:bg-surface-dark-tertiary px-2 py-0.5 rounded-full">
+                  {section.bookings.length}
+                </span>
+              </div>
 
-                <div className="space-y-2">
-                  {section.bookings.map((b) => {
-                    const dateStr = new Date(b.startTime).toISOString().split("T")[0];
-                    const clientName = typeof b.clientId === "object" ? (b.clientId as any).name || "Client" : "Client";
-                    const serviceName = typeof b.serviceId === "object" ? (b.serviceId as any).name || "Service" : "Service";
-                    const isPending = b.status === "pending";
-                    const isCancelled = b.status === "cancelled";
-                    const tf = fmtTime12(b.startTime);
-                    const dur = fmtDuration(b);
+              {/* Booking Cards */}
+              <div className="space-y-2.5">
+                {section.bookings.map((b, cardIdx) => {
+                  const clientName = getClientName(b);
+                  const serviceName = getServiceName(b);
+                  const isPending = b.status === "pending";
+                  const isInProgress = b.status === "in-progress";
+                  const isConfirmed = b.status === "confirmed";
+                  const isCancelled = b.status === "cancelled";
+                  const tf = fmtTime12(b.startTime);
+                  const dur = fmtDuration(b);
+                  const dateStr = new Date(b.startTime).toISOString().split("T")[0];
 
-                    return (
-                      <motion.div key={b._id} onClick={() => setDetail(b)}
-                        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                        className={`group bg-white dark:bg-surface-dark-secondary rounded-2xl border cursor-pointer hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 ${isCancelled ? "opacity-60" : "border-gray-100 dark:border-gray-700/40"} ${isPending ? "border-l-4 border-l-stylist-500 dark:border-l-stylist-400" : ""}`}>
-                        <div className="p-2.5 sm:p-3">
-                          {/* Row 1: time | name + badge */}
-                          <div className="flex items-start gap-2.5 sm:gap-3">
-                            <div className="flex flex-col items-center w-[52px] shrink-0 pt-0.5">
-                              <span className="text-sm sm:text-[15px] font-bold text-text-primary dark:text-text-dark-primary tabular-nums leading-tight">{tf.time}</span>
-                              <span className="text-[10px] text-text-muted dark:text-text-dark-muted font-medium leading-tight">{tf.ampm}</span>
-                              {dur && (
-                                <span className="text-[9px] text-text-secondary dark:text-text-dark-secondary mt-1 font-medium">{dur}</span>
-                              )}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-1.5">
-                                <p className={`text-sm sm:text-base font-semibold truncate ${isCancelled ? "text-text-muted dark:text-text-dark-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>{clientName}</p>
-                                <StatusBadge status={b.status} date={dateStr} />
+                  return (
+                    <motion.div
+                      key={b._id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: cardIdx * 0.03 }}
+                    >
+                      <div
+                        onClick={() => setDetail(b)}
+                        className={`group relative w-full bg-white dark:bg-surface-dark-secondary rounded-2xl border-2 cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-md ${
+                          isCancelled
+                            ? "border-red-100 dark:border-red-900/30 opacity-60 hover:opacity-80"
+                            : isInProgress
+                              ? "border-emerald-200 dark:border-emerald-800/30 hover:border-emerald-300 dark:hover:border-emerald-700/50"
+                              : isPending
+                                ? "border-amber-200 dark:border-amber-800/30 hover:border-amber-300 dark:hover:border-amber-700/50"
+                                : isConfirmed
+                                  ? "border-blue-100 dark:border-blue-900/30 hover:border-blue-200 dark:hover:border-blue-700/50"
+                                  : "border-gray-100 dark:border-gray-700/40 hover:border-gray-200 dark:hover:border-gray-600"
+                        }`}
+                      >
+                        {/* Mobile layout */}
+                        <div className="sm:hidden p-3.5 w-full">
+                          {/* Top row: time + status */}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="text-center min-w-[48px]">
+                                <div className="text-lg font-bold text-text-primary dark:text-text-dark-primary tabular-nums leading-none">{tf.time}</div>
+                                <div className="text-[10px] font-medium text-text-muted dark:text-text-dark-muted mt-0.5">{tf.ampm}</div>
                               </div>
-                              <p className="text-xs sm:text-sm text-text-secondary dark:text-text-dark-secondary truncate mt-0.5">
-                                {serviceName}{b.totalPrice > 0 ? " \u00B7 GH\u20B5" + b.totalPrice : ""}
-                              </p>
+                              <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-7 h-7 rounded-lg ${isCancelled ? "bg-gray-200 dark:bg-gray-700" : "bg-stylist-100 dark:bg-stylist-900/40"} flex items-center justify-center`}>
+                                    <span className={`text-[10px] font-bold ${isCancelled ? "text-gray-400" : "text-stylist-600 dark:text-stylist-400"}`}>
+                                      {initials(clientName)}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className={`text-sm font-semibold leading-tight ${isCancelled ? "text-text-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>
+                                      {clientName}
+                                    </p>
+                                    <p className="text-[11px] text-text-secondary dark:text-text-dark-secondary truncate max-w-[160px]">
+                                      {serviceName}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
+                            <StatusBadge status={b.status} date={dateStr} />
                           </div>
 
-                          {/* Action buttons */}
-                          {(isPending || b.status === "confirmed" || b.status === "in-progress") && (
-                            <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-gray-100 dark:border-gray-700/40">
+                          {/* Price + duration */}
+                          <div className="flex items-center gap-3 mb-3">
+                            {dur && (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-text-muted dark:text-text-dark-muted">
+                                <Timer size={11} />
+                                {dur}
+                              </span>
+                            )}
+                            {b.totalPrice > 0 && (
+                              <span className="text-[11px] font-semibold text-text-primary dark:text-text-dark-primary">
+                                GH₵{b.totalPrice}
+                              </span>
+                            )}
+                            {isInProgress && elapsed[b._id] && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 ml-auto">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                {elapsed[b._id]}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          {(isPending || isConfirmed || isInProgress) && (
+                            <div className="flex items-center gap-2 pt-2.5 border-t border-gray-100 dark:border-gray-700/40">
                               {isPending && (
                                 <>
                                   <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
-                                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[48px] rounded-xl border border-stylist-300 bg-stylist-50 dark:bg-stylist-950/20 text-sm font-semibold text-stylist-600 dark:text-stylist-400 hover:bg-stylist-100 dark:hover:bg-stylist-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                    {actionLoading === b._id ? <Loader2 size={16} className="animate-spin" /> : <CheckIcon size={16} />}
+                                    className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                    {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <CheckIcon size={15} />}
                                     Confirm
                                   </button>
                                   <button onClick={(e) => { e.stopPropagation(); handleCancel(b._id); }} disabled={actionLoading === b._id}
-                                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[48px] rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/20 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                    {actionLoading === b._id ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
+                                    className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/10 text-red-600 dark:text-red-400 text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-950/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
                                     Cancel
                                   </button>
                                 </>
                               )}
-                              {b.status === "confirmed" && (
+                              {isConfirmed && (
                                 <button onClick={(e) => { e.stopPropagation(); handleStartService(b._id); }} disabled={actionLoading === b._id}
-                                  className="flex-1 flex items-center justify-center gap-1.5 min-h-[48px] rounded-xl border border-stylist-300 bg-stylist-50 dark:bg-stylist-950/20 text-sm font-semibold text-stylist-600 dark:text-stylist-400 hover:bg-stylist-100 dark:hover:bg-stylist-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                  {actionLoading === b._id ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+                                  className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-gradient-to-r from-violet-500 to-stylist-500 text-white text-sm font-semibold hover:from-violet-600 hover:to-stylist-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                  {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
                                   Start Service
                                 </button>
                               )}
-                              {b.status === "in-progress" && (
+                              {isInProgress && (
                                 <div className="flex items-center gap-2 flex-1">
                                   {elapsed[b._id] && (
-                                    <span className="flex items-center gap-1 text-xs font-mono text-stylist-600 dark:text-stylist-400 font-semibold shrink-0">
-                                      <Timer size={14} /> {elapsed[b._id]}
+                                    <span className="flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-1.5 rounded-lg shrink-0">
+                                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                      {elapsed[b._id]}
                                     </span>
                                   )}
                                   <button onClick={(e) => { e.stopPropagation(); handleComplete(b._id); }} disabled={actionLoading === b._id}
-                                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[48px] rounded-xl border border-green-300 bg-green-50 dark:bg-green-950/20 text-sm font-semibold text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-950/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                    {actionLoading === b._id ? <Loader2 size={16} className="animate-spin" /> : <StopCircle size={16} />}
+                                    className="flex-1 flex items-center justify-center gap-1.5 h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white text-sm font-semibold hover:from-emerald-600 hover:to-green-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                    {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <StopCircle size={15} />}
                                     Complete
                                   </button>
                                 </div>
@@ -321,15 +504,124 @@ export default function StylistBookings() {
                             </div>
                           )}
                         </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+
+                        {/* Desktop layout */}
+                        <div className="hidden sm:block">
+                          <div className="flex items-stretch">
+                            {/* Time column */}
+                            <div className="flex flex-col items-center justify-center w-24 py-4 px-3 bg-gray-50/50 dark:bg-surface-dark-tertiary/30 border-r border-gray-100 dark:border-gray-700/40 shrink-0">
+                              <span className="text-xl font-bold text-text-primary dark:text-text-dark-primary tabular-nums leading-none">{tf.time}</span>
+                              <span className="text-[11px] font-medium text-text-muted dark:text-text-dark-muted mt-0.5">{tf.ampm}</span>
+                              {dur && (
+                                <span className="text-[10px] text-text-secondary dark:text-text-dark-secondary mt-1.5 font-medium bg-white dark:bg-surface-dark-secondary px-2 py-0.5 rounded-full border border-gray-100 dark:border-gray-700/40">
+                                  {dur}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 flex items-center gap-4 py-4 px-4 min-w-0">
+                              {/* Client avatar */}
+                              <div className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center ${
+                                isCancelled
+                                  ? "bg-gray-100 dark:bg-gray-800"
+                                  : "bg-stylist-100 dark:bg-stylist-900/40"
+                              }`}>
+                                <span className={`text-xs font-bold ${
+                                  isCancelled ? "text-gray-400" : "text-stylist-600 dark:text-stylist-400"
+                                }`}>
+                                  {initials(clientName)}
+                                </span>
+                              </div>
+
+                              {/* Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2.5">
+                                  <p className={`text-[15px] font-semibold truncate ${
+                                    isCancelled
+                                      ? "text-text-muted line-through"
+                                      : "text-text-primary dark:text-text-dark-primary"
+                                  }`}>
+                                    {clientName}
+                                  </p>
+                                  {b.totalPrice > 0 && (
+                                    <span className="text-xs font-semibold text-text-secondary dark:text-text-dark-secondary bg-gray-100 dark:bg-surface-dark-tertiary px-2 py-0.5 rounded-md whitespace-nowrap">
+                                      GH₵{b.totalPrice}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-text-secondary dark:text-text-dark-secondary truncate mt-0.5">
+                                  {serviceName}
+                                </p>
+                              </div>
+
+                              {/* Elapsed timer for in-progress */}
+                              {isInProgress && elapsed[b._id] && (
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 shrink-0">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">{elapsed[b._id]}</span>
+                                </div>
+                              )}
+
+                              {/* Status */}
+                              <div className="shrink-0 hidden lg:block">
+                                <StatusBadge status={b.status} date={dateStr} />
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2 pr-4 py-4 shrink-0">
+                              {(isPending || isConfirmed || isInProgress) && (
+                                <div className="flex items-center gap-2">
+                                  {isPending && (
+                                    <>
+                                      <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
+                                        className="inline-flex items-center gap-1.5 px-4 h-10 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                        {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <CheckIcon size={15} />}
+                                        Confirm
+                                      </button>
+                                      <button onClick={(e) => { e.stopPropagation(); handleCancel(b._id); }} disabled={actionLoading === b._id}
+                                        className="inline-flex items-center gap-1.5 px-4 h-10 rounded-xl border border-red-200 dark:border-red-800/40 bg-red-50 dark:bg-red-950/10 text-red-600 dark:text-red-400 text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-950/20 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                        {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
+                                        Cancel
+                                      </button>
+                                    </>
+                                  )}
+                                  {isConfirmed && (
+                                    <button onClick={(e) => { e.stopPropagation(); handleStartService(b._id); }} disabled={actionLoading === b._id}
+                                      className="inline-flex items-center gap-1.5 px-5 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-stylist-500 text-white text-sm font-semibold hover:from-violet-600 hover:to-stylist-600 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                      {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+                                      Start
+                                    </button>
+                                  )}
+                                  {isInProgress && (
+                                    <button onClick={(e) => { e.stopPropagation(); handleComplete(b._id); }} disabled={actionLoading === b._id}
+                                      className="inline-flex items-center gap-1.5 px-5 h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 text-white text-sm font-semibold hover:from-emerald-600 hover:to-green-600 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                                      {actionLoading === b._id ? <Loader2 size={15} className="animate-spin" /> : <StopCircle size={15} />}
+                                      Complete
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Click hint */}
+                        <div className="hidden sm:flex absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-[10px] text-text-muted dark:text-text-dark-muted flex items-center gap-0.5">
+                            View details <ChevronRight size={10} />
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       <AnimatePresence>
         {detail && <BookingDetailModal booking={detail} clientView={false} onClose={() => setDetail(null)} />}
