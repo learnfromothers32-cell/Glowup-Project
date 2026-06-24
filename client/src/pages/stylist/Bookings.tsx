@@ -138,7 +138,7 @@ export default function StylistBookings() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden">
+    <div className="min-h-screen relative">
       <AnimatePresence>
         {toast.visible && (
           <motion.div
@@ -157,7 +157,7 @@ export default function StylistBookings() {
           <p className="text-sm text-text-muted dark:text-text-dark-muted">Manage client appointments and requests</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-6">
           <StatCard label="Pending" value={counts.pending} icon={Clock} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} />
           <StatCard label="In Progress" value={counts.inProgress} icon={Play} color={{ bg: "bg-brand-50 dark:bg-brand-950/20", text: "text-brand-600 dark:text-brand-400", icon: "text-brand-500 dark:text-brand-400" }} />
           <StatCard label="Today" value={counts.today} icon={CalendarCheck} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-primary dark:text-text-dark-primary", icon: "text-text-muted dark:text-text-dark-muted" }} />
@@ -166,7 +166,7 @@ export default function StylistBookings() {
           <StatCard label="Cancelled" value={counts.cancelled} icon={CalendarX} color={{ bg: "bg-gray-50 dark:bg-surface-dark-tertiary", text: "text-text-muted dark:text-text-dark-muted", icon: "text-text-muted dark:text-text-dark-muted" }} />
         </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
           <div className="flex-1 min-w-0">
             <FilterPills filters={FILTERS} active={activeFilter} onChange={(f) => setActiveFilter(f as FilterKey)} counts={counts} />
           </div>
@@ -192,29 +192,29 @@ export default function StylistBookings() {
                 <motion.div key={b._id} onClick={() => setDetail(b)}
                   initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                   className={`group bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 cursor-pointer hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200 ${isCancelled ? "opacity-60" : ""} ${isPending ? "border-l-4 border-l-brand-500 dark:border-l-brand-400 border border-gray-100 dark:border-gray-700/40" : ""}`}>
-                  <div className="p-3 sm:p-4">
-                    <div className="flex items-center gap-3 w-full">
+                   <div className="p-2.5 sm:p-3">
+                    <div className="flex items-center gap-2 sm:gap-3 w-full">
                       <div className="hidden sm:flex flex-col items-center w-14 shrink-0 leading-tight">
                         <p className="text-sm font-bold text-text-primary dark:text-text-dark-primary tabular-nums">{fmtISO(b.startTime).split(" ")[0]}</p>
                         <p className="text-[10px] text-text-muted dark:text-text-dark-muted font-medium">{fmtISO(b.startTime).split(" ")[1]}</p>
                       </div>
 
                       <div className="shrink-0">
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gray-100 dark:bg-surface-dark-tertiary flex items-center justify-center ring-1 ring-gray-100 dark:ring-gray-700/40">
-                          <span className="text-[11px] font-bold text-text-muted dark:text-text-dark-muted">{initials(clientName)}</span>
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gray-100 dark:bg-surface-dark-tertiary flex items-center justify-center ring-1 ring-gray-100 dark:ring-gray-700/40">
+                          <span className="text-[10px] sm:text-[11px] font-bold text-text-muted dark:text-text-dark-muted">{initials(clientName)}</span>
                         </div>
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <p className={`text-xs sm:text-sm font-semibold truncate max-w-[120px] sm:max-w-none ${isCancelled ? "text-text-muted dark:text-text-dark-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>{clientName}</p>
+                          <p className={`text-xs sm:text-sm font-semibold truncate max-w-[140px] sm:max-w-none ${isCancelled ? "text-text-muted dark:text-text-dark-muted line-through" : "text-text-primary dark:text-text-dark-primary"}`}>{clientName}</p>
                           <StatusBadge status={b.status} date={dateStr} />
                         </div>
                         <p className="text-[11px] sm:text-xs text-text-secondary dark:text-text-dark-secondary truncate">{serviceName}</p>
-                        <div className="flex sm:hidden items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-text-muted dark:text-text-dark-muted">{fmtISO(b.startTime)}</span>
+                        <div className="flex sm:hidden items-center gap-1.5 mt-0.5">
+                          <span className="text-xs text-text-muted dark:text-text-dark-muted">{fmtISO(b.startTime)}</span>
                           {b.totalPrice > 0 && (
-                            <span className="text-[10px] font-semibold text-text-secondary dark:text-text-dark-secondary">GH₵{b.totalPrice}</span>
+                            <span className="text-xs font-semibold text-text-secondary dark:text-text-dark-secondary">· GH₵{b.totalPrice}</span>
                           )}
                         </div>
                       </div>
@@ -227,6 +227,7 @@ export default function StylistBookings() {
                     </div>
 
                     <div className="hidden sm:flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/40 justify-end">
+                      {/* desktop actions */}
                       {isPending && (
                         <>
                           <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
@@ -260,22 +261,22 @@ export default function StylistBookings() {
                       )}
                     </div>
 
-                    <div className="flex sm:hidden items-center gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700/40">
+                    <div className="flex sm:hidden items-center gap-2 mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700/40">
                       {isPending && (
                         <>
                           <button onClick={(e) => { e.stopPropagation(); handleConfirm(b._id); }} disabled={actionLoading === b._id}
-                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-brand-300 bg-brand-50 dark:bg-brand-950/20 text-[11px] font-semibold text-brand-600 dark:text-brand-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                            className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-brand-300 bg-brand-50 dark:bg-brand-950/20 text-[11px] font-semibold text-brand-600 dark:text-brand-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
                             {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <CheckIcon size={12} />} Confirm
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); handleCancel(b._id); }} disabled={actionLoading === b._id}
-                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/20 text-[11px] font-semibold text-red-600 dark:text-red-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                            className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/20 text-[11px] font-semibold text-red-600 dark:text-red-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
                             {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />} Cancel
                           </button>
                         </>
                       )}
                       {b.status === "confirmed" && (
                         <button onClick={(e) => { e.stopPropagation(); handleStartService(b._id); }} disabled={actionLoading === b._id}
-                          className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-brand-300 bg-brand-50 dark:bg-brand-950/20 text-[11px] font-semibold text-brand-600 dark:text-brand-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                          className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-brand-300 bg-brand-50 dark:bg-brand-950/20 text-[11px] font-semibold text-brand-600 dark:text-brand-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
                           {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} Start Service
                         </button>
                       )}
@@ -287,7 +288,7 @@ export default function StylistBookings() {
                             </span>
                           )}
                           <button onClick={(e) => { e.stopPropagation(); handleComplete(b._id); }} disabled={actionLoading === b._id}
-                            className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-green-300 bg-green-50 dark:bg-green-950/20 text-[11px] font-semibold text-green-700 dark:text-green-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                            className="flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-green-300 bg-green-50 dark:bg-green-950/20 text-[11px] font-semibold text-green-700 dark:text-green-400 flex-1 disabled:opacity-50 disabled:cursor-not-allowed">
                             {actionLoading === b._id ? <Loader2 size={12} className="animate-spin" /> : <StopCircle size={12} />} Complete
                           </button>
                         </div>
