@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Users, BadgeCheck, Share2, Flag, Calendar,
+  X, Users, BadgeCheck, Share2, Flag,
   Heart, Gift, MessageCircle, Volume2, VolumeX, Send,
 } from "lucide-react";
 import { FloatingReactions } from "./FloatingReactions";
@@ -43,7 +43,27 @@ interface Props {
   };
 }
 
-const DOUBLE_TAP_DELAY = 300;
+const DOUBLE_TAP_DELAY = 280;
+
+function LocalFloatingHearts({ hearts }: { hearts: Array<{ id: string; x: number }> }) {
+  return (
+    <AnimatePresence>
+      {hearts.map((h) => (
+        <motion.div
+          key={h.id}
+          initial={{ opacity: 1, scale: 0.4, y: 0, x: `${h.x}%` }}
+          animate={{ opacity: 0, scale: 1.5, y: -300 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 2.2, ease: "ease-out" }}
+          className="absolute bottom-20 z-30 pointer-events-none"
+          style={{ left: `${h.x}%` }}
+        >
+          <span className="text-3xl">❤️</span>
+        </motion.div>
+      ))}
+    </AnimatePresence>
+  );
+}
 
 export function LivePlayerScreen({
   stream, onFollow, isFollowing, hostName, hostImage, hostId, isVerified,
@@ -59,6 +79,7 @@ export function LivePlayerScreen({
 
   const [showGiftPanel, setShowGiftPanel] = useState(false);
   const [localReactions, setLocalReactions] = useState<FloatingReaction[]>([]);
+  const [localHearts, setLocalHearts] = useState<Array<{ id: string; x: number }>>([]);
   const [showFollowAnim, setShowFollowAnim] = useState(false);
   const [showChat, setShowChat] = useState(true);
   const [chatInput, setChatInput] = useState("");
@@ -96,6 +117,15 @@ export function LivePlayerScreen({
     }
   }, [comments]);
 
+  const spawnHeart = useCallback(() => {
+    const id = `h-${Date.now()}-${Math.random()}`;
+    const x = 15 + Math.random() * 70;
+    setLocalHearts((prev) => [...prev, { id, x }]);
+    setTimeout(() => {
+      setLocalHearts((prev) => prev.filter((h) => h.id !== id));
+    }, 2400);
+  }, []);
+
   const spawnReaction = useCallback((type = "heart") => {
     const x = 15 + Math.random() * 70;
     const r: FloatingReaction = {
@@ -106,10 +136,11 @@ export function LivePlayerScreen({
       createdAt: Date.now(),
     };
     setLocalReactions((prev) => [...prev, r].slice(-20));
+    spawnHeart();
     setTimeout(() => {
       setLocalReactions((prev) => prev.filter((rr) => rr.id !== r.id));
     }, 2500);
-  }, []);
+  }, [spawnHeart]);
 
   const handleVideoClick = useCallback(() => {
     const now = Date.now();
@@ -121,9 +152,10 @@ export function LivePlayerScreen({
     }
 
     if (diff < DOUBLE_TAP_DELAY) {
-      for (let i = 0; i < 3; i++) {
-        setTimeout(() => { spawnReaction("heart"); onReaction?.("heart"); }, i * 100);
-      }
+      spawnHeart();
+      setTimeout(() => spawnHeart(), 80);
+      setTimeout(() => spawnHeart(), 160);
+      onReaction?.("heart");
       lastTapRef.current = 0;
     } else {
       lastTapRef.current = now;
@@ -131,7 +163,7 @@ export function LivePlayerScreen({
         lastTapRef.current = 0;
       }, DOUBLE_TAP_DELAY);
     }
-  }, [spawnReaction, onReaction]);
+  }, [spawnHeart, onReaction]);
 
   const handleSendChat = () => {
     if (!chatInput.trim() || !socket) return;
@@ -165,7 +197,7 @@ export function LivePlayerScreen({
               autoPlay
               muted={isMuted}
               playsInline
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
@@ -176,53 +208,59 @@ export function LivePlayerScreen({
             </div>
           )}
 
+          {/* Local floating hearts (single-tap sends these) */}
+          <LocalFloatingHearts hearts={localHearts} />
+
           {/* Floating reactions */}
           <FloatingReactions reactions={allReactions} />
 
           {/* Gradient overlays */}
           <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
-          <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-black/75 to-transparent pointer-events-none" />
 
-          {/* ── TOP BAR ── (always visible) */}
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 z-20" style={{ paddingTop: "calc(12px + env(safe-area-inset-top))", paddingBottom: 12 }}>
+          {/* ── TOP BAR ── */}
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 z-20" style={{ paddingTop: "calc(10px + env(safe-area-inset-top))" }}>
             <button
               onClick={(e) => { e.stopPropagation(); onClose?.(); }}
-              className="p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-white/10 transition-colors"
+              className="p-2.5 rounded-full bg-black/40 backdrop-blur-sm hover:bg-white/10 active:scale-90 transition-all"
             >
               <X size={20} className="text-white" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/90 backdrop-blur-sm">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/90 backdrop-blur-sm shadow-lg">
                 <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
                 <span className="text-[10px] font-bold text-white tracking-wider">LIVE</span>
               </div>
-              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm">
-                <Users size={12} className="text-white" />
-                <span className="text-xs text-white font-medium">{viewerCount}</span>
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm shadow-lg border border-white/[0.06]">
+                <Users size={11} className="text-white" />
+                <span className="text-[11px] text-white font-semibold">{viewerCount}</span>
               </div>
             </div>
           </div>
 
-          {/* ── BOTTOM ROW: host info + actions + input ── */}
-          <div className="absolute bottom-0 left-0 right-0 z-20 flex flex-col gap-2 px-3 pb-6 pt-16 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}>
+          {/* ── BOTTOM ROW: host info + comments + input ── */}
+          <div
+            className="absolute bottom-0 left-0 right-0 z-20 flex flex-col gap-1.5 px-3 pb-5 pt-20 bg-gradient-to-t from-black/85 to-transparent pointer-events-none"
+            style={{ paddingBottom: "calc(14px + env(safe-area-inset-bottom))" }}
+          >
             {/* Comments */}
             <div
               ref={chatListRef}
               className="overflow-hidden pointer-events-auto"
-              style={{ maxHeight: 160 }}
+              style={{ maxHeight: 152 }}
             >
               <AnimatePresence initial={false}>
                 {showChat && visibleComments.map((msg) => (
                   <motion.div
                     key={msg.id}
-                    initial={{ opacity: 0, x: -30, y: 10 }}
+                    initial={{ opacity: 0, x: -32, y: 8 }}
                     animate={{ opacity: 1, x: 0, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ type: "spring", damping: 20, stiffness: 300 }}
                     className="mb-1"
                   >
-                    <div className="inline-flex items-start gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md" style={{ background: "rgba(0,0,0,0.55)", maxWidth: "85%" }}>
-                      <span className="shrink-0 font-bold text-[11px] leading-5 text-white/90 drop-shadow-md">
+                    <div className="inline-flex items-start gap-1.5 px-3 py-1.5 rounded-xl backdrop-blur-md" style={{ background: "rgba(0,0,0,0.55)", maxWidth: "88%" }}>
+                      <span className="shrink-0 font-bold text-[12px] leading-5 text-white/90 drop-shadow-md">
                         {msg.userName}
                       </span>
                       <span className="text-white text-[13px] leading-5 break-words min-w-0 drop-shadow-md">
@@ -236,30 +274,34 @@ export function LivePlayerScreen({
 
             {/* Host info + Follow/Book */}
             <div className="flex items-center gap-3 pointer-events-auto">
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <button
                   onClick={(e) => { e.stopPropagation(); onHostClick?.(); }}
-                  className="w-10 h-10 rounded-full border-2 border-white/50 overflow-hidden shrink-0 bg-gradient-to-br from-gray-600 to-gray-500 flex items-center justify-center shadow-lg cursor-pointer hover:opacity-80 transition-opacity"
+                  className="w-11 h-11 rounded-full border-2 border-white/50 overflow-hidden shrink-0 bg-gradient-to-br from-gray-600 to-gray-500 flex items-center justify-center shadow-lg cursor-pointer hover:opacity-80 active:scale-95 transition-all"
                 >
                   {hostImage ? (
                     <img src={hostImage} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-white font-bold text-sm">{hostInitial}</span>
+                    <span className="text-white font-bold text-base">{hostInitial}</span>
                   )}
                 </button>
-                <div className="min-w-0 flex flex-col gap-1">
+                <div className="min-w-0 flex flex-col gap-0.5">
                   <button
                     onClick={(e) => { e.stopPropagation(); onHostClick?.(); }}
                     className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
                   >
-                    <span className="text-white font-bold text-sm drop-shadow-lg truncate max-w-[120px]">{hostName || "Host"}</span>
-                    {isVerified && <BadgeCheck size={13} className="text-blue-400 shrink-0 drop-shadow-lg" />}
+                    <span className="text-white font-bold text-sm drop-shadow-lg truncate max-w-[130px]">{hostName || "Host"}</span>
+                    {isVerified && <BadgeCheck size={14} className="text-blue-400 shrink-0 drop-shadow-lg" />}
                   </button>
                   <div className="flex items-center gap-1.5">
                     {onFollow && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); onFollow(); setShowFollowAnim(true); setTimeout(() => setShowFollowAnim(false), 1000); }}
-                        className="px-3 py-0.5 rounded-full text-[10px] font-bold transition-all active:scale-95 border leading-5"
+                        onClick={(e) => {
+                          e.stopPropagation(); onFollow();
+                          setShowFollowAnim(true);
+                          setTimeout(() => setShowFollowAnim(false), 1000);
+                        }}
+                        className="px-4 py-1 rounded-full text-[11px] font-bold transition-all active:scale-95 border leading-5 drop-shadow-md"
                         style={{
                           background: isFollowing ? "rgba(255,255,255,0.15)" : "#FE2C55",
                           borderColor: isFollowing ? "rgba(255,255,255,0.3)" : "transparent",
@@ -272,8 +314,8 @@ export function LivePlayerScreen({
                     {onBook && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onBook(); }}
-                        className="px-3 py-0.5 rounded-full text-[10px] font-bold leading-5 transition-all active:scale-95"
-                        style={{ background: "#FE2C55", color: "white" }}
+                        className="px-4 py-1 rounded-full text-[11px] font-bold leading-5 transition-all active:scale-95 drop-shadow-md border border-white/20"
+                        style={{ background: "rgba(255,255,255,0.12)", color: "white" }}
                       >
                         Book
                       </button>
@@ -285,18 +327,18 @@ export function LivePlayerScreen({
 
             {/* Chat input */}
             {showChat && stream && (
-              <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-4 py-2 border border-white/10 pointer-events-auto">
+              <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-4 py-2.5 border border-white/[0.08] pointer-events-auto shadow-lg">
                 <input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSendChat(); }}
                   placeholder="Add a comment..."
-                  className="flex-1 bg-transparent text-sm text-white placeholder-white/40 outline-none"
+                  className="flex-1 bg-transparent text-sm text-white placeholder-white/35 outline-none"
                 />
                 <button
                   onClick={handleSendChat}
                   disabled={!chatInput.trim()}
-                  className="p-1 disabled:opacity-30 transition-all"
+                  className="p-1.5 disabled:opacity-25 active:scale-90 transition-all"
                 >
                   <Send size={18} style={{ color: "#FE2C55" }} />
                 </button>
@@ -305,20 +347,27 @@ export function LivePlayerScreen({
           </div>
 
           {/* ── RIGHT: Action buttons ── */}
-          <div className="absolute right-3 z-20 flex flex-col items-center gap-3"
+          <div
+            className="absolute right-3 z-20 flex flex-col items-center gap-4"
             style={{ top: "50%", transform: "translateY(-50%)" }}
           >
             {onToggleMute && (
-              <button onClick={(e) => { e.stopPropagation(); onToggleMute(); }} className="flex flex-col items-center gap-0.5">
-                <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform shadow-lg">
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleMute(); }}
+                className="flex flex-col items-center gap-0.5 active:scale-90 transition-transform"
+              >
+                <div className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/[0.06]">
                   {isMuted ? <VolumeX size={19} className="text-white" /> : <Volume2 size={19} className="text-white" />}
                 </div>
                 <span className="text-[9px] text-white/60 drop-shadow-lg">{isMuted ? "Unmute" : "Mute"}</span>
               </button>
             )}
 
-            <button onClick={(e) => { e.stopPropagation(); spawnReaction("heart"); onReaction?.("heart"); }} className="flex flex-col items-center gap-0.5 relative">
-              <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform shadow-lg">
+            <button
+              onClick={(e) => { e.stopPropagation(); spawnReaction("heart"); onReaction?.("heart"); }}
+              className="flex flex-col items-center gap-0.5 active:scale-90 transition-transform relative"
+            >
+              <div className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/[0.06]">
                 <Heart size={19} className="text-white" fill="white" fillOpacity={0.3} />
               </div>
               <span className="text-[9px] text-white/60 drop-shadow-lg">Like</span>
@@ -338,8 +387,11 @@ export function LivePlayerScreen({
               </AnimatePresence>
             </button>
 
-            <button onClick={(e) => { e.stopPropagation(); setShowChat((p) => !p); }} className="flex flex-col items-center gap-0.5">
-              <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform shadow-lg relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowChat((p) => !p); }}
+              className="flex flex-col items-center gap-0.5 active:scale-90 transition-transform"
+            >
+              <div className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/[0.06] relative">
                 <MessageCircle size={19} className="text-white" />
                 {comments.length > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full flex items-center justify-center px-1" style={{ background: "#FE2C55" }}>
@@ -351,8 +403,11 @@ export function LivePlayerScreen({
             </button>
 
             {onSendGift && (
-              <button onClick={(e) => { e.stopPropagation(); setShowGiftPanel(true); }} className="flex flex-col items-center gap-0.5">
-                <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform shadow-lg relative">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowGiftPanel(true); }}
+                className="flex flex-col items-center gap-0.5 active:scale-90 transition-transform"
+              >
+                <div className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/[0.06] relative">
                   <Gift size={19} className="text-pink-400" />
                   <motion.div
                     className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full flex items-center justify-center"
@@ -368,8 +423,11 @@ export function LivePlayerScreen({
             )}
 
             {onShare && (
-              <button onClick={(e) => { e.stopPropagation(); onShare(); }} className="flex flex-col items-center gap-0.5">
-                <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform shadow-lg">
+              <button
+                onClick={(e) => { e.stopPropagation(); onShare(); }}
+                className="flex flex-col items-center gap-0.5 active:scale-90 transition-transform"
+              >
+                <div className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/[0.06]">
                   <Share2 size={19} className="text-white" />
                 </div>
                 <span className="text-[9px] text-white/60 drop-shadow-lg">Share</span>
@@ -377,8 +435,11 @@ export function LivePlayerScreen({
             )}
 
             {onReport && (
-              <button onClick={(e) => { e.stopPropagation(); onReport(); }} className="flex flex-col items-center gap-0.5">
-                <div className="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform shadow-lg">
+              <button
+                onClick={(e) => { e.stopPropagation(); onReport(); }}
+                className="flex flex-col items-center gap-0.5 active:scale-90 transition-transform"
+              >
+                <div className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/[0.06]">
                   <Flag size={16} className="text-white/60" />
                 </div>
                 <span className="text-[9px] text-white/60 drop-shadow-lg">Report</span>
