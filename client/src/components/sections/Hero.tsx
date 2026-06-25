@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Star, Play, Shield, Sparkles, Download } from "lucide-react";
+import { Star, Play, Shield, Sparkles } from "lucide-react";
 
 interface HeroProps {
   onOpenInstall?: () => void;
@@ -39,25 +39,28 @@ export default function Hero({ onOpenInstall }: HeroProps) {
               Discover verified stylists, watch live beauty sessions, get AI-powered matches, and earn rewards — the premium platform for modern beauty.
             </p>
 
-            <div className="mt-8 flex flex-row flex-wrap gap-2">
-              <button
-                onClick={() => navigate("/signup")}
-                className="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-3 text-[11px] font-semibold text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-              >
-                Get Started Free
-                <ArrowRight size={11} />
-              </button>
+            {/* Mobile: stacked · Desktop: horizontal */}
+            <div className="mt-8 flex flex-col md:flex-row items-stretch gap-4 md:gap-3">
+              {/* Sign In — mobile: 1st · desktop: 2nd */}
               <button
                 onClick={() => navigate("/login")}
-                className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark-secondary px-3 text-[11px] font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-surface-dark-tertiary transition-all duration-200"
+                className="order-1 md:order-2 inline-flex h-12 md:h-10 w-full md:w-auto items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark-secondary px-6 md:px-5 text-base md:text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200"
               >
                 Sign In
               </button>
+              {/* Get Started Free — mobile: 2nd · desktop: 1st */}
+              <button
+                onClick={() => navigate("/signup")}
+                className="order-2 md:order-1 inline-flex h-12 md:h-10 w-full md:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-brand-600 px-6 md:px-5 text-base md:text-sm font-bold text-white shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200"
+              >
+                Get Started Free
+              </button>
+              {/* Download App — mobile: 3rd · desktop: 3rd */}
               <button
                 onClick={onOpenInstall}
-                className="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-gray-900 dark:bg-white px-3 text-[11px] font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                className="order-3 inline-flex h-12 md:h-10 w-full md:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-brand-600 px-6 md:px-5 text-base md:text-sm font-semibold text-white shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200"
               >
-                <Download size={11} />
+                <span className="text-lg leading-none">📱</span>
                 Download App
               </button>
             </div>
