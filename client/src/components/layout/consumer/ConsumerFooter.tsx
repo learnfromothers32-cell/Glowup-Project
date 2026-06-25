@@ -594,8 +594,6 @@ export default function ConsumerFooter() {
       <PwaInstallModal
         open={showInstallModal}
         onClose={() => setShowInstallModal(false)}
-        isIOS={isIOS}
-        isAndroid={isAndroid}
       />
     </footer>
   );
