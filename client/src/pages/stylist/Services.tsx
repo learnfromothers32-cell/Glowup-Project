@@ -302,11 +302,10 @@ export default function Services() {
                 svc.isActive === false
                   ? "border-gray-200 dark:border-gray-700/30 opacity-70"
                   : "border-gray-100 dark:border-gray-700/40"
-              }`}
-            >
+              }`}>
               <div className="p-4 sm:p-5">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  {/* Icon */}
+                {/* Top row: icon + name + badge (stack on mobile) */}
+                <div className="flex items-start gap-3">
                   <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
                     svc.isActive === false
                       ? "bg-gray-100 dark:bg-surface-dark-tertiary"
@@ -318,8 +317,6 @@ export default function Services() {
                         : "text-stylist-500"
                     } />
                   </div>
-
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -327,7 +324,7 @@ export default function Services() {
                           svc.isActive === false
                             ? "text-text-muted dark:text-text-dark-muted"
                             : "text-text-primary dark:text-text-dark-primary"
-                        }`}>
+              }`}>
                           {svc.name}
                         </h3>
                         {svc.category && (
@@ -337,12 +334,7 @@ export default function Services() {
                           </p>
                         )}
                       </div>
-                      <Badge
-                        variant={svc.isActive === false ? "gray" : "success"}
-                        pill
-                        dot
-                        className="shrink-0 mt-0.5"
-                      >
+                      <Badge variant={svc.isActive === false ? "gray" : "success"} pill dot className="shrink-0 mt-0.5">
                         {svc.isActive === false ? "Paused" : "Active"}
                       </Badge>
                     </div>
@@ -359,36 +351,66 @@ export default function Services() {
                       </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    <button
-                      onClick={() => handleToggleActive(svc)}
-                      className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all ${
-                        svc.isActive === false
-                          ? "text-text-muted hover:text-stylist-500 hover:bg-stylist-50 dark:hover:bg-stylist-950/30"
-                          : "text-emerald-500 hover:text-stylist-500 hover:bg-stylist-50 dark:hover:bg-stylist-950/30"
-                      }`}
-                      aria-label={svc.isActive === false ? "Activate service" : "Pause service"}
-                      title={svc.isActive === false ? "Activate" : "Pause"}
-                    >
-                      {svc.isActive === false ? <ArchiveRestore size={16} /> : <Power size={16} />}
-                    </button>
-                    <button
-                      onClick={() => openEditModal(svc)}
-                      className="h-9 w-9 rounded-xl flex items-center justify-center text-text-muted dark:text-text-dark-muted hover:text-stylist-500 hover:bg-stylist-50 dark:hover:bg-stylist-950/30 transition-all"
-                      aria-label={`Edit ${svc.name}`}
-                    >
-                      <Edit3 size={15} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(svc)}
-                      className="h-9 w-9 rounded-xl flex items-center justify-center text-text-muted dark:text-text-dark-muted hover:text-error hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-                      aria-label={`Delete ${svc.name}`}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                {/* Actions row: full-width on mobile, inline on desktop */}
+                <div className="flex items-center gap-1.5 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 dark:border-gray-700/30 sm:hidden">
+                  <button
+                    onClick={() => openEditModal(svc)}
+                    className="flex-1 h-10 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-stylist-600 dark:text-stylist-400 bg-stylist-50 dark:bg-stylist-950/30 hover:bg-stylist-100 dark:hover:bg-stylist-950/50 rounded-xl transition-colors"
+                  >
+                    <Edit3 size={14} />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleToggleActive(svc)}
+                    className={`h-10 px-3 rounded-xl inline-flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors ${
+                      svc.isActive === false
+                        ? "text-stylist-600 dark:text-stylist-400 bg-gray-100 dark:bg-surface-dark-tertiary hover:bg-gray-200 dark:hover:bg-surface-dark-hover"
+                        : "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+                    }`}
+                    aria-label={svc.isActive === false ? "Activate" : "Pause"}
+                  >
+                    {svc.isActive === false ? <ArchiveRestore size={14} /> : <Power size={14} />}
+                    {svc.isActive === false ? "Activate" : "Pause"}
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(svc)}
+                    className="h-10 w-10 rounded-xl flex items-center justify-center text-text-muted dark:text-text-dark-muted hover:text-error hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                    aria-label={`Delete ${svc.name}`}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+
+                {/* Desktop actions (inline) */}
+                <div className="hidden sm:flex items-center gap-0.5 absolute right-4 sm:right-5 top-1/2 -translate-y-1/2">
+                  <button
+                    onClick={() => handleToggleActive(svc)}
+                    className={`h-9 w-9 rounded-xl flex items-center justify-center transition-all ${
+                      svc.isActive === false
+                        ? "text-text-muted hover:text-stylist-500 hover:bg-stylist-50 dark:hover:bg-stylist-950/30"
+                        : "text-emerald-500 hover:text-stylist-500 hover:bg-stylist-50 dark:hover:bg-stylist-950/30"
+                    }`}
+                    aria-label={svc.isActive === false ? "Activate service" : "Pause service"}
+                    title={svc.isActive === false ? "Activate" : "Pause"}
+                  >
+                    {svc.isActive === false ? <ArchiveRestore size={16} /> : <Power size={16} />}
+                  </button>
+                  <button
+                    onClick={() => openEditModal(svc)}
+                    className="h-9 w-9 rounded-xl flex items-center justify-center text-text-muted dark:text-text-dark-muted hover:text-stylist-500 hover:bg-stylist-50 dark:hover:bg-stylist-950/30 transition-all"
+                    aria-label={`Edit ${svc.name}`}
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(svc)}
+                    className="h-9 w-9 rounded-xl flex items-center justify-center text-text-muted dark:text-text-dark-muted hover:text-error hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+                    aria-label={`Delete ${svc.name}`}
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               </div>
             </motion.div>
