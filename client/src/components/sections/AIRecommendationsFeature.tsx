@@ -8,7 +8,7 @@ const AI_SUGGESTIONS = [
     service: "Medium Box Braids",
     rating: 4.9,
     match: "98% match",
-    color: "from-brand-400 to-brand-500",
+    avatar: "https://picsum.photos/seed/ai1/100/100",
   },
   {
     title: "Near you in Osu",
@@ -17,7 +17,7 @@ const AI_SUGGESTIONS = [
     service: "Fade Cut",
     rating: 4.8,
     match: "95% match",
-    color: "from-stylist-400 to-stylist-500",
+    avatar: "https://picsum.photos/seed/ai2/100/100",
   },
   {
     title: "Trending in Accra",
@@ -26,7 +26,7 @@ const AI_SUGGESTIONS = [
     service: "Glow Facial",
     rating: 4.9,
     match: "92% match",
-    color: "from-gold-400 to-gold-500",
+    avatar: "https://picsum.photos/seed/ai3/100/100",
   },
 ];
 
@@ -50,11 +50,14 @@ export default function AIRecommendationsFeature() {
                 {/* Suggestions */}
                 <div className="px-4 py-4 space-y-3">
                   {AI_SUGGESTIONS.map((s) => (
-                    <div key={s.title} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3.5">
+                    <div key={s.title} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3.5 hover:shadow-card transition-shadow duration-300">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center text-white text-[10px] font-bold`}>
-                          {s.stylist.split(" ").map(n => n[0]).join("")}
-                        </div>
+                        <img
+                          src={s.avatar}
+                          alt={s.stylist}
+                          className="h-8 w-8 rounded-lg object-cover"
+                          loading="lazy"
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] font-bold text-text-primary dark:text-text-dark-primary">{s.stylist}</p>
                           <p className="text-[9px] text-text-muted dark:text-text-dark-muted">{s.service}</p>
@@ -71,7 +74,7 @@ export default function AIRecommendationsFeature() {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[8px] font-bold text-success bg-success/10 rounded-full px-2 py-0.5">{s.match}</span>
-                          <button className="h-6 w-6 rounded-full bg-brand-500 flex items-center justify-center">
+                          <button className="h-6 w-6 rounded-full bg-brand-500 flex items-center justify-center hover:bg-brand-600 transition-colors">
                             <Heart size={10} className="text-white" />
                           </button>
                         </div>
@@ -86,7 +89,7 @@ export default function AIRecommendationsFeature() {
                     <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400">AI Insight</span>
                   </div>
                   <p className="text-[9px] text-text-secondary dark:text-text-dark-secondary leading-relaxed">
-                    Based on your booking history, we think you&apos;ll love Ama&apos;s braids. She has a 98% satisfaction rate from clients with similar preferences.
+                    Based on your booking history, we think you'll love Ama's braids. She has a 98% satisfaction rate from clients with similar preferences.
                   </p>
                 </div>
               </div>
@@ -95,12 +98,12 @@ export default function AIRecommendationsFeature() {
 
           {/* Text */}
           <div>
-            <span className="inline-block text-xs font-bold uppercase tracking-[0.16em] text-brand-500 mb-3">AI-Powered</span>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary dark:text-text-dark-primary leading-tight">
+            <span className="section-label mb-3">AI-Powered</span>
+            <h2 className="section-heading leading-tight">
               AI finds the{" "}
               <span className="text-brand-500">perfect stylist</span>
             </h2>
-            <p className="mt-4 text-base text-text-secondary dark:text-text-dark-secondary leading-relaxed max-w-md">
+            <p className="mt-4 section-subheading">
               Our AI learns your preferences, location, and past bookings to recommend the best stylists and services for you.
             </p>
             <div className="mt-6 space-y-3">
@@ -110,8 +113,8 @@ export default function AIRecommendationsFeature() {
                 { icon: Zap, label: "Smart Matching", desc: "Matches you with 95%+ accuracy" },
                 { icon: Star, label: "Rating Analysis", desc: "Considers ratings from similar clients" },
               ].map((f) => (
-                <div key={f.label} className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-950/30">
+                <div key={f.label} className="flex items-start gap-3 group">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-950/30 transition-transform duration-300 group-hover:scale-110">
                     <f.icon size={14} className="text-brand-500" />
                   </div>
                   <div>

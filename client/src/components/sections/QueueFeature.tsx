@@ -14,18 +14,18 @@ export default function QueueFeature() {
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           {/* Text */}
           <div>
-            <span className="inline-block text-xs font-bold uppercase tracking-[0.16em] text-brand-500 mb-3">Real-Time Queue</span>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary dark:text-text-dark-primary leading-tight">
+            <span className="section-label mb-3">Real-Time Queue</span>
+            <h2 className="section-heading leading-tight">
               No more waiting{" "}
               <span className="text-brand-500">in lines</span>
             </h2>
-            <p className="mt-4 text-base text-text-secondary dark:text-text-dark-secondary leading-relaxed max-w-md">
+            <p className="mt-4 section-subheading">
               Join a queue from your phone. Watch your position update live. Get notified when it's almost your turn. Never miss your slot again.
             </p>
             <div className="mt-8 space-y-4">
               {QUEUE_FEATURES.map((f) => (
-                <div key={f.label} className="flex items-start gap-3.5">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-950/30">
+                <div key={f.label} className="flex items-start gap-3.5 group">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-50 to-brand-100/50 dark:from-brand-950/30 dark:to-brand-900/20 transition-transform duration-300 group-hover:scale-110">
                     <f.icon size={18} className="text-brand-500" />
                   </div>
                   <div>
@@ -39,7 +39,7 @@ export default function QueueFeature() {
 
           {/* Mockup */}
           <div className="relative">
-            <div className="rounded-[2rem] bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-950/30 dark:to-brand-900/20 p-8 shadow-[0_20px_60px_rgba(244,63,94,0.08)]">
+            <div className="rounded-[2rem] bg-gradient-to-br from-brand-50 to-brand-100/50 dark:from-brand-950/30 dark:to-brand-900/20 p-8 shadow-[0_20px_60px_rgba(244,63,94,0.06)]">
               <div className="mx-auto max-w-xs rounded-3xl bg-white dark:bg-surface-dark-secondary shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-brand-500 to-brand-600 px-5 py-4 text-white">
@@ -48,14 +48,14 @@ export default function QueueFeature() {
                 </div>
                 {/* Position */}
                 <div className="px-5 py-6 text-center">
-                  <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-brand-50 dark:bg-brand-950/30 mb-3">
+                  <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-950/30 dark:to-brand-900/20 mb-3">
                     <span className="text-3xl font-extrabold text-brand-500">3</span>
                   </div>
                   <p className="text-xs font-semibold text-text-primary dark:text-text-dark-primary">Your position</p>
                   <p className="text-[10px] text-text-muted dark:text-text-dark-muted mt-1">Est. wait: <span className="font-bold text-brand-500">~25 min</span></p>
                   {/* Progress */}
                   <div className="mt-4 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                    <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-brand-500 to-brand-400" />
+                    <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-1000" />
                   </div>
                   <p className="mt-2 text-[10px] text-success font-semibold">Almost your turn! 2 clients ahead</p>
                 </div>
@@ -76,8 +76,8 @@ export default function QueueFeature() {
                 </div>
                 {/* Buttons */}
                 <div className="px-5 pb-5 flex gap-2">
-                  <button className="flex-1 rounded-xl bg-brand-500 py-2.5 text-xs font-bold text-white">Join Queue</button>
-                  <button className="rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-semibold text-text-secondary dark:text-text-dark-secondary">Leave</button>
+                  <button className="flex-1 rounded-xl bg-brand-500 py-2.5 text-xs font-bold text-white hover:bg-brand-600 transition-colors">Join Queue</button>
+                  <button className="rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-semibold text-text-secondary dark:text-text-dark-secondary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Leave</button>
                 </div>
               </div>
             </div>

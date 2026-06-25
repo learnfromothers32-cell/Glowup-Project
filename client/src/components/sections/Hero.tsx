@@ -9,19 +9,20 @@ export default function Hero({ onOpenInstall }: HeroProps) {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/80 via-white to-white dark:from-surface-dark dark:via-surface-dark dark:to-surface-dark">
-      {/* Background decoration */}
+    <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/60 via-white to-white dark:from-surface-dark dark:via-surface-dark dark:to-surface-dark">
+      {/* Background gradient mesh */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-brand-100/40 dark:bg-brand-950/20 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 h-[300px] w-[300px] rounded-full bg-brand-50/60 dark:bg-brand-950/10 blur-3xl" />
+        <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-brand-100/30 dark:bg-brand-950/15 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 h-[400px] w-[400px] rounded-full bg-brand-50/50 dark:bg-brand-950/10 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[300px] rounded-full bg-gold-100/20 dark:bg-gold-900/10 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-8 pt-28 pb-16 sm:pt-36 sm:pb-24 lg:pt-40 lg:pb-32">
         <div className="grid gap-12 lg:grid-cols-[1fr_480px] lg:items-center lg:gap-16">
           {/* Left — Copy */}
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 dark:border-brand-800 dark:bg-brand-950/30 mb-6">
-              <Sparkles size={14} className="text-brand-500" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand-200/60 bg-brand-50/80 px-4 py-1.5 dark:border-brand-800/40 dark:bg-brand-950/20 mb-6 backdrop-blur-sm">
+              <Sparkles size={14} className="text-brand-500 animate-pulse-soft" />
               <span className="text-xs font-semibold tracking-wide text-brand-600 dark:text-brand-400">
                 AI beauty matching is now live
               </span>
@@ -29,7 +30,7 @@ export default function Hero({ onOpenInstall }: HeroProps) {
 
             <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold leading-[1.1] tracking-tight text-text-primary dark:text-text-dark-primary">
               Where beauty meets{" "}
-              <span className="bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-brand-500 via-brand-600 to-brand-500 bg-clip-text text-transparent">
                 intelligence.
               </span>
             </h1>
@@ -41,22 +42,22 @@ export default function Hero({ onOpenInstall }: HeroProps) {
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => navigate("/signup")}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-7 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(244,63,94,0.35)] hover:shadow-[0_4px_20px_rgba(244,63,94,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-7 text-sm font-semibold text-white shadow-[0_2px_12px_rgba(244,63,94,0.3)] hover:shadow-[0_4px_20px_rgba(244,63,94,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
                 Get Started Free
                 <ArrowRight size={16} />
               </button>
               <button
                 onClick={() => navigate("/login")}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-gray-800 px-7 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark-secondary px-7 text-sm font-medium text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-surface-dark-tertiary transition-all duration-200"
               >
                 Sign In
               </button>
               <button
                 onClick={onOpenInstall}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-500 px-7 text-sm font-bold text-white shadow-[0_2px_12px_rgba(244,63,94,0.35)] hover:shadow-[0_4px_20px_rgba(244,63,94,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gray-900 dark:bg-white px-7 text-sm font-semibold text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
-                <Download size={18} />
+                <Download size={16} />
                 Download App
               </button>
             </div>
@@ -64,16 +65,21 @@ export default function Hero({ onOpenInstall }: HeroProps) {
             {/* Social proof */}
             <div className="mt-10 flex items-center gap-4">
               <div className="flex -space-x-2">
-                {["bg-brand-500", "bg-brand-600", "bg-gold-500", "bg-brand-400", "bg-brand-700"].map(
-                  (bg, i) => (
-                    <div
-                      key={i}
-                      className={`h-8 w-8 rounded-full ${bg} border-2 border-white dark:border-surface-dark flex items-center justify-center text-[10px] font-bold text-white`}
-                    >
-                      {["A", "N", "E", "K", "M"][i]}
-                    </div>
-                  )
-                )}
+                {[
+                  "https://picsum.photos/seed/hero1/80/80",
+                  "https://picsum.photos/seed/hero2/80/80",
+                  "https://picsum.photos/seed/hero3/80/80",
+                  "https://picsum.photos/seed/hero4/80/80",
+                  "https://picsum.photos/seed/hero5/80/80",
+                ].map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`User ${i + 1}`}
+                    className="h-8 w-8 rounded-full border-2 border-white dark:border-surface-dark object-cover"
+                    loading="lazy"
+                  />
+                ))}
               </div>
               <div>
                 <div className="flex items-center gap-0.5">
@@ -90,10 +96,10 @@ export default function Hero({ onOpenInstall }: HeroProps) {
 
           {/* Right — App preview card */}
           <div className="relative lg:ml-auto w-full max-w-md">
-            <div className="relative rounded-3xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 shadow-[0_8px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div className="relative rounded-3xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 shadow-[0_8px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.3)] overflow-hidden">
               {/* App header */}
               <div className="flex items-center gap-3 px-5 pt-5 pb-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-sm">
                   <Sparkles size={18} className="text-white" />
                 </div>
                 <div>
@@ -110,7 +116,12 @@ export default function Hero({ onOpenInstall }: HeroProps) {
               <div className="mx-5 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-surface-dark-tertiary p-4">
                 <div className="flex items-start gap-3">
                   <div className="relative">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-sm font-bold text-white">AK</div>
+                    <img
+                      src="https://picsum.photos/seed/stylist1/100/100"
+                      alt="Stylist"
+                      className="h-12 w-12 rounded-xl object-cover"
+                      loading="lazy"
+                    />
                     <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-success flex items-center justify-center border-2 border-white dark:border-gray-900">
                       <Shield size={8} className="text-white" />
                     </div>
@@ -118,7 +129,7 @@ export default function Hero({ onOpenInstall }: HeroProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-bold text-text-primary dark:text-text-dark-primary">Ama K.</p>
-                      <span className="text-[10px] font-semibold text-gold-500 bg-gold-50 dark:bg-gold-900/20 px-1.5 py-0.5 rounded">Top Rated</span>
+                      <span className="text-[10px] font-semibold text-gold-600 bg-gold-50 dark:bg-gold-900/20 px-1.5 py-0.5 rounded-full">Top Rated</span>
                     </div>
                     <p className="text-xs text-text-muted dark:text-text-dark-muted mt-0.5">Bridal makeup · Braids · Natural glam</p>
                     <div className="flex items-center gap-1 mt-1.5">
@@ -130,31 +141,49 @@ export default function Hero({ onOpenInstall }: HeroProps) {
                 </div>
               </div>
 
-              {/* Live preview */}
+              {/* Live preview with image */}
               <div className="mx-5 mt-3 mb-5 rounded-2xl overflow-hidden relative">
-                <div className="aspect-video bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-900/30 dark:to-brand-800/20 flex items-center justify-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="h-12 w-12 rounded-full bg-white/80 dark:bg-white/10 backdrop-blur flex items-center justify-center">
-                      <Play size={20} className="text-brand-500 ml-0.5" fill="currentColor" />
-                    </div>
-                    <span className="text-xs font-semibold text-brand-600 dark:text-brand-400">Watch Live</span>
+                <img
+                  src="https://picsum.photos/seed/livesession/600/340"
+                  alt="Live session preview"
+                  className="aspect-video w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer">
+                    <Play size={20} className="text-brand-500 ml-0.5" fill="currentColor" />
                   </div>
                 </div>
                 <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-sm px-2.5 py-1">
                   <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                   <span className="text-[10px] font-semibold text-white">LIVE</span>
                 </div>
+                <div className="absolute bottom-3 left-3 right-3">
+                  <p className="text-xs font-semibold text-white drop-shadow">Bridal Styling Session</p>
+                  <p className="text-[10px] text-white/80 drop-shadow">with Ama K. · 2.4K watching</p>
+                </div>
               </div>
             </div>
 
             {/* Floating badges */}
-            <div className="absolute -top-4 -right-4 rounded-2xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 shadow-lg px-3 py-2 flex items-center gap-2 animate-bounce" style={{ animationDuration: "3s" }}>
+            <div className="absolute -top-4 -right-4 rounded-2xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 shadow-lg px-3 py-2 flex items-center gap-2 animate-float">
               <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center">
                 <Shield size={14} className="text-success" />
               </div>
               <div>
                 <p className="text-[10px] font-semibold text-text-primary dark:text-text-dark-primary">Verified</p>
                 <p className="text-[9px] text-text-muted">All stylists</p>
+              </div>
+            </div>
+
+            <div className="absolute -bottom-3 -left-3 rounded-2xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 shadow-lg px-3 py-2 flex items-center gap-2 animate-float-delay">
+              <div className="h-8 w-8 rounded-lg bg-brand-50 dark:bg-brand-950/30 flex items-center justify-center">
+                <Star size={14} className="text-brand-500" fill="currentColor" />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-text-primary dark:text-text-dark-primary">4.9 Rating</p>
+                <p className="text-[9px] text-text-muted">10K+ reviews</p>
               </div>
             </div>
           </div>

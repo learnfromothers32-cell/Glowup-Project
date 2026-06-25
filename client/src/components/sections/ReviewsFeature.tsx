@@ -9,7 +9,8 @@ const REVIEWS = [
     service: "Box Braids",
     verified: true,
     helpful: 24,
-    color: "from-brand-400 to-brand-500",
+    avatar: "https://picsum.photos/seed/reviewer1/100/100",
+    gradient: "from-brand-400 to-brand-500",
   },
   {
     name: "Kofi A.",
@@ -19,7 +20,8 @@ const REVIEWS = [
     service: "Fade Cut",
     verified: true,
     helpful: 18,
-    color: "from-stylist-400 to-stylist-500",
+    avatar: "https://picsum.photos/seed/reviewer2/100/100",
+    gradient: "from-stylist-400 to-stylist-500",
   },
   {
     name: "Ama B.",
@@ -29,7 +31,8 @@ const REVIEWS = [
     service: "Bridal Makeup",
     verified: true,
     helpful: 31,
-    color: "from-gold-400 to-gold-500",
+    avatar: "https://picsum.photos/seed/reviewer3/100/100",
+    gradient: "from-gold-400 to-gold-500",
   },
   {
     name: "Nana Y.",
@@ -39,7 +42,8 @@ const REVIEWS = [
     service: "Gel Nails",
     verified: true,
     helpful: 15,
-    color: "from-success to-emerald-500",
+    avatar: "https://picsum.photos/seed/reviewer4/100/100",
+    gradient: "from-success to-emerald-500",
   },
 ];
 
@@ -48,12 +52,12 @@ export default function ReviewsFeature() {
     <section className="py-20 sm:py-28 bg-gray-50 dark:bg-surface-dark-secondary">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <span className="inline-block text-xs font-bold uppercase tracking-[0.16em] text-brand-500 mb-3">Reviews</span>
-          <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary dark:text-text-dark-primary">
+          <span className="section-label mb-3">Reviews</span>
+          <h2 className="section-heading">
             Trustworthy{" "}
             <span className="text-brand-500">reviews</span>
           </h2>
-          <p className="mt-4 text-base text-text-secondary dark:text-text-dark-secondary">
+          <p className="mt-4 section-subheading mx-auto">
             Read real customer reviews. Check ratings before booking. Verified reviews from actual clients.
           </p>
         </div>
@@ -62,7 +66,7 @@ export default function ReviewsFeature() {
           {REVIEWS.map((r) => (
             <div
               key={r.name + r.service}
-              className="rounded-2xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 p-5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all duration-300"
+              className="rounded-2xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 p-5 transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 hover:border-gray-200 dark:hover:border-gray-700"
             >
               <Quote size={20} className="text-brand-200 dark:text-brand-800 mb-3" />
               <p className="text-xs text-text-secondary dark:text-text-dark-secondary leading-relaxed mb-4">{r.text}</p>
@@ -77,9 +81,12 @@ export default function ReviewsFeature() {
                 ))}
               </div>
               <div className="flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${r.color} flex items-center justify-center text-white text-[10px] font-bold`}>
-                  {r.name[0]}
-                </div>
+                <img
+                  src={r.avatar}
+                  alt={r.name}
+                  className="h-8 w-8 rounded-full object-cover"
+                  loading="lazy"
+                />
                 <div>
                   <div className="flex items-center gap-1">
                     <span className="text-xs font-bold text-text-primary dark:text-text-dark-primary">{r.name}</span>

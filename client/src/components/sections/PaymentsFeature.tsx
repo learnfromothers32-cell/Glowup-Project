@@ -1,9 +1,9 @@
 import { Shield, CreditCard, Smartphone, CheckCircle, Lock, Banknote } from "lucide-react";
 
 const PAYMENT_METHODS = [
-  { icon: CreditCard, label: "Debit/Credit Card", desc: "Visa, Mastercard", color: "text-stylist-500", bg: "bg-stylist-50 dark:bg-stylist-950/30" },
-  { icon: Smartphone, label: "Mobile Money", desc: "MTN MoMo, Vodafone Cash", color: "text-gold-500", bg: "bg-gold-50 dark:bg-gold-900/20" },
-  { icon: Banknote, label: "Pay on Delivery", desc: "Cash at appointment", color: "text-success", bg: "bg-success/10 dark:bg-success/10" },
+  { icon: CreditCard, label: "Debit/Credit Card", desc: "Visa, Mastercard", color: "text-stylist-500", bg: "bg-gradient-to-br from-stylist-50 to-stylist-100/50 dark:from-stylist-950/30 dark:to-stylist-900/20" },
+  { icon: Smartphone, label: "Mobile Money", desc: "MTN MoMo, Vodafone Cash", color: "text-gold-600", bg: "bg-gradient-to-br from-gold-50 to-gold-100/50 dark:from-gold-900/20 dark:to-gold-800/15" },
+  { icon: Banknote, label: "Pay on Delivery", desc: "Cash at appointment", color: "text-success", bg: "bg-gradient-to-br from-success/5 to-success/10 dark:from-success/10 dark:to-success/5" },
 ];
 
 const SECURITY = [
@@ -20,17 +20,17 @@ export default function PaymentsFeature() {
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           {/* Text */}
           <div>
-            <span className="inline-block text-xs font-bold uppercase tracking-[0.16em] text-success mb-3">Secure Payments</span>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary dark:text-text-dark-primary leading-tight">
+            <span className="section-label mb-3" style={{ color: "#10b981" }}>Secure Payments</span>
+            <h2 className="section-heading leading-tight">
               Pay securely{" "}
-              <span className="text-success">in GHS</span>
+              <span style={{ color: "#10b981" }}>in GHS</span>
             </h2>
-            <p className="mt-4 text-base text-text-secondary dark:text-text-dark-secondary leading-relaxed max-w-md">
+            <p className="mt-4 section-subheading">
               Multiple payment methods, all secured. Pay with card, mobile money, or cash. Instant confirmation, instant receipts.
             </p>
             <div className="mt-6 space-y-3">
               {PAYMENT_METHODS.map((m) => (
-                <div key={m.label} className="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                <div key={m.label} className="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 px-4 py-3 hover:shadow-card transition-shadow duration-300">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${m.bg}`}>
                     <m.icon size={18} className={m.color} />
                   </div>
@@ -101,7 +101,7 @@ export default function PaymentsFeature() {
                     <span className="text-xs font-bold text-text-primary dark:text-text-dark-primary">Total</span>
                     <span className="text-lg font-extrabold text-success">GH₵ 250.00</span>
                   </div>
-                  <button className="w-full rounded-xl bg-gradient-to-r from-success to-emerald-600 py-3 text-xs font-bold text-white shadow-lg flex items-center justify-center gap-2">
+                  <button className="w-full rounded-xl bg-gradient-to-r from-success to-emerald-600 py-3 text-xs font-bold text-white shadow-lg flex items-center justify-center gap-2 hover:from-emerald-600 hover:to-emerald-700 transition-all">
                     <Lock size={12} /> Pay Securely
                   </button>
                   <div className="flex items-center justify-center gap-1.5 mt-3">

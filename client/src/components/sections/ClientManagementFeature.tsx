@@ -1,9 +1,9 @@
 import { Users, Calendar, FileText, MessageCircle, Clock, TrendingUp } from "lucide-react";
 
 const CLIENTS = [
-  { name: "Esi Koranteng", lastVisit: "2 days ago", totalVisits: 12, spent: "GH₵2,400", note: "Prefers medium braids, allergic to certain products" },
-  { name: "Kofi Adjei", lastVisit: "1 week ago", totalVisits: 8, spent: "GH₵640", note: "Likes fade with 0.5 guard, come in every 3 weeks" },
-  { name: "Ama Boateng", lastVisit: "3 days ago", totalVisits: 23, spent: "GH₵5,750", note: "VIP client, always books box braids" },
+  { name: "Esi Koranteng", lastVisit: "2 days ago", totalVisits: 12, spent: "GH₵2,400", note: "Prefers medium braids, allergic to certain products", avatar: "https://picsum.photos/seed/client1/100/100" },
+  { name: "Kofi Adjei", lastVisit: "1 week ago", totalVisits: 8, spent: "GH₵640", note: "Likes fade with 0.5 guard, come in every 3 weeks", avatar: "https://picsum.photos/seed/client2/100/100" },
+  { name: "Ama Boateng", lastVisit: "3 days ago", totalVisits: 23, spent: "GH₵5,750", note: "VIP client, always books box braids", avatar: "https://picsum.photos/seed/client3/100/100" },
 ];
 
 export default function ClientManagementFeature() {
@@ -13,12 +13,12 @@ export default function ClientManagementFeature() {
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           {/* Text */}
           <div>
-            <span className="inline-block text-xs font-bold uppercase tracking-[0.16em] text-stylist-500 mb-3">For Stylists</span>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary dark:text-text-dark-primary leading-tight">
+            <span className="section-label mb-3" style={{ color: "#6366f1" }}>For Stylists</span>
+            <h2 className="section-heading leading-tight">
               Manage your{" "}
-              <span className="text-stylist-500">clients</span>
+              <span style={{ color: "#6366f1" }}>clients</span>
             </h2>
-            <p className="mt-4 text-base text-text-secondary dark:text-text-dark-secondary leading-relaxed max-w-md">
+            <p className="mt-4 section-subheading">
               Track client history, add notes, manage bookings, and build lasting relationships — all from your dashboard.
             </p>
             <div className="mt-6 space-y-3">
@@ -28,8 +28,8 @@ export default function ClientManagementFeature() {
                 { icon: Calendar, label: "Booking History", desc: "See past and upcoming appointments" },
                 { icon: TrendingUp, label: "Revenue Tracking", desc: "Track earnings per client and overall" },
               ].map((f) => (
-                <div key={f.label} className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stylist-50 dark:bg-stylist-950/30">
+                <div key={f.label} className="flex items-start gap-3 group">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stylist-50 dark:bg-stylist-950/30 transition-transform duration-300 group-hover:scale-110">
                     <f.icon size={14} className="text-stylist-500" />
                   </div>
                   <div>
@@ -43,7 +43,7 @@ export default function ClientManagementFeature() {
 
           {/* Mockup */}
           <div className="relative">
-            <div className="rounded-[2rem] bg-gradient-to-br from-stylist-50 to-stylist-100 dark:from-stylist-950/30 dark:to-stylist-900/20 p-8 shadow-[0_20px_60px_rgba(99,102,241,0.08)]">
+            <div className="rounded-[2rem] bg-gradient-to-br from-stylist-50 to-stylist-100/50 dark:from-stylist-950/30 dark:to-stylist-900/20 p-8 shadow-[0_20px_60px_rgba(99,102,241,0.06)]">
               <div className="mx-auto max-w-sm rounded-3xl bg-white dark:bg-surface-dark-secondary shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-stylist-500 to-stylist-600 px-5 py-4">
@@ -74,11 +74,14 @@ export default function ClientManagementFeature() {
                 {/* Client list */}
                 <div className="px-4 py-3 space-y-2.5">
                   {CLIENTS.map((c) => (
-                    <div key={c.name} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 px-3.5 py-3">
+                    <div key={c.name} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 px-3.5 py-3 hover:shadow-card transition-shadow duration-300">
                       <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-stylist-400 to-stylist-500 flex items-center justify-center text-white text-[10px] font-bold">
-                          {c.name.split(" ").map(n => n[0]).join("")}
-                        </div>
+                        <img
+                          src={c.avatar}
+                          alt={c.name}
+                          className="h-8 w-8 rounded-full object-cover"
+                          loading="lazy"
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold text-text-primary dark:text-text-dark-primary">{c.name}</p>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -101,10 +104,10 @@ export default function ClientManagementFeature() {
                 </div>
                 {/* Quick actions */}
                 <div className="px-4 pb-4 flex gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-stylist-500 py-2.5 text-[10px] font-bold text-white">
+                  <button className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-stylist-500 py-2.5 text-[10px] font-bold text-white hover:bg-stylist-600 transition-colors">
                     <MessageCircle size={11} /> Message All
                   </button>
-                  <button className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-[10px] font-semibold text-text-secondary dark:text-text-dark-secondary">
+                  <button className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-[10px] font-semibold text-text-secondary dark:text-text-dark-secondary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <Clock size={11} /> View Schedule
                   </button>
                 </div>

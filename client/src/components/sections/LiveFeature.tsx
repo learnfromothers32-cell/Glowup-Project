@@ -1,4 +1,4 @@
-import { Radio, Heart, MessageCircle, Eye, Users, Send } from "lucide-react";
+import { Radio, Heart, MessageCircle, Eye, Send } from "lucide-react";
 
 const COMMENTS = [
   { user: "Esi K.", text: "This technique is amazing! 😍", time: "2m ago" },
@@ -13,12 +13,12 @@ export default function LiveFeature() {
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           {/* Text */}
           <div>
-            <span className="inline-block text-xs font-bold uppercase tracking-[0.16em] text-error mb-3">Live Streaming</span>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary dark:text-text-dark-primary leading-tight">
+            <span className="section-label mb-3" style={{ color: "#ef4444" }}>Live Streaming</span>
+            <h2 className="section-heading leading-tight">
               Watch live{" "}
-              <span className="text-error">beauty tutorials</span>
+              <span style={{ color: "#ef4444" }}>beauty tutorials</span>
             </h2>
-            <p className="mt-4 text-base text-text-secondary dark:text-text-dark-secondary leading-relaxed max-w-md">
+            <p className="mt-4 section-subheading">
               Stylists stream their work live. Watch techniques in real-time, ask questions, and interact with the community.
             </p>
             <div className="mt-6 space-y-3">
@@ -38,12 +38,14 @@ export default function LiveFeature() {
             <div className="rounded-[2rem] bg-gradient-to-br from-error/5 to-brand-50 dark:from-error/5 dark:to-brand-950/30 p-8 shadow-[0_20px_60px_rgba(244,63,94,0.06)]">
               <div className="mx-auto max-w-xs rounded-3xl bg-black shadow-2xl overflow-hidden">
                 {/* Video area */}
-                <div className="relative h-64 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 mx-auto flex items-center justify-center text-white text-xl font-bold">AB</div>
-                    <p className="text-white text-xs font-bold mt-3">Ama Boateng</p>
-                    <p className="text-white/60 text-[10px] mt-1">Box Braids Tutorial</p>
-                  </div>
+                <div className="relative h-64 overflow-hidden">
+                  <img
+                    src="https://picsum.photos/seed/livestream/400/500"
+                    alt="Live stream"
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   {/* Live badge */}
                   <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-error px-2.5 py-1">
                     <Radio size={10} className="text-white animate-pulse" />
@@ -60,16 +62,18 @@ export default function LiveFeature() {
                     <Heart size={12} fill="#f43f5e" className="text-brand-500 opacity-60 ml-2" />
                     <Heart size={14} fill="#f43f5e" className="text-brand-500 opacity-70" />
                   </div>
-                  {/* Interaction bar */}
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5">
-                      <Heart size={12} fill="#f43f5e" className="text-brand-500" />
-                      <span className="text-[10px] font-bold text-white">3.2K</span>
+                  {/* Bottom info */}
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <img
+                        src="https://picsum.photos/seed/streamer/100/100"
+                        alt="Streamer"
+                        className="h-7 w-7 rounded-full border-2 border-white object-cover"
+                        loading="lazy"
+                      />
+                      <span className="text-[11px] font-bold text-white">@ama_beauty</span>
                     </div>
-                    <div className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm px-3 py-1.5">
-                      <MessageCircle size={12} className="text-white" />
-                      <span className="text-[10px] font-bold text-white">248</span>
-                    </div>
+                    <p className="text-[10px] text-white/80">Box Braids Tutorial</p>
                   </div>
                 </div>
                 {/* Comments */}
@@ -88,7 +92,7 @@ export default function LiveFeature() {
                 {/* Input */}
                 <div className="px-4 py-3 bg-gray-900 border-t border-gray-800 flex items-center gap-2">
                   <input type="text" placeholder="Say something…" className="flex-1 bg-gray-800 rounded-full px-3 py-1.5 text-[10px] text-white placeholder-gray-500 outline-none" />
-                  <button className="h-7 w-7 rounded-full bg-brand-500 flex items-center justify-center">
+                  <button className="h-7 w-7 rounded-full bg-brand-500 flex items-center justify-center hover:bg-brand-600 transition-colors">
                     <Send size={10} className="text-white" />
                   </button>
                 </div>

@@ -14,7 +14,7 @@ export default function BookingFeature() {
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           {/* Mockup */}
           <div className="relative order-2 lg:order-1">
-            <div className="rounded-[2rem] bg-gradient-to-br from-stylist-50 to-stylist-100 dark:from-stylist-950/30 dark:to-stylist-900/20 p-8 shadow-[0_20px_60px_rgba(99,102,241,0.08)]">
+            <div className="rounded-[2rem] bg-gradient-to-br from-stylist-50 to-stylist-100/50 dark:from-stylist-950/30 dark:to-stylist-900/20 p-8 shadow-[0_20px_60px_rgba(99,102,241,0.06)]">
               <div className="mx-auto max-w-xs rounded-3xl bg-white dark:bg-surface-dark-secondary shadow-xl overflow-hidden border border-gray-100 dark:border-gray-800">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-stylist-500 to-stylist-600 px-5 py-4 text-white">
@@ -24,7 +24,12 @@ export default function BookingFeature() {
                 {/* Stylist */}
                 <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-xs font-bold">AB</div>
+                    <img
+                      src="https://picsum.photos/seed/stylist2/100/100"
+                      alt="Stylist"
+                      className="h-10 w-10 rounded-full object-cover"
+                      loading="lazy"
+                    />
                     <div>
                       <p className="text-xs font-bold text-text-primary dark:text-text-dark-primary">Ama Boateng</p>
                       <div className="flex items-center gap-1 mt-0.5">
@@ -66,7 +71,7 @@ export default function BookingFeature() {
                     <CheckCircle size={14} className="text-success" />
                     <span className="text-[10px] font-bold text-success">Instant Confirmation</span>
                   </div>
-                  <button className="w-full rounded-xl bg-gradient-to-r from-stylist-500 to-stylist-600 py-3 text-xs font-bold text-white shadow-lg">
+                  <button className="w-full rounded-xl bg-gradient-to-r from-stylist-500 to-stylist-600 py-3 text-xs font-bold text-white shadow-lg hover:from-stylist-600 hover:to-stylist-700 transition-all">
                     Confirm Booking — GH₵250
                   </button>
                 </div>
@@ -76,17 +81,17 @@ export default function BookingFeature() {
 
           {/* Text */}
           <div className="order-1 lg:order-2">
-            <span className="inline-block text-xs font-bold uppercase tracking-[0.16em] text-stylist-500 mb-3">Booking</span>
-            <h2 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary dark:text-text-dark-primary leading-tight">
+            <span className="section-label mb-3" style={{ color: "#6366f1" }}>Booking</span>
+            <h2 className="section-heading leading-tight">
               Book appointments{" "}
-              <span className="text-stylist-500">instantly</span>
+              <span style={{ color: "#6366f1" }}>instantly</span>
             </h2>
-            <p className="mt-4 text-base text-text-secondary dark:text-text-dark-secondary leading-relaxed max-w-md">
+            <p className="mt-4 section-subheading">
               Pick a stylist, choose your service, select a date — done. Instant confirmation, no phone calls needed.
             </p>
             <div className="mt-8 grid grid-cols-2 gap-3">
               {BOOKING_STEPS.map((s, i) => (
-                <div key={s.label} className="flex items-start gap-3 rounded-xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 p-3.5">
+                <div key={s.label} className="flex items-start gap-3 rounded-xl bg-white dark:bg-surface-dark-secondary border border-gray-100 dark:border-gray-800 p-3.5 hover:shadow-card hover:-translate-y-0.5 transition-all duration-300">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stylist-50 dark:bg-stylist-950/30 text-[10px] font-extrabold text-stylist-500">{i + 1}</div>
                   <div>
                     <p className="text-xs font-bold text-text-primary dark:text-text-dark-primary">{s.label}</p>
