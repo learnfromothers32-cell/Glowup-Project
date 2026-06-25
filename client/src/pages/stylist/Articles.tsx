@@ -25,6 +25,7 @@ import {
   Upload,
   Save,
   ChevronDown,
+  RefreshCcw,
 } from 'lucide-react';
 
 type Status = 'idle' | 'loading' | 'error';
@@ -62,6 +63,7 @@ export default function Articles() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'published' | 'draft'>('all');
+  const [categoryFilter, setCategoryFilter] = useState('All');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [editorMode, setEditorMode] = useState<EditorMode>('none');
@@ -256,6 +258,10 @@ export default function Articles() {
 
   const publishCount = articles.filter((a) => a.published).length;
   const draftCount = articles.filter((a) => !a.published).length;
+  const catOptions = ['All', ...new Set(articles.map(a => a.category))].slice(0, 8);
+  const filteredArticles = categoryFilter === 'All'
+    ? articles
+    : articles.filter(a => a.category === categoryFilter);
 
   return (
     <div className="space-y-6">
@@ -332,6 +338,23 @@ export default function Articles() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Category Filter Pills */}
+      <div className="flex flex-wrap gap-1.5">
+        {catOptions.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => { setCategoryFilter(cat); setPage(1); }}
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              categoryFilter === cat
+                ? 'bg-stylist-500 text-white shadow-sm'
+                : 'bg-white dark:bg-surface-dark-secondary border border-gray-200 dark:border-gray-700/40 text-text-secondary dark:text-text-dark-secondary hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
 
       {/* Error Banner */}
@@ -591,100 +614,113 @@ export default function Articles() {
 
       {/* Content */}
       {status === 'loading' ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-text-muted dark:text-text-dark-muted" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-gray-100 dark:border-gray-700/40 bg-white dark:bg-surface-dark-secondary overflow-hidden">
+              <div className="aspect-[2/1] bg-gray-100 dark:bg-surface-dark-tertiary skeleton-pulse" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 w-20 skeleton-pulse rounded-full" />
+                <div className="h-5 w-full skeleton-pulse rounded-lg" />
+                <div className="h-4 w-3/4 skeleton-pulse rounded-lg" />
+                <div className="flex gap-2">
+                  <div className="h-4 w-16 skeleton-pulse rounded-lg" />
+                  <div className="h-4 w-12 skeleton-pulse rounded-lg" />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <div className="h-9 flex-1 skeleton-pulse rounded-xl" />
+                  <div className="h-9 w-9 skeleton-pulse rounded-xl" />
+                  <div className="h-9 w-9 skeleton-pulse rounded-xl" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : status === 'error' && !articles.length ? (
-        <div className="text-center py-20 bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40">
-          <AlertCircle size={32} className="mx-auto text-text-muted dark:text-text-dark-muted mb-3" />
-          <p className="text-sm text-text-secondary dark:text-text-dark-secondary">{error || 'Failed to load articles'}</p>
-          <button onClick={fetchArticles} className="mt-3 text-sm font-medium text-stylist-600 hover:text-stylist-700">
-            Try again
+        <div className="flex flex-col items-center justify-center py-20 sm:py-24 text-center px-4">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center mb-4">
+            <AlertCircle size={28} className="text-error" />
+          </div>
+          <h3 className="text-lg sm:text-xl font-bold text-text-primary dark:text-text-dark-primary mb-1">Failed to load articles</h3>
+          <p className="text-sm text-text-secondary dark:text-text-dark-secondary mb-6 max-w-xs">{error || 'Something went wrong. Please try again.'}</p>
+          <button onClick={fetchArticles} className="h-12 px-6 inline-flex items-center gap-2 bg-stylist-500 text-white rounded-xl text-sm font-semibold hover:bg-stylist-600 transition-all shadow-sm">
+            <RefreshCcw size={16} />
+            Try Again
           </button>
         </div>
       ) : !articles.length ? (
-        <div className="text-center py-20 bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40">
-          <div className="w-16 h-16 rounded-full bg-gray-50 dark:bg-surface-dark-tertiary flex items-center justify-center mx-auto mb-4">
+        <div className="flex flex-col items-center justify-center py-20 sm:py-24 text-center px-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gray-50 dark:bg-surface-dark-tertiary flex items-center justify-center mb-5">
             <FileText size={28} className="text-text-muted dark:text-text-dark-muted" />
           </div>
-          <h3 className="text-base font-semibold text-text-primary dark:text-text-dark-primary mb-1">No articles yet</h3>
-          <p className="text-sm text-text-secondary dark:text-text-dark-secondary mb-5">Create your first beauty tip article</p>
+          <h3 className="text-lg sm:text-xl font-bold text-text-primary dark:text-text-dark-primary mb-1.5 font-display">No articles yet</h3>
+          <p className="text-sm text-text-secondary dark:text-text-dark-secondary mb-6 max-w-xs">Create your first beauty tip article to share with clients</p>
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-stylist-500 text-white rounded-xl text-sm font-medium hover:bg-stylist-600 transition-colors shadow-sm"
+            className="h-12 px-6 inline-flex items-center gap-2 bg-stylist-500 text-white rounded-xl text-sm font-semibold hover:bg-stylist-600 transition-all shadow-sm"
           >
-            <Plus size={16} />
+            <Plus size={18} />
             Create Article
           </button>
         </div>
+      ) : filteredArticles.length === 0 ? (
+        <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-12 h-12 rounded-full bg-gray-50 dark:bg-surface-dark-tertiary flex items-center justify-center mb-3">
+            <Search size={20} className="text-text-muted dark:text-text-dark-muted" />
+          </div>
+          <p className="text-sm font-semibold text-text-primary dark:text-text-dark-primary mb-0.5">No articles found</p>
+          <p className="text-caption text-text-muted dark:text-text-dark-muted">Try a different category or search term</p>
+        </div>
       ) : (
-        <>
-          <div className="space-y-3">
-            {articles.map((a) => {
+        <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredArticles.map((a) => {
               const cat = categoryMeta(a.category);
               return (
-                <div
-                  key={a.id}
-                  className="group flex items-start gap-4 p-4 bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-sm transition-all"
-                >
-                  <div className="w-20 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface-dark-tertiary shrink-0 hidden sm:block">
-                    <img
-                      src={a.image}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center flex-wrap gap-2 mb-1.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${cat.color}`}>
-                        {a.category}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                        a.published
-                          ? 'bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400'
-                          : 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400'
-                      }`}>
+                <div key={a.id} className="group flex flex-col bg-white dark:bg-surface-dark-secondary rounded-2xl border border-gray-100 dark:border-gray-700/40 hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-card transition-all duration-200 overflow-hidden">
+                  <div className="relative aspect-[2/1] overflow-hidden bg-gray-100 dark:bg-surface-dark-tertiary">
+                    {a.image ? (
+                      <img src={a.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon size={28} className="text-text-muted dark:text-text-dark-muted" />
+                      </div>
+                    )}
+                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm ${cat.color}`}>{a.category}</span>
+                    </div>
+                    <div className="absolute top-2.5 right-2.5 flex flex-wrap gap-1.5">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm ${a.published ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
                         {a.published ? <CheckCircle2 size={10} /> : <Clock size={10} />}
                         {a.published ? 'Published' : 'Draft'}
                       </span>
                       {a.featured && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400">
-                          <Sparkles size={10} />
-                          Featured
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm text-purple-600 dark:text-purple-400">
+                          <Sparkles size={10} /> Featured
                         </span>
                       )}
                     </div>
-                    <h3 className="text-sm font-semibold text-text-primary dark:text-text-dark-primary truncate">{a.title}</h3>
-                    <p className="text-xs text-text-secondary dark:text-text-dark-secondary line-clamp-1 mt-0.5">{a.excerpt}</p>
-                    <div className="flex items-center gap-3 mt-2 text-[11px] text-text-muted dark:text-text-dark-muted">
-                      <span className="flex items-center gap-1"><Clock size={11} />{a.readTime}</span>
+                  </div>
+                  <div className="flex flex-col flex-1 p-4 sm:p-5">
+                    <h3 className="text-sm sm:text-base font-bold text-text-primary dark:text-text-dark-primary font-display line-clamp-2 leading-snug">{a.title}</h3>
+                    <p className="text-xs sm:text-sm text-text-secondary dark:text-text-dark-secondary mt-1.5 line-clamp-2 leading-relaxed">{a.excerpt}</p>
+                    <div className="flex flex-wrap items-center gap-3 mt-3 text-caption text-text-muted dark:text-text-dark-muted">
+                      <span className="inline-flex items-center gap-1"><Clock size={12} className="shrink-0" />{a.readTime}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
                       <span>{a.viewCount} views</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
                       <span>{new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-0.5 shrink-0 self-center">
-                    <button
-                      onClick={() => togglePublish(a)}
-                      className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary text-text-muted dark:text-text-dark-muted hover:text-text-secondary dark:hover:text-text-dark-secondary transition-colors"
-                      title={a.published ? 'Unpublish' : 'Publish'}
-                    >
-                      {a.published ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
-                    <button
-                      onClick={() => openEdit(a)}
-                      className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-surface-dark-tertiary text-text-muted dark:text-text-dark-muted hover:text-stylist-600 transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteId(a.id)}
-                      className="p-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 text-text-muted dark:text-text-dark-muted hover:text-red-500 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <div className="flex items-center gap-2 mt-auto pt-4 border-t border-gray-100 dark:border-gray-700/30">
+                      <button onClick={() => openEdit(a)} className="flex-1 h-9 sm:h-10 inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-stylist-600 dark:text-stylist-400 bg-stylist-50 dark:bg-stylist-950/30 hover:bg-stylist-100 dark:hover:bg-stylist-950/50 rounded-xl transition-colors">
+                        <Edit2 size={14} /> Edit
+                      </button>
+                      <button onClick={() => togglePublish(a)} className={`h-9 sm:h-10 w-9 sm:w-10 rounded-xl flex items-center justify-center transition-colors ${a.published ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50' : 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-950/50'}`} title={a.published ? 'Unpublish' : 'Publish'}>
+                        {a.published ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                      <button onClick={() => setDeleteId(a.id)} className="h-9 sm:h-10 w-9 sm:w-10 rounded-xl flex items-center justify-center text-text-muted dark:text-text-dark-muted hover:text-error hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -692,23 +728,15 @@ export default function Articles() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-4">
+            <div className="flex items-center justify-center gap-2 pt-6">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-9 h-9 rounded-xl text-xs font-medium transition-colors ${
-                    page === p
-                      ? 'bg-stylist-500 text-white shadow-sm'
-                      : 'bg-gray-100 dark:bg-surface-dark-tertiary text-text-secondary dark:text-text-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
+                <button key={p} onClick={() => setPage(p)} className={`min-w-[36px] h-10 rounded-xl text-xs font-semibold transition-all px-3 ${page === p ? 'bg-stylist-500 text-white shadow-sm' : 'bg-gray-100 dark:bg-surface-dark-tertiary text-text-secondary dark:text-text-dark-secondary hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
                   {p}
                 </button>
               ))}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
