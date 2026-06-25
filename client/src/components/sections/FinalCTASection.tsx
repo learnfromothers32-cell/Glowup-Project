@@ -7,8 +7,11 @@ import {
   Apple,
   Play,
   Mail,
+  Download,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePwaInstall } from "../../hooks/usePwaInstall";
+import { PwaInstallModal } from "../PwaInstallModal";
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
@@ -42,22 +45,21 @@ const T = {
 function StoreBadge({
   store,
   icon: Icon,
+  onInstall,
+  isIOS,
+  isAndroid,
 }: {
   store: string;
   icon: typeof Apple;
+  onInstall: () => void;
+  isIOS: boolean;
+  isAndroid: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
 
-  const appStoreUrl =
-    store === "App Store"
-      ? "https://apps.apple.com/app/glowup/id123456789"
-      : "https://play.google.com/store/apps/details?id=com.glowup.app";
-
   return (
-    <a
-      href={appStoreUrl}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      onClick={onInstall}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -74,6 +76,7 @@ function StoreBadge({
         textDecoration: "none",
         transition: "all 0.2s ease",
         transform: hovered ? "translateY(-1px)" : "translateY(0)",
+        fontFamily: "inherit",
       }}
     >
       <Icon size={20} color={T.white} />
@@ -86,13 +89,13 @@ function StoreBadge({
             color: T.whiteLight,
           }}
         >
-          Download on the
+          {isIOS ? "Add to Home Screen" : isAndroid ? "Install from" : "Install"}
         </p>
         <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: T.white }}>
-          {store}
+          {isIOS ? "Safari" : store}
         </p>
       </div>
-    </a>
+    </button>
   );
 }
 
@@ -428,6 +431,8 @@ function EmailCapture({ isMobile }: { isMobile: boolean }) {
 
 export default function FinalCTASection() {
   const [isMobile, setIsMobile] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const { isInstallable, isInstalled, isIOS, isAndroid, promptInstall } = usePwaInstall();
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -436,12 +441,30 @@ export default function FinalCTASection() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  const handleInstall = async () => {
+    if (isIOS || (!isAndroid && !isInstallable)) {
+      setShowInstallModal(true);
+      return;
+    }
+    const accepted = await promptInstall();
+    if (!accepted) {
+      setShowInstallModal(true);
+    }
+  };
+
   return (
     <>
       <style>{`
         * { box-sizing: border-box; }
         input::placeholder { color: rgba(255,255,255,0.35); }
       `}</style>
+
+      <PwaInstallModal
+        open={showInstallModal}
+        onClose={() => setShowInstallModal(false)}
+        isIOS={isIOS}
+        isAndroid={isAndroid}
+      />
 
       <section
         aria-labelledby="cta-heading"
@@ -597,17 +620,30 @@ export default function FinalCTASection() {
             }}
           >
             <div style={{ textAlign: "center", width: "100%" }}>
-              <p
-                style={{
-                  margin: "0 0 16px",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: T.whiteMid,
-                }}
-              >
-                Not ready yet? Get notified when we launch in your area.
-              </p>
-              <EmailCapture isMobile={isMobile} />
+              {isInstalled ? (
+                <p
+                  style={{
+                    margin: "0 0 16px",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "#86efac",
+                  }}
+                >
+                  GlowUp is installed! Open it from your home screen.
+                </p>
+              ) : (
+                <p
+                  style={{
+                    margin: "0 0 16px",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: T.whiteMid,
+                  }}
+                >
+                  Install the app for the best experience — it's free!
+                </p>
+              )}
+              {!isInstalled && <EmailCapture isMobile={isMobile} />}
             </div>
 
             <div
@@ -621,8 +657,17 @@ export default function FinalCTASection() {
               <StoreBadge
                 store="App Store"
                 icon={Apple}
+                onInstall={handleInstall}
+                isIOS={isIOS}
+                isAndroid={isAndroid}
               />
-              <StoreBadge store="Google Play" icon={Play} />
+              <StoreBadge
+                store="Google Play"
+                icon={Play}
+                onInstall={handleInstall}
+                isIOS={isIOS}
+                isAndroid={isAndroid}
+              />
             </div>
 
             <div
