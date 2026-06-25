@@ -19,24 +19,14 @@ const FEATURE_LINKS = [
 
 interface AppFooterProps {
   variant?: "landing" | "consumer";
+  onOpenInstall?: () => void;
 }
 
-export default function AppFooter({ variant = "landing" }: AppFooterProps) {
-  const { promptInstall, isInstallable, isInstalled, isIOS } = usePwaInstall();
+export default function AppFooter({ variant = "landing", onOpenInstall }: AppFooterProps) {
+  const { isInstalled } = usePwaInstall();
 
-  const handleInstall = async () => {
-    if (isIOS) {
-      // iOS — open instructions modal (handled by parent or inline)
-      const modal = document.getElementById("pwa-install-modal");
-      if (modal) modal.classList.remove("hidden");
-      return;
-    }
-    const result = await promptInstall();
-    if (!result && isInstallable) {
-      // Fallback: show modal
-      const modal = document.getElementById("pwa-install-modal");
-      if (modal) modal.classList.remove("hidden");
-    }
+  const handleInstall = () => {
+    onOpenInstall?.();
   };
 
   if (variant === "consumer") {

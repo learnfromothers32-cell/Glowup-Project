@@ -1,22 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Star, Play, Shield, Sparkles, Download } from "lucide-react";
-import { usePwaInstall } from "../../hooks/usePwaInstall";
-import PwaInstallModal from "../PwaInstallModal";
-import { useState } from "react";
 
-export default function Hero() {
+interface HeroProps {
+  onOpenInstall?: () => void;
+}
+
+export default function Hero({ onOpenInstall }: HeroProps) {
   const navigate = useNavigate();
-  const [showInstallModal, setShowInstallModal] = useState(false);
-  const { isInstallable, isIOS, isAndroid, promptInstall } = usePwaInstall();
-
-  const handleInstall = async () => {
-    if (isIOS || (!isAndroid && !isInstallable)) {
-      setShowInstallModal(true);
-      return;
-    }
-    const accepted = await promptInstall();
-    if (!accepted) setShowInstallModal(true);
-  };
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/80 via-white to-white dark:from-surface-dark dark:via-surface-dark dark:to-surface-dark">
@@ -63,7 +53,7 @@ export default function Hero() {
                 Sign In
               </button>
               <button
-                onClick={handleInstall}
+                onClick={onOpenInstall}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-500 px-7 text-sm font-bold text-white shadow-[0_2px_12px_rgba(244,63,94,0.35)] hover:shadow-[0_4px_20px_rgba(244,63,94,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 <Download size={18} />
@@ -170,13 +160,6 @@ export default function Hero() {
           </div>
         </div>
       </div>
-
-      <PwaInstallModal
-        open={showInstallModal}
-        onClose={() => setShowInstallModal(false)}
-        isIOS={isIOS}
-        isAndroid={isAndroid}
-      />
     </section>
   );
 }

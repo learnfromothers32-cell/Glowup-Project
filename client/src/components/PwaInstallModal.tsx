@@ -9,9 +9,9 @@ interface PwaInstallModalProps {
 }
 
 export default function PwaInstallModal({ open, onClose, isIOS, isAndroid }: PwaInstallModalProps) {
-  const { promptInstall, isInstalled } = usePwaInstall();
+  const { promptInstall } = usePwaInstall();
 
-  if (isInstalled || !open) return null;
+  if (!open) return null;
 
   const handleInstall = async () => {
     if (isAndroid) {
