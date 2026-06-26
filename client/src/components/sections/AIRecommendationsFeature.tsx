@@ -1,33 +1,10 @@
 import { Sparkles, MapPin, Star, Heart, Zap, Target } from "lucide-react";
+import { IMAGES } from "../../config/images";
 
 const AI_SUGGESTIONS = [
-  {
-    title: "Based on your style",
-    reason: "You loved box braids last time",
-    stylist: "Ama Boateng",
-    service: "Medium Box Braids",
-    rating: 4.9,
-    match: "98% match",
-    avatar: "https://picsum.photos/seed/ai1/100/100",
-  },
-  {
-    title: "Near you in Osu",
-    reason: "Top rated barber in your area",
-    stylist: "Kofi Mensah",
-    service: "Fade Cut",
-    rating: 4.8,
-    match: "95% match",
-    avatar: "https://picsum.photos/seed/ai2/100/100",
-  },
-  {
-    title: "Trending in Accra",
-    reason: "Most booked this week",
-    stylist: "Efua Asante",
-    service: "Glow Facial",
-    rating: 4.9,
-    match: "92% match",
-    avatar: "https://picsum.photos/seed/ai3/100/100",
-  },
+  { title: "Based on your style", reason: "You loved box braids last time", stylist: "Ama Boateng", service: "Medium Box Braids", rating: 4.9, match: "98% match", avatar: IMAGES.aiAvatars[0] },
+  { title: "Near you in Osu", reason: "Top rated barber in your area", stylist: "Kofi Mensah", service: "Fade Cut", rating: 4.8, match: "95% match", avatar: IMAGES.aiAvatars[1] },
+  { title: "Trending in Accra", reason: "Most booked this week", stylist: "Efua Asante", service: "Glow Facial", rating: 4.9, match: "92% match", avatar: IMAGES.aiAvatars[2] },
 ];
 
 export default function AIRecommendationsFeature() {

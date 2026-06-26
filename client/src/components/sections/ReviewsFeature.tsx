@@ -1,50 +1,11 @@
 import { Star, ThumbsUp, CheckCircle, Quote } from "lucide-react";
+import { IMAGES } from "../../config/images";
 
 const REVIEWS = [
-  {
-    name: "Esi K.",
-    rating: 5,
-    date: "2 days ago",
-    text: "Ama did an amazing job on my box braids! Quick, professional, and the result was perfect. The queue feature saved me so much time.",
-    service: "Box Braids",
-    verified: true,
-    helpful: 24,
-    avatar: "https://picsum.photos/seed/reviewer1/100/100",
-    gradient: "from-brand-400 to-brand-500",
-  },
-  {
-    name: "Kofi A.",
-    rating: 5,
-    date: "1 week ago",
-    text: "Best barber in Accra! Kofi's fade cuts are always on point. Love being able to book from my phone and see exactly when to show up.",
-    service: "Fade Cut",
-    verified: true,
-    helpful: 18,
-    avatar: "https://picsum.photos/seed/reviewer2/100/100",
-    gradient: "from-stylist-400 to-stylist-500",
-  },
-  {
-    name: "Ama B.",
-    rating: 4,
-    date: "3 days ago",
-    text: "My bridal makeup was absolutely stunning! Efua understood exactly what I wanted. The payment was smooth and secure.",
-    service: "Bridal Makeup",
-    verified: true,
-    helpful: 31,
-    avatar: "https://picsum.photos/seed/reviewer3/100/100",
-    gradient: "from-gold-400 to-gold-500",
-  },
-  {
-    name: "Nana Y.",
-    rating: 5,
-    date: "5 days ago",
-    text: "The AI recommendation was spot on! Found a great nail technician near me. The whole experience was seamless from booking to payment.",
-    service: "Gel Nails",
-    verified: true,
-    helpful: 15,
-    avatar: "https://picsum.photos/seed/reviewer4/100/100",
-    gradient: "from-success to-emerald-500",
-  },
+  { name: "Esi K.", rating: 5, date: "2 days ago", text: "Ama did an amazing job on my box braids! Quick, professional, and the result was perfect. The queue feature saved me so much time.", service: "Box Braids", verified: true, helpful: 24, avatar: IMAGES.reviewAvatars[0], gradient: "from-brand-400 to-brand-500" },
+  { name: "Kofi A.", rating: 5, date: "1 week ago", text: "Best barber in Accra! Kofi's fade cuts are always on point. Love being able to book from my phone and see exactly when to show up.", service: "Fade Cut", verified: true, helpful: 18, avatar: IMAGES.reviewAvatars[1], gradient: "from-stylist-400 to-stylist-500" },
+  { name: "Ama B.", rating: 4, date: "3 days ago", text: "My bridal makeup was absolutely stunning! Efua understood exactly what I wanted. The payment was smooth and secure.", service: "Bridal Makeup", verified: true, helpful: 31, avatar: IMAGES.reviewAvatars[2], gradient: "from-gold-400 to-gold-500" },
+  { name: "Nana Y.", rating: 5, date: "5 days ago", text: "The AI recommendation was spot on! Found a great nail technician near me. The whole experience was seamless from booking to payment.", service: "Gel Nails", verified: true, helpful: 15, avatar: IMAGES.reviewAvatars[3], gradient: "from-success to-emerald-500" },
 ];
 
 export default function ReviewsFeature() {

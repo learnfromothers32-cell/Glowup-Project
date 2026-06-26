@@ -1,9 +1,10 @@
 import { Users, Calendar, FileText, MessageCircle, Clock, TrendingUp } from "lucide-react";
+import { IMAGES } from "../../config/images";
 
 const CLIENTS = [
-  { name: "Esi Koranteng", lastVisit: "2 days ago", totalVisits: 12, spent: "GH₵2,400", note: "Prefers medium braids, allergic to certain products", avatar: "https://picsum.photos/seed/client1/100/100" },
-  { name: "Kofi Adjei", lastVisit: "1 week ago", totalVisits: 8, spent: "GH₵640", note: "Likes fade with 0.5 guard, come in every 3 weeks", avatar: "https://picsum.photos/seed/client2/100/100" },
-  { name: "Ama Boateng", lastVisit: "3 days ago", totalVisits: 23, spent: "GH₵5,750", note: "VIP client, always books box braids", avatar: "https://picsum.photos/seed/client3/100/100" },
+  { name: "Esi Koranteng", lastVisit: "2 days ago", totalVisits: 12, spent: "GH₵2,400", note: "Prefers medium braids, allergic to certain products", avatar: IMAGES.clientAvatars[0] },
+  { name: "Kofi Adjei", lastVisit: "1 week ago", totalVisits: 8, spent: "GH₵640", note: "Likes fade with 0.5 guard, come in every 3 weeks", avatar: IMAGES.clientAvatars[1] },
+  { name: "Ama Boateng", lastVisit: "3 days ago", totalVisits: 23, spent: "GH₵5,750", note: "VIP client, always books box braids", avatar: IMAGES.clientAvatars[2] },
 ];
 
 export default function ClientManagementFeature() {

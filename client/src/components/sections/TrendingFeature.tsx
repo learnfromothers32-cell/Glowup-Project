@@ -1,9 +1,10 @@
-import { Heart, MessageCircle, Share2, Bookmark, TrendingUp, Play } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, TrendingUp } from "lucide-react";
+import { IMAGES } from "../../config/images";
 
 const TRENDING = [
-  { creator: "Ama Beauty", service: "Box Braids", likes: "12.4K", comments: "892", image: "https://picsum.photos/seed/trend1/200/200", trending: true },
-  { creator: "Kofi Fades", service: "Fade Cut", likes: "8.7K", comments: "567", image: "https://picsum.photos/seed/trend2/200/200", trending: true },
-  { creator: "Efua Glam", service: "Bridal Makeup", likes: "15.2K", comments: "1.2K", image: "https://picsum.photos/seed/trend3/200/200", trending: true },
+  { creator: "Ama Beauty", service: "Box Braids", likes: "12.4K", comments: "892", image: IMAGES.trendingList[0], trending: true },
+  { creator: "Kofi Fades", service: "Fade Cut", likes: "8.7K", comments: "567", image: IMAGES.trendingList[1], trending: true },
+  { creator: "Efua Glam", service: "Bridal Makeup", likes: "15.2K", comments: "1.2K", image: IMAGES.trendingList[2], trending: true },
 ];
 
 export default function TrendingFeature() {
@@ -18,7 +19,7 @@ export default function TrendingFeature() {
                 {/* Video */}
                 <div className="absolute inset-0">
                   <img
-                    src="https://picsum.photos/seed/trending/400/700"
+                    src={IMAGES.trendingMain}
                     alt="Trending video"
                     className="h-full w-full object-cover"
                     loading="lazy"
@@ -61,7 +62,7 @@ export default function TrendingFeature() {
                 <div className="absolute bottom-3 left-3 right-14 z-10">
                   <div className="flex items-center gap-2 mb-2">
                     <img
-                      src="https://picsum.photos/seed/creator/100/100"
+                      src={IMAGES.trendingCreatorAvatar}
                       alt="Creator"
                       className="h-7 w-7 rounded-full border-2 border-white object-cover"
                       loading="lazy"

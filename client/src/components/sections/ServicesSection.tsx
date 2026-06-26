@@ -1,35 +1,12 @@
 import { ArrowRight, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { IMAGES } from "../../config/images";
 
 const SERVICES = [
-  {
-    title: "Bridal Makeup",
-    desc: "Complete bridal beauty package with trial and day-of service.",
-    price: "GH₵800",
-    rating: 4.9,
-    image: "https://picsum.photos/seed/bridal/400/300",
-  },
-  {
-    title: "Natural Hair Braids",
-    desc: "Box braids, cornrows, twist outs, and protective styles.",
-    price: "GH₵250",
-    rating: 4.8,
-    image: "https://picsum.photos/seed/braids/400/300",
-  },
-  {
-    title: "Manicure & Pedicure",
-    desc: "Gel nails, nail art, spa pedicure, and luxury treatments.",
-    price: "GH₵150",
-    rating: 4.9,
-    image: "https://picsum.photos/seed/nails/400/300",
-  },
-  {
-    title: "Facial Treatment",
-    desc: "Deep cleansing, hydration, acne treatment, and glow facials.",
-    price: "GH₵300",
-    rating: 4.7,
-    image: "https://picsum.photos/seed/facial/400/300",
-  },
+  { title: "Bridal Makeup", desc: "Complete bridal beauty package with trial and day-of service.", price: "GH₵800", rating: 4.9, image: IMAGES.services[0] },
+  { title: "Natural Hair Braids", desc: "Box braids, cornrows, twist outs, and protective styles.", price: "GH₵250", rating: 4.8, image: IMAGES.services[1] },
+  { title: "Manicure & Pedicure", desc: "Gel nails, nail art, spa pedicure, and luxury treatments.", price: "GH₵150", rating: 4.9, image: IMAGES.services[2] },
+  { title: "Facial Treatment", desc: "Deep cleansing, hydration, acne treatment, and glow facials.", price: "GH₵300", rating: 4.7, image: IMAGES.services[3] },
 ];
 
 export default function ServicesSection() {

@@ -1,16 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles, Download } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
+import InstallInstructions from "../InstallInstructions";
 
-interface FinalCTAProps {
-  onOpenInstall?: () => void;
-}
-
-export default function FinalCTASection({ onOpenInstall }: FinalCTAProps) {
+export default function FinalCTASection() {
   const navigate = useNavigate();
 
   return (
     <section className="py-16 sm:py-24 bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-3xl animate-float" />
         <div className="absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-white/5 blur-3xl animate-float-delay" />
@@ -38,13 +34,7 @@ export default function FinalCTASection({ onOpenInstall }: FinalCTAProps) {
             Get Started
             <ArrowRight size={14} />
           </button>
-          <button
-            onClick={onOpenInstall}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-white/15 border border-white/20 px-5 text-sm font-medium text-white hover:bg-white/25 transition-all duration-200"
-          >
-            <Download size={14} />
-            Download App
-          </button>
+          <InstallInstructions />
         </div>
 
         <p className="mt-5 text-[11px] text-white/40">

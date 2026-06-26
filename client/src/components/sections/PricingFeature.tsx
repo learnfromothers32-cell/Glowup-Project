@@ -1,13 +1,14 @@
 import { Check, Star, Clock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { IMAGES } from "../../config/images";
 
 const SERVICES = [
-  { name: "Box Braids", duration: "3 hrs", price: 250, rating: 4.9, category: "Braids", popular: true, image: "https://picsum.photos/seed/service1/100/100" },
-  { name: "Fade Cut", duration: "45 min", price: 80, rating: 4.8, category: "Barber", popular: false, image: "https://picsum.photos/seed/service2/100/100" },
-  { name: "Bridal Makeup", duration: "2 hrs", price: 800, rating: 5.0, category: "Makeup", popular: true, image: "https://picsum.photos/seed/service3/100/100" },
-  { name: "Gel Nails", duration: "1 hr", price: 150, rating: 4.7, category: "Nails", popular: false, image: "https://picsum.photos/seed/service4/100/100" },
-  { name: "Facial Treatment", duration: "1.5 hrs", price: 300, rating: 4.9, category: "Skincare", popular: false, image: "https://picsum.photos/seed/service5/100/100" },
-  { name: "Cornrows", duration: "2 hrs", price: 200, rating: 4.8, category: "Braids", popular: false, image: "https://picsum.photos/seed/service6/100/100" },
+  { name: "Box Braids", duration: "3 hrs", price: 250, rating: 4.9, category: "Braids", popular: true, image: IMAGES.pricing[0] },
+  { name: "Fade Cut", duration: "45 min", price: 80, rating: 4.8, category: "Barber", popular: false, image: IMAGES.pricing[1] },
+  { name: "Bridal Makeup", duration: "2 hrs", price: 800, rating: 5.0, category: "Makeup", popular: true, image: IMAGES.pricing[2] },
+  { name: "Gel Nails", duration: "1 hr", price: 150, rating: 4.7, category: "Nails", popular: false, image: IMAGES.pricing[3] },
+  { name: "Facial Treatment", duration: "1.5 hrs", price: 300, rating: 4.9, category: "Skincare", popular: false, image: IMAGES.pricing[4] },
+  { name: "Cornrows", duration: "2 hrs", price: 200, rating: 4.8, category: "Braids", popular: false, image: IMAGES.pricing[5] },
 ];
 
 const FEATURES = ["Transparent pricing", "No hidden fees", "Pay in GHS", "Instant booking"];

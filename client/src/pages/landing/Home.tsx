@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import LandingNavbar from "../../components/layout/LandingNavbar";
 import AppFooter from "../../components/layout/AppFooter";
@@ -20,11 +20,9 @@ import ClientManagementFeature from "../../components/sections/ClientManagementF
 import AIRecommendationsFeature from "../../components/sections/AIRecommendationsFeature";
 import PaymentsFeature from "../../components/sections/PaymentsFeature";
 import NotificationsFeature from "../../components/sections/NotificationsFeature";
-import PwaInstallModal from "../../components/PwaInstallModal";
 
 export default function Home() {
   const location = useLocation();
-  const [showInstallModal, setShowInstallModal] = useState(false);
 
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
@@ -59,17 +57,11 @@ export default function Home() {
     }
   }, [location]);
 
-  // Expose openModal globally so any component can trigger it
-  useEffect(() => {
-    (window as any).__openPwaInstall = () => setShowInstallModal(true);
-    return () => { delete (window as any).__openPwaInstall; };
-  }, []);
-
   return (
     <div className="min-h-screen bg-white dark:bg-surface-dark">
       <LandingNavbar />
       <main>
-        <Hero onOpenInstall={() => setShowInstallModal(true)} />
+        <Hero />
         <div id="features"><FeaturesSection /></div>
         <div id="how"><HowItWorks /></div>
         <div id="queue"><QueueFeature /></div>
@@ -86,10 +78,9 @@ export default function Home() {
         <AIRecommendationsFeature />
         <PaymentsFeature />
         <NotificationsFeature />
-        <FinalCTASection onOpenInstall={() => setShowInstallModal(true)} />
+        <FinalCTASection />
       </main>
-      <AppFooter variant="landing" onOpenInstall={() => setShowInstallModal(true)} />
-      <PwaInstallModal open={showInstallModal} onClose={() => setShowInstallModal(false)} />
+      <AppFooter variant="landing" />
     </div>
   );
 }

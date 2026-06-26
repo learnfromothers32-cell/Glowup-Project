@@ -1,4 +1,5 @@
-import { Radio, Heart, MessageCircle, Eye, Send } from "lucide-react";
+import { Radio, Heart, Eye, Send } from "lucide-react";
+import { IMAGES } from "../../config/images";
 
 const COMMENTS = [
   { user: "Esi K.", text: "This technique is amazing! 😍", time: "2m ago" },
@@ -40,7 +41,7 @@ export default function LiveFeature() {
                 {/* Video area */}
                 <div className="relative h-64 overflow-hidden">
                   <img
-                    src="https://picsum.photos/seed/livestream/400/500"
+                    src={IMAGES.liveStream}
                     alt="Live stream"
                     className="h-full w-full object-cover"
                     loading="lazy"
@@ -66,7 +67,7 @@ export default function LiveFeature() {
                   <div className="absolute bottom-3 left-3 right-3">
                     <div className="flex items-center gap-2 mb-2">
                       <img
-                        src="https://picsum.photos/seed/streamer/100/100"
+                        src={IMAGES.liveStreamerAvatar}
                         alt="Streamer"
                         className="h-7 w-7 rounded-full border-2 border-white object-cover"
                         loading="lazy"

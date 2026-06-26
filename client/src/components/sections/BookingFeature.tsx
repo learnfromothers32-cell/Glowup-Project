@@ -1,4 +1,5 @@
 import { Calendar, Clock, User, CheckCircle, Star } from "lucide-react";
+import { IMAGES } from "../../config/images";
 
 const BOOKING_STEPS = [
   { icon: User, label: "Pick Stylist", desc: "Browse profiles, ratings, and portfolios" },
@@ -25,7 +26,7 @@ export default function BookingFeature() {
                 <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-3">
                     <img
-                      src="https://picsum.photos/seed/stylist2/100/100"
+                      src={IMAGES.bookingStylist}
                       alt="Stylist"
                       className="h-10 w-10 rounded-full object-cover"
                       loading="lazy"

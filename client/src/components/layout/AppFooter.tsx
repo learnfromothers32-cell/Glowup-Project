@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Sparkles, Heart, Download, Mail } from "lucide-react";
-import { usePwaInstall } from "../../hooks/usePwaInstall";
+import { Sparkles, Heart, Mail } from "lucide-react";
+import InstallInstructions from "../InstallInstructions";
 
 const COMPANY_LINKS = [
   { label: "About Us", to: "/about" },
@@ -61,16 +61,9 @@ const SOCIAL_ICONS = [
 
 interface AppFooterProps {
   variant?: "landing" | "consumer";
-  onOpenInstall?: () => void;
 }
 
-export default function AppFooter({ variant = "landing", onOpenInstall }: AppFooterProps) {
-  const { isInstalled } = usePwaInstall();
-
-  const handleInstall = () => {
-    onOpenInstall?.();
-  };
-
+export default function AppFooter({ variant = "landing" }: AppFooterProps) {
   if (variant === "consumer") {
     return (
       <footer className="bg-gray-900 dark:bg-surface-dark">
@@ -185,21 +178,10 @@ export default function AppFooter({ variant = "landing", onOpenInstall }: AppFoo
               ))}
             </ul>
 
-            {/* PWA Download Button */}
-            {!isInstalled && (
-              <button
-                onClick={handleInstall}
-                className="mt-6 w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-brand-500 text-xs font-semibold text-white shadow-sm hover:bg-brand-600 transition-all duration-200"
-              >
-                <Download size={14} />
-                Download App
-              </button>
-            )}
-            {isInstalled && (
-              <div className="mt-6 w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-success/10 border border-success/20 text-xs font-semibold text-success">
-                <span>✓</span> App Installed
-              </div>
-            )}
+            {/* Download App */}
+            <InstallInstructions
+              buttonClassName="mt-6 w-full flex items-center justify-center gap-1.5 h-9 rounded-lg bg-brand-500 text-xs font-semibold text-white shadow-sm hover:bg-brand-600 transition-all duration-200"
+            />
 
             {/* App Store Badges */}
             <div className="mt-4 flex gap-2">

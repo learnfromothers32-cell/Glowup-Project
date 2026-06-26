@@ -49,7 +49,7 @@ export default function HowItWorks() {
           {/* Connector line (desktop) */}
           <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-px bg-gradient-to-r from-brand-200 via-gold-200 to-stylist-200 dark:from-brand-800 dark:via-gold-800 dark:to-stylist-800" />
 
-          {STEPS.map((step, i) => (
+          {STEPS.map((step) => (
             <div key={step.num} className="relative flex flex-col items-center text-center group">
               {/* Step number circle */}
               <div className={`relative z-10 mb-6 flex h-16 w-16 items-center justify-center rounded-2xl ${step.bg} border ${step.border} shadow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-card`}>

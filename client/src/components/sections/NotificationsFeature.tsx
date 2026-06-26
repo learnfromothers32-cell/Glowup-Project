@@ -1,4 +1,4 @@
-import { Bell, Calendar, Users, MessageCircle, Clock, CheckCircle, Star, TrendingUp } from "lucide-react";
+import { Bell, Calendar, Users, MessageCircle, CheckCircle, Star, TrendingUp } from "lucide-react";
 
 const NOTIFICATIONS = [
   {

@@ -1,9 +1,10 @@
 import { Star, MapPin, MessageCircle, UserPlus, Briefcase, Award } from "lucide-react";
+import { IMAGES } from "../../config/images";
 
 const STYLISTS = [
-  { name: "Ama Boateng", specialty: "Braids & Locs", location: "Osu, Accra", rating: 4.9, reviews: 127, followers: "2.3K", verified: true, cover: "https://picsum.photos/seed/cover1/400/200", avatar: "https://picsum.photos/seed/ama/100/100" },
-  { name: "Kofi Mensah", specialty: "Barber & Fades", location: "Labone, Accra", rating: 4.8, reviews: 89, followers: "1.8K", verified: true, cover: "https://picsum.photos/seed/cover2/400/200", avatar: "https://picsum.photos/seed/kofi/100/100" },
-  { name: "Efua Asante", specialty: "Makeup & Skincare", location: "East Legon, Accra", rating: 4.9, reviews: 203, followers: "4.1K", verified: true, cover: "https://picsum.photos/seed/cover3/400/200", avatar: "https://picsum.photos/seed/efua/100/100" },
+  { name: "Ama Boateng", specialty: "Braids & Locs", location: "Osu, Accra", rating: 4.9, reviews: 127, followers: "2.3K", verified: true, cover: IMAGES.stylistCovers[0], avatar: IMAGES.stylistAvatars[0] },
+  { name: "Kofi Mensah", specialty: "Barber & Fades", location: "Labone, Accra", rating: 4.8, reviews: 89, followers: "1.8K", verified: true, cover: IMAGES.stylistCovers[1], avatar: IMAGES.stylistAvatars[1] },
+  { name: "Efua Asante", specialty: "Makeup & Skincare", location: "East Legon, Accra", rating: 4.9, reviews: 203, followers: "4.1K", verified: true, cover: IMAGES.stylistCovers[2], avatar: IMAGES.stylistAvatars[2] },
 ];
 
 export default function StylistFeature() {
