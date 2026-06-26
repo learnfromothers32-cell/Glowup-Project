@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import LandingNavbar from "../../components/layout/LandingNavbar";
 import AppFooter from "../../components/layout/AppFooter";
 import Hero from "../../components/sections/Hero";
@@ -20,6 +21,13 @@ import ClientManagementFeature from "../../components/sections/ClientManagementF
 import AIRecommendationsFeature from "../../components/sections/AIRecommendationsFeature";
 import PaymentsFeature from "../../components/sections/PaymentsFeature";
 import NotificationsFeature from "../../components/sections/NotificationsFeature";
+
+const fadeUp = {
+  initial: { opacity: 0, y: 48 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-80px" },
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+};
 
 export default function Home() {
   const location = useLocation();
@@ -62,23 +70,23 @@ export default function Home() {
       <LandingNavbar />
       <main>
         <Hero />
-        <div id="features"><FeaturesSection /></div>
-        <div id="how"><HowItWorks /></div>
-        <div id="queue"><QueueFeature /></div>
-        <div id="booking"><BookingFeature /></div>
-        <div id="portfolio"><PortfolioFeature /></div>
-        <StylistFeature />
-        <div id="live"><LiveFeature /></div>
-        <div id="trending"><TrendingFeature /></div>
-        <StatsSection />
-        <PricingFeature />
-        <div id="testimonials"><ReviewsFeature /></div>
-        <div id="services"><ServicesSection /></div>
-        <ClientManagementFeature />
-        <AIRecommendationsFeature />
-        <PaymentsFeature />
-        <NotificationsFeature />
-        <FinalCTASection />
+        <motion.div id="features" {...fadeUp}><FeaturesSection /></motion.div>
+        <motion.div id="how" {...fadeUp}><HowItWorks /></motion.div>
+        <motion.div id="queue" {...fadeUp}><QueueFeature /></motion.div>
+        <motion.div id="booking" {...fadeUp}><BookingFeature /></motion.div>
+        <motion.div id="portfolio" {...fadeUp}><PortfolioFeature /></motion.div>
+        <motion.div {...fadeUp}><StylistFeature /></motion.div>
+        <motion.div id="live" {...fadeUp}><LiveFeature /></motion.div>
+        <motion.div id="trending" {...fadeUp}><TrendingFeature /></motion.div>
+        <motion.div {...fadeUp}><StatsSection /></motion.div>
+        <motion.div {...fadeUp}><PricingFeature /></motion.div>
+        <motion.div id="testimonials" {...fadeUp}><ReviewsFeature /></motion.div>
+        <motion.div id="services" {...fadeUp}><ServicesSection /></motion.div>
+        <motion.div {...fadeUp}><ClientManagementFeature /></motion.div>
+        <motion.div {...fadeUp}><AIRecommendationsFeature /></motion.div>
+        <motion.div {...fadeUp}><PaymentsFeature /></motion.div>
+        <motion.div {...fadeUp}><NotificationsFeature /></motion.div>
+        <motion.div {...fadeUp}><FinalCTASection /></motion.div>
       </main>
       <AppFooter variant="landing" />
     </div>

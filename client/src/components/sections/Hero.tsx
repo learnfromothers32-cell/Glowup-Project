@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Star, Shield, Sparkles } from "lucide-react";
+import { Star, Shield, Sparkles, Smartphone } from "lucide-react";
 import { IMAGES } from "../../config/images";
 import InstallInstructions from "../InstallInstructions";
 
@@ -37,28 +37,28 @@ export default function Hero() {
               Discover verified stylists, watch live beauty sessions, get AI-powered matches, and earn rewards — the premium platform for modern beauty.
             </p>
 
-            {/* Mobile: stacked · Desktop: horizontal */}
-            <div className="mt-8 flex flex-col md:flex-row items-stretch gap-4 md:gap-3">
-              {/* Sign In — mobile: 1st · desktop: 2nd */}
-              <button
-                onClick={() => navigate("/login")}
-                className="order-1 md:order-2 inline-flex h-12 md:h-10 w-full md:w-auto items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark-secondary px-6 md:px-5 text-base md:text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200"
-              >
-                Sign In
-              </button>
-              {/* Get Started Free — mobile: 2nd · desktop: 1st */}
+            {/* Mobile: 2-col · Desktop: row */}
+            <div className="mt-8 grid grid-cols-2 sm:flex sm:flex-row items-stretch gap-3">
+              {/* Get Started Free — mobile: left · desktop: 1st */}
               <button
                 onClick={() => navigate("/signup")}
-                className="order-2 md:order-1 inline-flex h-12 md:h-10 w-full md:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-brand-600 px-6 md:px-5 text-base md:text-sm font-bold text-white shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200"
+                className="order-1 inline-flex h-12 sm:h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-4 sm:px-5 text-sm sm:text-sm font-bold text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
                 Get Started Free
               </button>
-              {/* Download App — mobile: 3rd · desktop: 3rd */}
+              {/* Download App — mobile: right · desktop: 2nd */}
               <InstallInstructions
-                className="order-3"
-                icon={<span className="text-lg leading-none">📱</span>}
-                buttonClassName="inline-flex h-12 md:h-10 w-full md:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f43f5e] to-brand-600 px-6 md:px-5 text-base md:text-sm font-semibold text-white shadow-sm hover:shadow-md hover:scale-105 active:scale-[0.97] transition-all duration-200"
+                className="order-2"
+                icon={<Smartphone size={16} />}
+                buttonClassName="inline-flex h-12 sm:h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-4 sm:px-5 text-sm sm:text-sm font-semibold text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               />
+              {/* Sign In — mobile: full width below · desktop: 3rd */}
+              <button
+                onClick={() => navigate("/login")}
+                className="order-3 col-span-2 sm:col-span-1 inline-flex h-12 sm:h-10 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark-secondary px-5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] hover:text-gray-900 dark:hover:text-gray-200 transition-all duration-200"
+              >
+                Sign In
+              </button>
             </div>
 
             {/* Social proof */}
