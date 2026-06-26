@@ -22,20 +22,20 @@ export default function InstallInstructions({ className = "", buttonClassName = 
 
       {show && (
         <div className="mt-3 text-left w-full">
-          <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/15 px-4 py-3.5">
-            <p className="text-[11px] font-bold text-white/90 uppercase tracking-wider text-center sm:text-left">How to install</p>
-            <ol className="mt-2 space-y-1.5 text-[12px] text-white/80">
+          <div className="rounded-xl bg-white dark:bg-surface-dark-secondary border border-gray-200 dark:border-gray-700 px-4 py-3.5 shadow-sm">
+            <p className="text-[11px] font-bold text-gray-700 dark:text-white/90 uppercase tracking-wider text-center sm:text-left">How to install</p>
+            <ol className="mt-2 space-y-1.5 text-[12px] text-gray-600 dark:text-white/80">
               <li className="flex items-start gap-2">
-                <span className="text-white/40 font-bold shrink-0">1.</span>
+                <span className="text-gray-400 font-bold shrink-0">1.</span>
                 <span>Open glowup.app in your browser (Chrome, Safari, or Edge)</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-white/40 font-bold shrink-0">2.</span>
-                <span>Tap the browser menu <span className="text-white/60">⋮</span> or look for the install icon in the address bar</span>
+                <span className="text-gray-400 font-bold shrink-0">2.</span>
+                <span>Tap the browser menu <span className="text-gray-500 font-bold">&#8942;</span> or look for the install icon in the address bar</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-white/40 font-bold shrink-0">3.</span>
-                <span>Select <span className="font-semibold text-white">"Install"</span> or <span className="font-semibold text-white">"Add to Home Screen"</span></span>
+                <span className="text-gray-400 font-bold shrink-0">3.</span>
+                <span>Select <span className="font-semibold text-gray-800 dark:text-white">"Install"</span> or <span className="font-semibold text-gray-800 dark:text-white">"Add to Home Screen"</span></span>
               </li>
             </ol>
           </div>

@@ -1,10 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Star, Shield, Sparkles, Smartphone } from "lucide-react";
 import { IMAGES } from "../../config/images";
-import InstallInstructions from "../InstallInstructions";
 
 export default function Hero() {
   const navigate = useNavigate();
+  const [showInstall, setShowInstall] = useState(false);
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/60 via-white to-white dark:from-surface-dark dark:via-surface-dark dark:to-surface-dark">
@@ -37,29 +38,56 @@ export default function Hero() {
               Discover verified stylists, watch live beauty sessions, get AI-powered matches, and earn rewards — the premium platform for modern beauty.
             </p>
 
-            {/* Mobile: 2-col · Desktop: row */}
-            <div className="mt-8 grid grid-cols-2 sm:flex sm:flex-row items-stretch gap-3">
-              {/* Get Started Free — mobile: left · desktop: 1st */}
-              <button
-                onClick={() => navigate("/signup")}
-                className="order-1 inline-flex h-12 sm:h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-4 sm:px-5 text-sm sm:text-sm font-bold text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-              >
-                Get Started Free
-              </button>
-              {/* Download App — mobile: right · desktop: 2nd */}
-              <InstallInstructions
-                className="order-2"
-                icon={<Smartphone size={16} />}
-                buttonClassName="inline-flex h-12 sm:h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-4 sm:px-5 text-sm sm:text-sm font-semibold text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-              />
-              {/* Sign In — mobile: full width below · desktop: 3rd */}
-              <button
-                onClick={() => navigate("/login")}
-                className="order-3 col-span-2 sm:col-span-1 inline-flex h-12 sm:h-10 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark-secondary px-5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] hover:text-gray-900 dark:hover:text-gray-200 transition-all duration-200"
-              >
-                Sign In
-              </button>
+            {/* Buttons: mobile stacked, desktop row */}
+            <div className="mt-8 flex flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-1 sm:gap-3">
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="inline-flex h-12 sm:h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-5 text-sm font-bold text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 sm:flex-1"
+                >
+                  Get Started Free
+                </button>
+                <button
+                  onClick={() => setShowInstall((v) => !v)}
+                  className="inline-flex h-12 sm:h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-5 text-sm font-semibold text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 sm:flex-1"
+                >
+                  <Smartphone size={16} />
+                  Download App
+                </button>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="inline-flex h-12 sm:h-10 items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark-secondary px-5 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] hover:text-gray-900 dark:hover:text-gray-200 transition-all duration-200 sm:flex-1"
+                >
+                  Sign In
+                </button>
+              </div>
             </div>
+            {/* Instructions panel - full width below buttons */}
+            {showInstall && (
+              <div className="mt-3 text-left w-full">
+                <div className="rounded-xl bg-white dark:bg-surface-dark-secondary border border-gray-200 dark:border-gray-700 px-4 py-3.5 shadow-sm">
+                  <p className="text-[11px] font-bold text-gray-700 dark:text-white/90 uppercase tracking-wider text-center sm:text-left">How to install</p>
+                  <ol className="mt-2 space-y-1.5 text-[12px] text-gray-600 dark:text-white/80">
+                    <li className="flex items-start gap-2">
+                      <span className="text-gray-400 font-bold shrink-0">1.</span>
+                      <span>Open glowup.app in your browser (Chrome, Safari, or Edge)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-gray-400 font-bold shrink-0">2.</span>
+                      <span>
+                        Tap the browser menu <span className="text-gray-500 font-bold text-sm leading-none">&#8942;</span> or look for the install icon in the address bar
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-gray-400 font-bold shrink-0">3.</span>
+                      <span>
+                        Select <span className="font-semibold text-gray-800 dark:text-white">&ldquo;Install&rdquo;</span> or <span className="font-semibold text-gray-800 dark:text-white">&ldquo;Add to Home Screen&rdquo;</span>
+                      </span>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            )}
 
             {/* Social proof */}
             <div className="mt-10 flex items-center gap-4">
