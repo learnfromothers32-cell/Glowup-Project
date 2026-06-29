@@ -19,6 +19,7 @@ import {
   Calendar,
   Sparkles,
   Award,
+  ChevronLeft,
 } from "lucide-react";
 import { getLocationString } from "@/utils/location";
 import { getStylistById } from "@/api/stylists";
@@ -82,8 +83,21 @@ function Tag({ children, accent }: { children: React.ReactNode; accent?: boolean
 
 function HeroGallery({ gallery, serviceName }: { gallery: string[]; serviceName: string }) {
   const [activeIdx, setActiveIdx] = useState(0);
+
+  const prev = useCallback(() => setActiveIdx(i => (i > 0 ? i - 1 : gallery.length - 1)), [gallery.length]);
+  const next = useCallback(() => setActiveIdx(i => (i + 1) % gallery.length), [gallery.length]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [prev, next]);
+
   return (
-    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-surface-dark dark:bg-black">
+    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-surface-dark dark:bg-black group">
       <AnimatePresence mode="wait">
         <motion.img
           key={activeIdx}
@@ -97,6 +111,24 @@ function HeroGallery({ gallery, serviceName }: { gallery: string[]; serviceName:
         />
       </AnimatePresence>
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+      {gallery.length > 1 && (
+        <>
+          <button
+            onClick={prev}
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white dark:hover:bg-gray-900 cursor-pointer"
+          >
+            <ChevronLeft size={16} className="text-gray-800 dark:text-gray-200" />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white dark:hover:bg-gray-900 cursor-pointer"
+          >
+            <ChevronRight size={16} className="text-gray-800 dark:text-gray-200" />
+          </button>
+        </>
+      )}
+
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
         {gallery.map((_, i) => (
           <button
@@ -437,6 +469,11 @@ export default function ServiceDetailPage() {
     );
   }
 
+  const portfolioImages = (stylist.portfolioImages || []).filter(p => p.type === 'image').map(p => p.url);
+  const galleryUrls: string[] = portfolioImages.length > 0
+    ? portfolioImages
+    : [stylist.image || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&q=80"];
+
   const extraServices: ServiceDisplay[] = (stylist.services || [])
     .filter((s): s is Exclude<typeof s, string> => typeof s !== "string")
     .filter((s) => s.name !== service.name)
@@ -514,14 +551,7 @@ export default function ServiceDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
             <div className="flex flex-col gap-7">
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-                <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-surface-dark dark:bg-black">
-                  <img
-                    src={stylist.image || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&q=80"}
-                    alt={service.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                </div>
+                <HeroGallery gallery={galleryUrls} serviceName={service.name} />
               </motion.div>
 
               <motion.div
