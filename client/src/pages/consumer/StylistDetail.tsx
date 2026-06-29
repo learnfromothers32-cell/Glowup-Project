@@ -1,6 +1,6 @@
 // src/pages/consumer/StylistDetail.tsx — Fresha-style Redesign
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStylistDetail } from "../../hooks/useStylistDetail";
 import { useFollow } from "../../context/FollowContext";
@@ -12,7 +12,7 @@ import {
   getMyConversations,
 } from "../../api/conversations";
 import { logger } from "../../utils/logger";
-import { joinWaitlist } from "../../api/waitlist";
+import { joinWaitlist, getConsumerWaitlist } from "../../api/waitlist";
 import { getStylistProducts } from "../../api/products";
 import { getStylistPackages, purchasePackage } from "../../api/packages";
 import { subscribeToTier, getStylistTiers } from "../../api/memberships";
@@ -1190,18 +1190,24 @@ function BookingCard({
             <Phone size={13} /> Call
           </button>
         </div>
-        <button
-          onClick={onJoinWaitlist}
-          disabled={joiningWaitlist}
-          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${waitlistJoined ? "bg-green-50 dark:bg-green-500/10 text-green-600" : "bg-brand-50 dark:bg-brand-500/10 text-brand-600 hover:bg-brand-100 dark:hover:bg-brand-500/20"}`}
-        >
-          {joiningWaitlist ? (
-            <Loader2 size={13} className="animate-spin" />
-          ) : waitlistJoined ? (
+        {waitlistJoined ? (
+          <Link
+            to="/app/waitlist"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold bg-green-50 dark:bg-green-500/10 text-green-600 hover:bg-green-100 dark:hover:bg-green-500/20 transition-all duration-200"
+          >
             <Check size={13} />
-          ) : null}
-          {waitlistJoined ? "Joined waitlist!" : "Join Waitlist"}
-        </button>
+            On Waitlist
+          </Link>
+        ) : (
+          <button
+            onClick={onJoinWaitlist}
+            disabled={joiningWaitlist}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 bg-brand-50 dark:bg-brand-500/10 text-brand-600 hover:bg-brand-100 dark:hover:bg-brand-500/20"
+          >
+            {joiningWaitlist ? <Loader2 size={13} className="animate-spin" /> : null}
+            Join Waitlist
+          </button>
+        )}
       </div>
       <div className="mx-5 mt-4 mb-5 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-800/50">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
@@ -1375,6 +1381,18 @@ export default function StylistDetail() {
     setSaved(followCtx.isFollowing(stylist.id));
   }, [stylist?.id, followCtx]);
 
+  useEffect(() => {
+    if (!stylistId) return;
+    getConsumerWaitlist()
+      .then((entries: { stylistId: { _id: string }; status: string }[]) => {
+        const hasEntry = entries.some(
+          e => e.stylistId?._id === stylistId && (e.status === 'waiting' || e.status === 'notified')
+        );
+        if (hasEntry) setWaitlistJoined(true);
+      })
+      .catch(() => {});
+  }, [stylistId]);
+
   const handleShare = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -1472,7 +1490,6 @@ export default function StylistDetail() {
         preferredDate: new Date(selectedDate).toISOString(),
       });
       setWaitlistJoined(true);
-      setTimeout(() => setWaitlistJoined(false), 3000);
     } catch {
       /* ignore */
     }
