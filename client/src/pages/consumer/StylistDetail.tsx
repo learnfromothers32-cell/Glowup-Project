@@ -1009,7 +1009,7 @@ function ReviewsTab({ stylist }: { stylist: ExtendedStylist }) {
 function StylistSkeleton() {
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950">
-      <Skeleton className="h-44 sm:h-52 rounded-none" />
+      <Skeleton className="h-40 sm:h-52 md:h-60 lg:h-72 xl:h-80 rounded-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-5">
         <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 sm:p-6">
           <div className="flex items-center gap-4 mb-5">
@@ -1582,12 +1582,12 @@ export default function StylistDetail() {
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950">
       {/* Cover Image */}
-      <div className="relative h-44 sm:h-52 overflow-hidden">
+      <div className="relative h-40 sm:h-52 md:h-60 lg:h-72 xl:h-80 overflow-hidden">
         {stylist.image ? (
           <img
             src={stylist.image}
             alt={stylist.name}
-            className="absolute inset-0 w-full h-full object-cover object-top"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-brand-500 to-brand-600" />
