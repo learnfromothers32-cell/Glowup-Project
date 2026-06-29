@@ -1570,7 +1570,13 @@ export default function StylistDetail() {
 
   const goTo = (key: TabKey) => {
     setActiveTab(key);
-    contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    requestAnimationFrame(() => {
+      if (contentRef.current) {
+        const offset = 80;
+        const top = contentRef.current.getBoundingClientRect().top + window.scrollY - offset;
+        window.scrollTo({ top, behavior: "smooth" });
+      }
+    });
   };
 
   return (
