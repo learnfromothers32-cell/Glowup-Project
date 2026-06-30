@@ -40,8 +40,8 @@ export default function GlobalSearchModal({
     setFetchError(false);
     setInitialLoading(true);
     getStylists()
-      .then((data) => {
-        setStylists(data);
+      .then(({ stylists }) => {
+        setStylists(stylists);
         setInitialLoading(false);
       })
       .catch(() => {

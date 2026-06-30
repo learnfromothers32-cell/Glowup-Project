@@ -23,6 +23,7 @@ export interface IAvailability extends Document {
     end?: string;
   }[];
   bufferMinutes: number;
+  maxClientsPerSlot: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -75,6 +76,12 @@ const availabilitySchema = new Schema<IAvailability>(
       default: 0,
       min: 0,
       max: 120
+    },
+    maxClientsPerSlot: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 100
     }
   },
   { timestamps: true }

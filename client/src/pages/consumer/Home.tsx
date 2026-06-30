@@ -1,11 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logger } from "../../utils/logger";
 import IntentBar from "../../features/consumer/components/IntentBar";
 import LiveStrip from "../../features/consumer/components/LiveStrip";
 import RecommendedSection from "../../features/consumer/components/RecommendedSection";
 import BookingModal from "../../features/consumer/components/BookingModal";
-import ConsumerMap from "../../features/consumer/components/ConsumerMap";
 import FilterBar, { type Filters } from "../../features/consumer/components/FilterBar";
 import RecentlyViewed from "../../features/consumer/components/RecentlyViewed";
 import FavoritesSection from "../../features/consumer/components/FavoritesSection";
@@ -22,13 +21,16 @@ import { useAuth } from "../../context/authUtils";
 import AuthModal from "../../features/consumer/components/AuthModal";
 import { io } from "socket.io-client";
 import { getSocketUrl } from "../../services/socket";
-import { Clock, Sparkles, MapPin, ArrowRight, Zap, Hourglass, MoveRight } from "lucide-react";
+import { haversineDistance } from "../../utils/distance";
+import { Clock, Sparkles, MapPin, ArrowRight, Zap, Hourglass, MoveRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card } from "../../components/ui/Card";
 
 import { Skeleton } from "../../components/ui/Skeleton";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../components/ui/Toast";
+
+const ConsumerMap = lazy(() => import("../../features/consumer/components/ConsumerMap"));
 
 interface UpcomingBooking {
   queuePosition: number;
@@ -67,8 +69,8 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const data = await getStylists();
-      setAllStylists(data);
+      const { stylists } = await getStylists();
+      setAllStylists(stylists);
       try {
         const liveFeed = await getLiveFeed({ limit: 50 });
         const mapped = (liveFeed.streams || []).map((s: any) => ({
@@ -122,29 +124,47 @@ export default function Home() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const data = await getStylists();
-        setAllStylists(data);
-        const liveFeed = await getLiveFeed({ limit: 50 });
-        const mapped = (liveFeed.streams || []).map((s: any) => ({
-          id: s.stylistId,
-          name: s.stylist?.name || "Unknown Host",
-          image: s.stylist?.image || "",
-          viewerCount: s.viewerCount || 0,
-          isLive: true,
-          bio: "",
-          category: "",
-          location: { area: "", lat: 0, lng: 0 },
-          rating: 0,
-          reviewCount: 0,
-          isVerified: false,
-          createdAt: "",
-        })) as Stylist[];
-        setLiveSessionStylists(mapped);
-      } catch {}
-    }, 30000);
-    return () => clearInterval(interval);
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let isTabVisible = true;
+
+    const startPolling = () => {
+      if (interval) clearInterval(interval);
+      interval = setInterval(async () => {
+        if (!isTabVisible) return;
+        try {
+          const { stylists } = await getStylists();
+          setAllStylists(stylists);
+          const liveFeed = await getLiveFeed({ limit: 50 });
+          const mapped = (liveFeed.streams || []).map((s: any) => ({
+            id: s.stylistId,
+            name: s.stylist?.name || "Unknown Host",
+            image: s.stylist?.image || "",
+            viewerCount: s.viewerCount || 0,
+            isLive: true,
+            bio: "",
+            category: "",
+            location: { area: "", lat: 0, lng: 0 },
+            rating: 0,
+            reviewCount: 0,
+            isVerified: false,
+            createdAt: "",
+          })) as Stylist[];
+          setLiveSessionStylists(mapped);
+        } catch {}
+      }, 30000);
+    };
+
+    const onVisibility = () => {
+      isTabVisible = document.visibilityState === "visible";
+      if (isTabVisible) startPolling();
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    startPolling();
+    return () => {
+      if (interval) clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   useEffect(() => {
@@ -154,8 +174,8 @@ export default function Home() {
     });
     const refresh = async () => {
       try {
-        const data = await getStylists();
-        setAllStylists(data);
+        const { stylists } = await getStylists();
+        setAllStylists(stylists);
         setLoading(false);
         const liveFeed = await getLiveFeed({ limit: 50 });
         const mapped = (liveFeed.streams || []).map((s: any) => ({
@@ -217,18 +237,11 @@ export default function Home() {
       if (saved) { const parsed = JSON.parse(saved); userLat = parsed.lat; userLng = parsed.lng; }
     } catch {}
     const hasUserLoc = userLat !== null && userLng !== null;
-    const haversineKm = (slat: number, slng: number) => {
-      const R = 6371;
-      const dLat = ((slat - userLat!) * Math.PI) / 180;
-      const dLng = ((slng - userLng!) * Math.PI) / 180;
-      const a = Math.sin(dLat / 2) ** 2 + Math.cos((userLat! * Math.PI) / 180) * Math.cos((slat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    };
     if (filters.distanceMax > 0 && hasUserLoc) {
       result = result.filter(s => {
         const slat = s.location?.lat; const slng = s.location?.lng;
         if (!slat || !slng) return true;
-        return haversineKm(slat, slng) <= filters.distanceMax;
+        return haversineDistance(userLat!, userLng!, slat, slng) <= filters.distanceMax;
       });
     }
     result = result.filter(s => (s.rating ?? 0) >= filters.ratingMin);
@@ -239,8 +252,8 @@ export default function Home() {
         if (hasUserLoc) {
           result.sort((a, b) => {
             const al = a.location; const bl = b.location;
-            const da = al?.lat && al?.lng ? haversineKm(al.lat, al.lng) : Infinity;
-            const db = bl?.lat && bl?.lng ? haversineKm(bl.lat, bl.lng) : Infinity;
+            const da = al?.lat && al?.lng ? haversineDistance(userLat!, userLng!, al.lat, al.lng) : Infinity;
+            const db = bl?.lat && bl?.lng ? haversineDistance(userLat!, userLng!, bl.lat, bl.lng) : Infinity;
             return da - db;
           });
         }
@@ -308,7 +321,9 @@ export default function Home() {
 
       <div>
         <h2 className="text-h4 font-display text-text-primary mb-3">Nearby stylists</h2>
-        <ConsumerMap stylists={filteredStylists} onSelectStylist={handleSelectStylistFromMap} />
+        <Suspense fallback={<div className="h-[420px] rounded-2xl bg-gray-100 dark:bg-surface-dark-secondary flex items-center justify-center"><Loader2 size={24} className="animate-spin text-gray-400" /></div>}>
+          <ConsumerMap stylists={filteredStylists} onSelectStylist={handleSelectStylistFromMap} />
+        </Suspense>
       </div>
 
       <LiveStrip liveStylists={liveStylists} />

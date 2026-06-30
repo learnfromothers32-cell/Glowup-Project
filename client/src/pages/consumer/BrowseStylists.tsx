@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import {
   Star,
   Users,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { getStylists } from "../../api/stylists";
 import type { Stylist } from "@/domain/stylist/stylist.types";
@@ -40,12 +41,6 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "price", label: "Price: Low → High" },
   { value: "reviews", label: "Most Reviewed" },
 ];
-
-function parsePrice(p: string | number | undefined | null): number {
-  if (p == null) return Infinity;
-  if (typeof p === "number") return p;
-  return parseFloat(p.replace(/[^0-9.]/g, "")) || Infinity;
-}
 
 function SkeletonGrid() {
   return (
@@ -167,6 +162,15 @@ export default function BrowseStylists() {
   const [searchParams] = useSearchParams();
   const [allStylists, setAllStylists] = useState<Stylist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const pageRef = useRef(1);
+  const categoryRef = useRef(category);
+  const sortRef = useRef(sort);
+  const fetchIdRef = useRef(0);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const isFetchingRef = useRef(false);
 
   const category = searchParams.get("category") || "all";
   const sort = (searchParams.get("sort") as SortOption) || "recommended";
@@ -183,12 +187,76 @@ export default function BrowseStylists() {
     navigate(qs ? `/app/browse?${qs}` : "/app/browse", { replace: true });
   };
 
-  useEffect(() => {
-    getStylists()
-      .then(setAllStylists)
-      .catch(() => setAllStylists([]))
-      .finally(() => setLoading(false));
+  const fetchPage = useCallback(async (pageNum: number, cat: string, append: boolean) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
+    const actualPage = pageNum > 0 ? pageNum : pageRef.current;
+
+    const fetchId = ++fetchIdRef.current;
+    if (append) {
+      setLoadError(false);
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const params: Record<string, unknown> = { page: actualPage, limit: 20 };
+      if (cat !== 'all') params.category = cat;
+      if (sortRef.current !== 'distance') params.sort = sortRef.current;
+      const { stylists, pagination } = await getStylists(params);
+      if (fetchId !== fetchIdRef.current) return;
+
+      if (pagination) {
+        setHasMore(pagination.page < pagination.totalPages);
+      }
+
+      if (append) {
+        setAllStylists(prev => [...prev, ...stylists]);
+      } else {
+        setAllStylists(stylists);
+      }
+
+      pageRef.current = actualPage + 1;
+    } catch {
+      if (append) {
+        setLoadError(true);
+      } else {
+        setAllStylists([]);
+      }
+    } finally {
+      if (fetchId === fetchIdRef.current) {
+        isFetchingRef.current = false;
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    }
   }, []);
+
+  useEffect(() => { sortRef.current = sort; }, [sort]);
+
+  useEffect(() => {
+    categoryRef.current = category;
+    pageRef.current = 1;
+    setHasMore(true);
+    fetchPage(1, category, false);
+  }, [category, fetchPage]);
+
+  useEffect(() => {
+    if (!hasMore || loading || loadingMore) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !isFetchingRef.current) {
+        fetchPage(0, categoryRef.current, true);
+      }
+    }, { rootMargin: '300px' });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, fetchPage]);
 
   const filtered = useMemo(() => {
     let result = [...allStylists];
@@ -199,25 +267,10 @@ export default function BrowseStylists() {
       );
     }
 
-    switch (sort) {
-      case "rating":
-        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "distance":
-        result.sort(
-          (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity),
-        );
-        break;
-      case "price":
-        result.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
-        break;
-      case "reviews":
-        result.sort(
-          (a, b) => (b.reviewCount || 0) - (a.reviewCount || 0),
-        );
-        break;
-      default:
-        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    if (sort === "distance") {
+      result.sort(
+        (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity),
+      );
     }
 
     return result;
@@ -421,6 +474,28 @@ export default function BrowseStylists() {
               ))}
             </AnimatePresence>
           </div>
+        )}
+
+        {/* Infinite scroll sentinel */}
+        <div ref={sentinelRef} className="h-4" />
+
+        {loadingMore && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 size={18} className="animate-spin text-gray-400" />
+            <span className="ml-2 text-sm text-gray-400">Loading more...</span>
+          </div>
+        )}
+
+        {loadError && !loadingMore && (
+          <p className="text-center text-xs text-red-400 py-8">
+            Couldn't load more stylists. Scroll to retry.
+          </p>
+        )}
+
+        {!hasMore && allStylists.length > 0 && (
+          <p className="text-center text-xs text-gray-400 py-8">
+            All stylists loaded
+          </p>
         )}
       </div>
     </div>

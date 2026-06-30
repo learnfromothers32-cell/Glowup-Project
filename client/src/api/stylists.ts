@@ -2,10 +2,18 @@ import api from './axios';
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import { mapToUIStylist } from "@/domain/stylist/stylist.adapter";
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface StylistsResponse {
   success: boolean;
   data: {
     stylists: any[];
+    pagination?: PaginationMeta;
   };
 }
 
@@ -16,9 +24,12 @@ export interface StylistDetailResponse {
   };
 }
 
-export const getStylists = async (params?: any): Promise<Stylist[]> => {
+export const getStylists = async (params?: any): Promise<{ stylists: Stylist[]; pagination: PaginationMeta | null }> => {
   const { data } = await api.get<StylistsResponse>('/stylists', { params });
-  return data.data.stylists.map(mapToUIStylist);
+  return {
+    stylists: data.data.stylists.map(mapToUIStylist),
+    pagination: data.data.pagination ?? null,
+  };
 };
 
 export const getStylistById = async (id: string): Promise<Stylist> => {

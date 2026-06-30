@@ -1,19 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import { MapPin, Crosshair, Loader2, Search, Navigation, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { searchLocation } from "../../utils/locationSearch";
+import { searchLocation, reverseGeocode } from "../../utils/locationSearch";
 import type { SearchResult } from "../../utils/locationSearch";
+import { fixDefaultMarkerIcons, getTileUrl, TILE_ATTRIBUTION } from "../../utils/leaflet";
 import "leaflet/dist/leaflet.css";
 
-const iconDefault = L.Icon.Default.prototype as unknown as { _getIconUrl?: () => string };
-delete iconDefault._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
+fixDefaultMarkerIcons();
 
 export interface LocationValue {
   area: string;
@@ -28,6 +23,47 @@ interface Props {
 
 const SEARCH_DEBOUNCE = 350;
 
+const FALLBACK_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+function MapTileLayer() {
+  const [tileUrl, setTileUrl] = useState(getTileUrl);
+  const [tileFailed, setTileFailed] = useState(false);
+  const map = useMap();
+
+  useEffect(() => {
+    const handler = () => {
+      if (!tileFailed) {
+        setTileFailed(true);
+        setTileUrl(FALLBACK_TILE_URL);
+      }
+    };
+    map.on("tileerror", handler);
+    return () => { map.off("tileerror", handler); };
+  }, [map, tileFailed]);
+
+  useEffect(() => {
+    if (!tileFailed) {
+      const updateTile = () => setTileUrl(getTileUrl());
+      const observer = new MutationObserver(updateTile);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+      return () => observer.disconnect();
+    }
+  }, [tileFailed]);
+
+  return <TileLayer key={tileUrl} url={tileUrl} attribution={TILE_ATTRIBUTION} />;
+}
+
+function MapEvents({ markerRef, onMoveRef }: { markerRef: React.RefObject<L.Marker | null>; onMoveRef: React.RefObject<(lat: number, lng: number) => void> }) {
+  useMapEvents({
+    click(e) {
+      const { lat: newLat, lng: newLng } = e.latlng;
+      markerRef.current?.setLatLng([newLat, newLng]);
+      onMoveRef.current(newLat, newLng);
+    },
+  });
+  return null;
+}
+
 function MapPinPicker({
   lat,
   lng,
@@ -41,18 +77,7 @@ function MapPinPicker({
 }) {
   const markerRef = useRef<L.Marker>(null);
   const onMoveRef = useRef(onMove);
-  onMoveRef.current = onMove;
-
-  function MapEvents() {
-    useMapEvents({
-      click(e) {
-        const { lat: newLat, lng: newLng } = e.latlng;
-        if (markerRef.current) markerRef.current.setLatLng([newLat, newLng]);
-        onMoveRef.current(newLat, newLng);
-      },
-    });
-    return null;
-  }
+  useEffect(() => { onMoveRef.current = onMove; }, [onMove]);
 
   const hasCoords = lat !== 0 && lng !== 0;
 
@@ -63,14 +88,11 @@ function MapPinPicker({
           center={[lat, lng]}
           zoom={hasCoords ? 16 : 2}
           style={{ height: "100%", width: "100%" }}
-          scrollWheelZoom
+          scrollWheelZoom={"center" as unknown as boolean}
           zoomControl={false}
         >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-          />
-          <MapEvents />
+          <MapTileLayer />
+          <MapEvents markerRef={markerRef} onMoveRef={onMoveRef} />
           <Marker
             ref={markerRef}
             position={[lat, lng]}
@@ -165,30 +187,18 @@ export default function StylistLocationPicker({ value, onChange }: Props) {
     if (!navigator.geolocation) return;
     setDetecting(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const { latitude, longitude } = pos.coords;
-        fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-          {
-            headers: { "User-Agent": "GlowUpOS/1.0", "Accept-Language": "en" },
-          },
-        )
-          .then((r) => r.json())
-          .then((data) => {
-            const area =
-              data.address?.suburb ||
-              data.address?.neighbourhood ||
-              data.address?.town ||
-              data.address?.city ||
-              "My location";
-            setQuery(area);
-            onChange({ area, lat: latitude, lng: longitude });
-          })
-          .catch(() => {
-            setQuery("My location");
-            onChange({ area: "My location", lat: latitude, lng: longitude });
-          })
-          .finally(() => setDetecting(false));
+        try {
+          const area = await reverseGeocode(latitude, longitude);
+          setQuery(area);
+          onChange({ area, lat: latitude, lng: longitude });
+        } catch {
+          setQuery("My location");
+          onChange({ area: "My location", lat: latitude, lng: longitude });
+        } finally {
+          setDetecting(false);
+        }
       },
       () => setDetecting(false),
       { enableHighAccuracy: true, timeout: 10000 },
@@ -236,7 +246,7 @@ export default function StylistLocationPicker({ value, onChange }: Props) {
             type="button"
             onClick={handleDetect}
             disabled={detecting}
-            className="px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-all shrink-0 flex items-center gap-2 text-sm font-medium"
+            className="px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-all shrink-0 flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 disabled:hover:border-gray-200"
           >
             {detecting ? <Loader2 size={16} className="animate-spin" /> : <Crosshair size={16} />}
             <span className="hidden sm:inline">Detect</span>

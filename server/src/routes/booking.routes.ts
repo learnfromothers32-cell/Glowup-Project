@@ -11,7 +11,7 @@ import {
 } from '../controllers/booking.controller';
 import { protect, requireRole } from '../middleware/auth.middleware';
 import { generalLimiter } from '../middleware/rateLimiter';
-import { validate, createBookingSchema, updateBookingStatusSchema, rescheduleBookingSchema } from '../middleware/validate';
+import { validate, validateQuery, createBookingSchema, getAvailableSlotsSchema, updateBookingStatusSchema, rescheduleBookingSchema } from '../middleware/validate';
 
 const router = Router();
 
@@ -20,7 +20,7 @@ router.use(protect);
 router.post('/', generalLimiter, requireRole('client'), validate(createBookingSchema), createBooking);
 router.get('/my', requireRole('client'), getMyBookings);
 router.get('/stylist', requireRole('stylist'), getStylistBookings);
-router.get('/stylists/:stylistId/available-slots', requireRole('client', 'stylist'), getAvailableSlots);
+router.get('/stylists/:stylistId/available-slots', requireRole('client', 'stylist'), validateQuery(getAvailableSlotsSchema), getAvailableSlots);
 router.get('/:id', getBookingById);
 router.patch('/:id/status', requireRole('stylist', 'admin'), validate(updateBookingStatusSchema), updateBookingStatus);
 router.patch('/:id/cancel', requireRole('client', 'stylist', 'admin'), generalLimiter, cancelBooking);

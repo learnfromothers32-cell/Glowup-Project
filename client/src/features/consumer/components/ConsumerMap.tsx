@@ -30,21 +30,12 @@ import type { Stylist } from "@/domain/stylist/stylist.types";
 import { getLocationString } from "@/utils/location";
 import { getAreas } from "@/api/areas";
 import type { Area } from "@/api/areas";
+import { haversineDistance } from "@/utils/distance";
+import { fixDefaultMarkerIcons, getTileUrl, TILE_ATTRIBUTION } from "@/utils/leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import "leaflet/dist/leaflet.css";
 
-// ─── Fix Leaflet default marker icons ─────────────────────
-const iconDefault = L.Icon.Default.prototype as unknown as {
-  _getIconUrl?: () => string;
-};
-delete iconDefault._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
+fixDefaultMarkerIcons();
 
 // ─── Constants ─────────────────────────────────────────────
 const STORAGE_KEY = "glowup_user_location";
@@ -93,23 +84,6 @@ function getInitialLocation() {
   return { userLocation: null as [number, number] | null, selectedArea: "" };
 }
 
-function haversineDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
 // ─── Map controller (programmatic fly-to) ─────────────────
 function MapController({
   center,
@@ -129,6 +103,37 @@ function MapController({
   }, [center, map]);
 
   return null;
+}
+
+// ─── Tile error handler + dark mode ────────────────────────
+const FALLBACK_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+function MapTileLayer() {
+  const [tileUrl, setTileUrl] = useState(getTileUrl);
+  const [tileFailed, setTileFailed] = useState(false);
+  const map = useMap();
+
+  useEffect(() => {
+    const handler = () => {
+      if (!tileFailed) {
+        setTileFailed(true);
+        setTileUrl(FALLBACK_TILE_URL);
+      }
+    };
+    map.on("tileerror", handler);
+    return () => { map.off("tileerror", handler); };
+  }, [map, tileFailed]);
+
+  useEffect(() => {
+    if (!tileFailed) {
+      const updateTile = () => setTileUrl(getTileUrl());
+      const observer = new MutationObserver(updateTile);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+      return () => observer.disconnect();
+    }
+  }, [tileFailed]);
+
+  return <TileLayer key={tileUrl} url={tileUrl} attribution={TILE_ATTRIBUTION} />;
 }
 
 // ─── Area Selector Dropdown ────────────────────────────────
@@ -435,7 +440,7 @@ export default function ConsumerMap({
   const [areasLoading, setAreasLoading] = useState(true);
   const mapInstanceRef = useRef<L.Map | null>(null);
 
-  const fetchAreas = useCallback(async () => {
+  const loadAreas = useCallback(async () => {
     setAreasLoading(true);
     try {
       const data = await getAreas();
@@ -448,18 +453,22 @@ export default function ConsumerMap({
   }, []);
 
   useEffect(() => {
-    fetchAreas();
-  }, [fetchAreas]);
+    loadAreas(); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [loadAreas]);
 
   const handleMapReady = useCallback((map: L.Map) => {
     mapInstanceRef.current = map;
   }, []);
 
   const saveLocation = (lat: number, lng: number, areaName?: string) => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ lat, lng, areaName: areaName || "" }),
-    );
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ lat, lng, areaName: areaName || "" }),
+      );
+    } catch {
+      /* quota exceeded or private mode */
+    }
   };
 
   const getUserLocation = () => {
@@ -507,8 +516,8 @@ export default function ConsumerMap({
   };
 
   const handleRetryAreas = useCallback(() => {
-    fetchAreas();
-  }, [fetchAreas]);
+    loadAreas();
+  }, [loadAreas]);
 
   const stylistsWithCoords = stylists.filter(
     (s) => s.location?.lat && s.location?.lng,
@@ -535,7 +544,7 @@ export default function ConsumerMap({
         <button
           onClick={getUserLocation}
           disabled={locating}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all disabled:cursor-not-allowed ${
             locating
               ? "bg-blue-50 text-blue-500 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50"
               : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:shadow-sm dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-primary dark:hover:border-gray-500"
@@ -595,19 +604,31 @@ export default function ConsumerMap({
         )}
       </AnimatePresence>
 
+      {/* ── Empty state ─────────────────────────────────── */}
+      {areaFilteredStylists.length === 0 && (
+        <div className="absolute inset-0 z-[2] pointer-events-none flex items-center justify-center">
+          <div className="bg-white/90 dark:bg-surface-dark/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 px-6 py-4 text-center pointer-events-auto max-w-[260px]">
+            <MapPin size={24} className="mx-auto mb-2 text-gray-300 dark:text-text-dark-muted" />
+            <p className="text-sm font-semibold text-gray-800 dark:text-text-dark-primary">
+              {selectedArea ? `No stylists in ${selectedArea}` : "No stylists nearby"}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-text-dark-muted mt-1">
+              {selectedArea ? "Try a different area" : "Check back later or adjust your filters"}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Map ────────────────────────────────────────── */}
       <div className="relative" style={{ height: "420px" }}>
         <MapContainer
           center={userLocation || DEFAULT_CENTER}
           zoom={userLocation ? 13 : 2}
           style={{ height: "100%", width: "100%" }}
-          scrollWheelZoom
+          scrollWheelZoom={"center" as unknown as boolean}
           zoomControl={false}
         >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB'
-          />
+          <MapTileLayer />
           <MapController center={flyTarget} onMapReady={handleMapReady} />
 
           {userLocation && (
@@ -636,38 +657,42 @@ export default function ConsumerMap({
             </>
           )}
 
-          {/* ── Stylist markers – no eventHandlers, popup decides ── */}
-          {areaFilteredStylists.map((stylist) => (
-            <Marker
-              key={stylist.id}
-              position={[stylist.location.lat, stylist.location.lng]}
-              icon={stylistIcon}
-            >
-              <Popup
-                maxWidth={240}
-                className="stylist-popup"
-                closeButton={false}
+          {/* ── Stylist markers (clustered) ── */}
+          <MarkerClusterGroup chunkedLoading>
+            {areaFilteredStylists.map((stylist) => (
+              <Marker
+                key={stylist.id}
+                position={[stylist.location.lat, stylist.location.lng]}
+                icon={stylistIcon}
               >
-                <StylistPopup
-                  stylist={stylist}
-                  userLocation={userLocation}
-                  onSelect={() => onSelectStylist(stylist)}
-                />
-              </Popup>
-            </Marker>
-          ))}
+                <Popup
+                  maxWidth={240}
+                  className="stylist-popup"
+                  closeButton={false}
+                >
+                  <StylistPopup
+                    stylist={stylist}
+                    userLocation={userLocation}
+                    onSelect={() => onSelectStylist(stylist)}
+                  />
+                </Popup>
+              </Marker>
+            ))}
+          </MarkerClusterGroup>
         </MapContainer>
 
         {/* Custom zoom controls (lower z-index) */}
         <div className="absolute top-3 right-3 z-10 flex flex-col gap-1">
           <button
             onClick={() => mapInstanceRef.current?.zoomIn()}
+            aria-label="Zoom in"
             className="w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-secondary"
           >
             <ZoomIn size={14} />
           </button>
           <button
             onClick={() => mapInstanceRef.current?.zoomOut()}
+            aria-label="Zoom out"
             className="w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:bg-gray-50 hover:shadow-md transition-all dark:bg-surface-dark dark:border-gray-600 dark:text-text-dark-secondary"
           >
             <ZoomOut size={14} />

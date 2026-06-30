@@ -50,7 +50,7 @@ const transactionSchema = new Schema<ITransaction>(
       index: true
     },
     paymentProvider: { type: String, default: 'paystack' },
-    paymentRef: { type: String },
+    paymentRef: { type: String, required: true },
     paymentMethod: {
       type: String,
       enum: ['card', 'mobile-money', 'cash'],
@@ -62,6 +62,6 @@ const transactionSchema = new Schema<ITransaction>(
   { timestamps: true }
 );
 
-transactionSchema.index({ paymentRef: 1 });
+transactionSchema.index({ paymentRef: 1 }, { unique: true });
 
 export const Transaction = model<ITransaction>('Transaction', transactionSchema);

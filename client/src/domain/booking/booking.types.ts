@@ -53,4 +53,5 @@ export interface CreateBookingData {
   startTime: string;
   notes?: string;
   paymentMethod?: PaymentMethod;
+  timezone?: string;
 }

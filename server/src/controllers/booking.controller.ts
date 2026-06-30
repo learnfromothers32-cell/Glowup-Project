@@ -1,14 +1,17 @@
 import mongoose from 'mongoose';
 import { Request, Response } from 'express';
+import { Availability } from '../models/Availability';
 import { Booking } from '../models/Booking';
 import { IQueueEntry, Queue } from '../models/Queue';
 import { Service } from '../models/Service';
 import { Stylist } from '../models/Stylist';
+import { StylistSettings } from '../models/StylistSettings';
 import { Client } from '../models/Client';
 import { Conversation } from '../models/Conversation';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../utils/apiError';
 import { sendSuccess, sendPaginated } from '../utils/apiResponse';
+import logger from '../utils/logger';
 import { notifyBookingCreated, notifyBookingStatusChange } from '../utils/notify';
 import { getIO } from '../socket';
 import { emitQueueUpdate } from '../utils/queue';
@@ -21,8 +24,19 @@ function emitBookingEvent(clientId: string, data: { bookingId: string; status: s
   }
 }
 
+/**
+ * Get UTC offset (in milliseconds) for a given calendar date and IANA timezone.
+ * Uses noon UTC to avoid midnight ambiguity during DST transitions.
+ */
+function getTimezoneOffsetMs(dateStr: string, timezone: string): number {
+  const utcRef = new Date(dateStr + 'T12:00:00Z');
+  const localStr = utcRef.toLocaleString('en-US', { timeZone: timezone, hour12: false });
+  const localDate = new Date(localStr);
+  return localDate.getTime() - utcRef.getTime();
+}
+
 export const createBooking = asyncHandler(async (req: Request, res: Response) => {
-  const { stylistId, serviceId, startTime, notes, paymentMethod } = req.body;
+  const { stylistId, serviceId, startTime, notes, paymentMethod, timezone: _timezone } = req.body;
   const clientId = req.user?.id;
 
   if (!stylistId || !serviceId || !startTime) {
@@ -48,24 +62,57 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
   if (isNaN(start.getTime())) {
     throw new ApiError(400, 'Invalid start time format');
   }
-  if (start.getTime() < Date.now() - 60000) {
+  const now = Date.now();
+  if (start.getTime() < now - 60000) {
     throw new ApiError(400, 'Start time must be in the future');
   }
   const end = new Date(start.getTime() + service.duration * 60000);
 
-  // Check for conflicts (app-level check for descriptive error messages)
-  const conflict = await Booking.findOne({
+  // ── Slot availability revalidation (mirrors getAvailableSlots) ──
+  const slotCheck = await validateSlotInSchedule(stylistId, start, service.duration);
+  if (!slotCheck.valid) {
+    throw new ApiError(409, slotCheck.reason || 'Requested slot is not available');
+  }
+
+  // ── Buffer-aware conflict check ──
+  const availability = await Availability.findOne({ stylistId });
+  const bufferMinutes = availability?.bufferMinutes ?? 0;
+
+  const conflictCount = await Booking.countDocuments({
     stylistId,
     status: { $ne: 'cancelled' },
-    $or: [
-      { startTime: { $lt: end, $gte: start } },
-      { endTime: { $gt: start, $lte: end } },
-      { startTime: { $lte: start }, endTime: { $gte: end } }
-    ]
+    startTime: { $lt: new Date(end.getTime() + bufferMinutes * 60000) },
+    endTime: { $gt: new Date(start.getTime() - bufferMinutes * 60000) },
   });
 
-  if (conflict) {
-    throw new ApiError(409, 'This time slot is already booked');
+  if (conflictCount > 0) {
+    throw new ApiError(409, 'This time slot conflicts with an existing booking');
+  }
+
+  // ── Capacity enforcement ──
+  const maxClients = availability?.maxClientsPerSlot ?? 1;
+  const slotBookingCount = await Booking.countDocuments({
+    stylistId,
+    startTime: start,
+    status: { $ne: 'cancelled' },
+  });
+  if (slotBookingCount >= maxClients) {
+    throw new ApiError(409, 'This time slot is fully booked');
+  }
+
+  // Enforce booking lead time
+  const settings = await StylistSettings.findOne({ stylistId });
+  const leadTimeMinutes = settings?.business?.bookingLeadTime ?? 0;
+  if (leadTimeMinutes > 0 && start.getTime() < now + leadTimeMinutes * 60000) {
+    throw new ApiError(400, `Bookings must be made at least ${leadTimeMinutes} minutes in advance`);
+  }
+
+  // Enforce maximum future booking window
+  const maxFutureDays = settings?.business?.maxFutureBookings ?? 60;
+  const maxFutureDate = new Date();
+  maxFutureDate.setDate(maxFutureDate.getDate() + maxFutureDays);
+  if (start > maxFutureDate) {
+    throw new ApiError(400, `Bookings cannot be made more than ${maxFutureDays} days in advance`);
   }
 
   // DB-level atomic duplicate prevention via unique partial index {stylistId, startTime}
@@ -88,6 +135,8 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
     }
     throw err;
   }
+
+  logger.info('Audit: booking created', { bookingId: booking._id, stylistId, clientId, startTime: start.toISOString(), serviceId, amount: service.price });
 
   await Client.findOneAndUpdate(
     { stylistId, userId: clientId },
@@ -114,92 +163,66 @@ export const createBooking = asyncHandler(async (req: Request, res: Response) =>
     notifyBookingCreated(clientId, stylist.name, booking._id.toString()).catch(() => {});
   }
 
-  // Atomically add to queue ($push never overwrites concurrent entries)
+  // Atomically add to queue ($pull removes old entry, $push adds new — prevents duplicates)
   let queuePosition = 0;
   let estimatedWaitMinutes = 0;
   try {
+    const joinedAt = new Date();
+    const stylistOid = new mongoose.Types.ObjectId(stylistId);
+    const clientOid = new mongoose.Types.ObjectId(clientId);
     const entry: IQueueEntry = {
-      userId: new mongoose.Types.ObjectId(clientId),
+      userId: clientOid,
       position: 0,
-      joinedAt: new Date(),
+      joinedAt,
       estimatedServiceMins: 30,
       estimatedWaitMins: 0,
       status: 'waiting',
       bookingId: booking._id,
     };
 
-    const updated = await Queue.findOneAndUpdate(
-      { stylistId: new mongoose.Types.ObjectId(stylistId) },
-      {
-        $push: { entries: entry },
-        $setOnInsert: {
-          stylistId: new mongoose.Types.ObjectId(stylistId),
-          currentPosition: 0,
-          predictedWaitMins: 0,
-          avgServiceDuration: 30,
-          lastUpdated: new Date(),
-        },
-      },
-      { upsert: true, new: true }
-    );
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await Queue.findOneAndUpdate(
+          { stylistId: stylistOid },
+          {
+            $pull: { entries: { userId: clientOid, status: 'waiting' } },
+            $push: { entries: entry },
+            $setOnInsert: {
+              stylistId: stylistOid,
+              currentPosition: 0,
+              predictedWaitMins: 0,
+              avgServiceDuration: 30,
+              lastUpdated: new Date(),
+            },
+          },
+          { upsert: true, session }
+        );
 
-    // Deduplicate: if the user was already waiting (race), remove extras
-    const waiting = updated.entries.filter((e) => e.status === 'waiting');
-    const userEntries = waiting.filter((e) => e.userId.toString() === clientId);
-    if (userEntries.length > 1) {
-      userEntries.sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime());
-      const keep = userEntries[0];
-      await Queue.findOneAndUpdate(
-        { stylistId: new mongoose.Types.ObjectId(stylistId) },
-        { $pull: { entries: { userId: new mongoose.Types.ObjectId(clientId), status: 'waiting', joinedAt: { $ne: keep.joinedAt } } } }
-      );
+        const queue = await Queue.findOne({ stylistId: stylistOid }).session(session);
+        if (queue) {
+          queue.recalculate();
+          await queue.save({ session });
+
+          const myEntry = queue.entries.find(
+            (e) => e.userId.toString() === clientId && e.status === 'waiting'
+          );
+          if (myEntry) {
+            queuePosition = myEntry.position;
+            estimatedWaitMinutes = myEntry.estimatedWaitMins;
+          }
+        }
+      });
+    } finally {
+      session.endSession();
     }
 
-    // Recalculate all waiting positions atomically
-    const afterDedup = await Queue.findOne({ stylistId: new mongoose.Types.ObjectId(stylistId) });
-    if (afterDedup) {
-      const finalWaiting = afterDedup.entries.filter((e) => e.status === 'waiting');
-      let cumulativeWait = 0;
-      for (const e of afterDedup.entries) {
-        if (e.status === 'in-service') cumulativeWait += e.estimatedServiceMins;
-      }
-
-      const bulkOps: any[] = [];
-      for (let i = 0; i < finalWaiting.length; i++) {
-        const pos = i + 1;
-        const wait = cumulativeWait;
-        cumulativeWait += finalWaiting[i].estimatedServiceMins;
-        bulkOps.push({
-          updateOne: {
-            filter: { stylistId: new mongoose.Types.ObjectId(stylistId), 'entries.userId': finalWaiting[i].userId },
-            update: { $set: { 'entries.$.position': pos, 'entries.$.estimatedWaitMins': wait } },
-          },
-        });
-      }
-
-      bulkOps.push({
-        updateOne: {
-          filter: { stylistId: new mongoose.Types.ObjectId(stylistId) },
-          update: { $set: { currentPosition: finalWaiting.length, predictedWaitMins: cumulativeWait, lastUpdated: new Date() } },
-        },
-      });
-
-      if (bulkOps.length > 0) await Queue.bulkWrite(bulkOps);
-
-      const myEntry = finalWaiting.find((e) => e.userId.toString() === clientId);
-      if (myEntry) {
-        queuePosition = myEntry.position;
-        estimatedWaitMinutes = myEntry.estimatedWaitMins;
-      } else {
-        queuePosition = finalWaiting.length;
-        estimatedWaitMinutes = cumulativeWait;
-      }
-
-      const freshQueue = await Queue.findOne({ stylistId: new mongoose.Types.ObjectId(stylistId) });
-      if (freshQueue) emitQueueUpdate(stylistId, freshQueue);
+    const queue = await Queue.findOne({ stylistId: stylistOid });
+    if (queue) {
+      emitQueueUpdate(stylistId, queue);
     }
   } catch (err) {
-    console.error('Failed to auto-join queue:', err);
+    logger.error('Failed to auto-join queue:', err);
   }
 
   return sendSuccess(res, { booking, queuePosition, estimatedWaitMinutes }, 'Booking created successfully', 201);
@@ -316,20 +339,37 @@ export const updateBookingStatus = asyncHandler(async (req: Request, res: Respon
     throw new ApiError(403, 'You do not have permission to update this booking');
   }
 
-  booking.status = status as any;
-  if (status === 'confirmed') booking.confirmedAt = new Date();
-  if (status === 'completed') booking.completedAt = new Date();
-  await booking.save();
+  const prevStatus = booking.status;
+  const allowedSources = Object.entries(validTransitions)
+    .filter(([_, next]) => next.includes(status))
+    .map(([current]) => current);
 
-  notifyBookingStatusChange(booking.clientId.toString(), status, booking._id.toString()).catch(() => {});
-  emitBookingEvent(booking.clientId.toString(), {
-    bookingId: booking._id.toString(),
-    status: booking.status,
-    stylistId: booking.stylistId.toString(),
-    clientId: booking.clientId.toString(),
+  const updated = await Booking.findOneAndUpdate(
+    { _id: id, status: { $in: allowedSources } },
+    {
+      $set: {
+        status,
+        ...(status === 'confirmed' ? { confirmedAt: new Date() } : {}),
+        ...(status === 'completed' ? { completedAt: new Date() } : {}),
+      }
+    },
+    { new: true }
+  );
+
+  if (!updated) {
+    throw new ApiError(400, `Cannot transition from '${prevStatus}' to '${status}'`);
+  }
+
+  logger.info('Audit: booking status updated', { bookingId: updated._id, from: prevStatus, to: status, byUserId: userId });
+  notifyBookingStatusChange(updated.clientId.toString(), status, updated._id.toString()).catch(() => {});
+  emitBookingEvent(updated.clientId.toString(), {
+    bookingId: updated._id.toString(),
+    status: updated.status,
+    stylistId: updated.stylistId.toString(),
+    clientId: updated.clientId.toString(),
   });
 
-  return sendSuccess(res, { booking }, `Booking status updated to ${status}`);
+  return sendSuccess(res, { booking: updated }, `Booking status updated to ${status}`);
 });
 
 export const cancelBooking = asyncHandler(async (req: Request, res: Response) => {
@@ -357,34 +397,54 @@ export const cancelBooking = asyncHandler(async (req: Request, res: Response) =>
     throw new ApiError(403, 'You do not have permission to cancel this booking');
   }
 
-  booking.status = 'cancelled';
-  if (reason) booking.cancellationReason = reason;
-  await booking.save();
+  const updated = await Booking.findOneAndUpdate(
+    { _id: id, status: { $nin: ['completed', 'cancelled'] } },
+    { $set: { status: 'cancelled', ...(reason ? { cancellationReason: reason } : {}) } },
+    { new: true }
+  );
+  if (!updated) {
+    throw new ApiError(409, 'Booking was modified concurrently');
+  }
 
-  emitBookingEvent(booking.clientId.toString(), {
-    bookingId: booking._id.toString(),
-    status: booking.status,
-    stylistId: booking.stylistId.toString(),
-    clientId: booking.clientId.toString(),
+  logger.info('Audit: booking cancelled', { bookingId: updated._id, byUserId: userId, reason });
+  emitBookingEvent(updated.clientId.toString(), {
+    bookingId: updated._id.toString(),
+    status: updated.status,
+    stylistId: updated.stylistId.toString(),
+    clientId: updated.clientId.toString(),
   });
 
-  // Remove from queue on cancellation
+  // Remove from queue on cancellation (transactional)
+  let queueUpdated: any = null;
   try {
-    const queue = await Queue.findOne({ stylistId: booking.stylistId });
-    if (queue) {
-      queue.entries = queue.entries.filter(
-        (e) => !(e.userId.toString() === booking.clientId.toString() && e.status === 'waiting')
-      );
-      queue.recalculate();
-      await queue.save();
-      emitQueueUpdate(booking.stylistId.toString(), queue);
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const queue = await Queue.findOneAndUpdate(
+          { stylistId: updated.stylistId },
+          { $pull: { entries: { userId: updated.clientId, status: 'waiting' } } },
+          { new: true, session }
+        );
+        if (queue) {
+          queue.recalculate();
+          await queue.save({ session });
+          queueUpdated = queue;
+        }
+      });
+    } finally {
+      session.endSession();
     }
-  } catch {}
+  } catch (err) {
+    logger.error('Failed to remove from queue on cancellation:', err);
+  }
+  if (queueUpdated) {
+    emitQueueUpdate(updated.stylistId.toString(), queueUpdated);
+  }
 
-  const targetId = isClient ? booking.stylistId.toString() : booking.clientId.toString();
-  notifyBookingStatusChange(targetId, 'cancelled', booking._id.toString()).catch(() => {});
+  const targetId = isClient ? updated.stylistId.toString() : updated.clientId.toString();
+  notifyBookingStatusChange(targetId, 'cancelled', updated._id.toString()).catch(() => {});
 
-  return sendSuccess(res, { booking }, 'Booking cancelled successfully');
+  return sendSuccess(res, { booking: updated }, 'Booking cancelled successfully');
 });
 
 export const rescheduleBooking = asyncHandler(async (req: Request, res: Response) => {
@@ -427,6 +487,12 @@ export const rescheduleBooking = asyncHandler(async (req: Request, res: Response
   }
   const end = new Date(start.getTime() + service.duration * 60000);
 
+  // Re-validate against availability schedule
+  const slotCheck = await validateSlotInSchedule(booking.stylistId.toString(), start, service.duration);
+  if (!slotCheck.valid) {
+    throw new ApiError(409, slotCheck.reason || 'Requested slot is not available');
+  }
+
   const conflict = await Booking.findOne({
     _id: { $ne: id },
     stylistId: booking.stylistId,
@@ -442,94 +508,294 @@ export const rescheduleBooking = asyncHandler(async (req: Request, res: Response
     throw new ApiError(409, 'This time slot is already booked');
   }
 
-  booking.startTime = start;
-  booking.endTime = end;
-  booking.status = 'pending';
-  booking.rescheduleCount = (booking.rescheduleCount || 0) + 1;
-  await booking.save();
+  const updated = await Booking.findOneAndUpdate(
+    { _id: id, status: { $in: ['pending', 'confirmed'] } },
+    { $set: { startTime: start, endTime: end, status: 'pending' }, $inc: { rescheduleCount: 1 } },
+    { new: true }
+  );
+  if (!updated) {
+    throw new ApiError(409, 'Booking was modified concurrently');
+  }
 
-  emitBookingEvent(booking.clientId.toString(), {
-    bookingId: booking._id.toString(),
-    status: booking.status,
-    stylistId: booking.stylistId.toString(),
-    clientId: booking.clientId.toString(),
+  logger.info('Audit: booking rescheduled', { bookingId: updated._id, newStart: start.toISOString(), newEnd: end.toISOString() });
+  emitBookingEvent(updated.clientId.toString(), {
+    bookingId: updated._id.toString(),
+    status: updated.status,
+    stylistId: updated.stylistId.toString(),
+    clientId: updated.clientId.toString(),
   });
 
-  return sendSuccess(res, { booking }, 'Booking rescheduled successfully');
+  return sendSuccess(res, { booking: updated }, 'Booking rescheduled successfully');
 });
+
+/**
+ * Compute block start/end in UTC for a stylist's local day.
+ * Returns [dayStartUTC, dayEndUTC] covering the full local day, accounting for timezone offset.
+ */
+function localDayRangeUTC(dateStr: string, timezone: string): [Date, Date] {
+  const utcMidnight = new Date(dateStr + 'T00:00:00Z');
+  const offsetMs = getTimezoneOffsetMs(dateStr, timezone);
+  const localDayStart = new Date(utcMidnight.getTime() - offsetMs);
+  const localDayEnd = new Date(localDayStart.getTime() + 24 * 60 * 60000);
+  return [localDayStart, localDayEnd];
+}
+
+/**
+ * Convert a local time string (HH:MM) to a UTC Date for the given calendar date and timezone.
+ */
+function localTimeToUTC(dateStr: string, timeStr: string, timezone: string): Date {
+  const [h, m] = timeStr.split(':').map(Number);
+  const utcMidnight = new Date(dateStr + 'T00:00:00Z');
+  const offsetMs = getTimezoneOffsetMs(dateStr, timezone);
+  return new Date(utcMidnight.getTime() + (h * 60 + m) * 60000 - offsetMs);
+}
+
+/**
+ * Convert a time string (HH:MM) to total minutes from midnight.
+ */
+function timeToMinutes(timeStr: string): number {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Validate that a given UTC startTime falls within the stylist's availability schedule
+ * (working hours, breaks, day-of-week, date overrides).
+ * This mirrors the slot-generation logic in getAvailableSlots.
+ */
+async function validateSlotInSchedule(
+  stylistId: string,
+  startTime: Date,
+  durationMinutes: number,
+): Promise<{ valid: boolean; reason?: string }> {
+  const availability = await Availability.findOne({ stylistId });
+  if (!availability) {
+    return { valid: false, reason: 'Stylist has no availability configured' };
+  }
+
+  const timezone = availability.timezone || 'UTC';
+
+  // Stable local date key (yyyy-mm-dd) in the stylist's timezone
+  const localDateParts = startTime.toLocaleDateString('en-US', { timeZone: timezone }).split('/');
+  const localDateStr = `${localDateParts[2]}-${String(Number(localDateParts[0])).padStart(2, '0')}-${String(Number(localDateParts[1])).padStart(2, '0')}`;
+
+  const dayOfWeek = startTime.toLocaleDateString('en-US', {
+    weekday: 'long',
+    timeZone: timezone,
+  }).toLowerCase();
+
+  // Convert UTC startTime to minutes since start of local day
+  const [dayStartUTC] = localDayRangeUTC(localDateStr, timezone);
+  const slotStartMin = (startTime.getTime() - dayStartUTC.getTime()) / 60000;
+  const slotEndMin = slotStartMin + durationMinutes;
+
+  // Date overrides
+  const override = (availability.dateOverrides || []).find(o => {
+    const od = o.date instanceof Date ? o.date : new Date(o.date);
+    return od.toISOString().slice(0, 10) === localDateStr;
+  });
+
+  let workStartMin: number;
+  let workEndMin: number;
+  let breaks: { start: string; end: string }[] = [];
+
+  if (override) {
+    if (!override.available) {
+      return { valid: false, reason: 'Stylist is not available on this date' };
+    }
+    workStartMin = override.start ? timeToMinutes(override.start) : 0;
+    workEndMin = override.end ? timeToMinutes(override.end) : 24 * 60;
+  } else {
+    const schedule = availability.schedule;
+    const daySchedule = schedule instanceof Map
+      ? schedule.get(dayOfWeek)
+      : (schedule as any)?.[dayOfWeek];
+
+    if (!daySchedule || !daySchedule.enabled) {
+      return { valid: false, reason: 'Stylist is not available on this day' };
+    }
+
+    workStartMin = timeToMinutes(daySchedule.start);
+    workEndMin = timeToMinutes(daySchedule.end);
+    breaks = daySchedule.breaks || [];
+  }
+
+  // Working hours check
+  if (slotStartMin < workStartMin || slotEndMin > workEndMin) {
+    return { valid: false, reason: 'Requested time is outside the stylist\'s working hours' };
+  }
+
+  // Break check
+  const inBreak = breaks.some(b => {
+    const bs = timeToMinutes(b.start);
+    const be = timeToMinutes(b.end);
+    return slotStartMin < be && slotEndMin > bs;
+  });
+  if (inBreak) {
+    return { valid: false, reason: 'Requested time overlaps with a break period' };
+  }
+
+  return { valid: true };
+}
 
 export const getAvailableSlots = asyncHandler(async (req: Request, res: Response) => {
   const { stylistId } = req.params;
-  const { date } = req.query;
+  const { date, serviceId } = req.query;
 
   if (!mongoose.Types.ObjectId.isValid(stylistId)) {
     throw new ApiError(400, 'Invalid stylist ID');
   }
 
-  const stylist = await Stylist.findById(stylistId);
+  const stylist = await Stylist.findById(stylistId).select('_id');
   if (!stylist) {
     throw new ApiError(404, 'Stylist not found');
   }
 
-  const targetDate = date ? new Date(date as string) : new Date();
+  const dateStr = date as string | undefined;
+  const targetDate = dateStr ? new Date(dateStr) : new Date();
   if (isNaN(targetDate.getTime())) {
     throw new ApiError(400, 'Invalid date parameter');
   }
 
-  const dayOfWeek = targetDate.toLocaleDateString('en-US', { weekday: 'long' });
-  const dayStart = new Date(targetDate);
-  dayStart.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(targetDate);
-  dayEnd.setHours(23, 59, 59, 999);
+  // Use a stable string key for date comparison
+  const targetDateStr = targetDate.toISOString().slice(0, 10);
 
-  // Get existing bookings for this stylist on this day
+  // ── 1. Load Availability ──
+  let availability = await Availability.findOne({ stylistId });
+  if (!availability) {
+    availability = new Availability({ stylistId });
+  }
+
+  const timezone = availability.timezone || 'UTC';
+
+  // ── 2. Load StylistSettings for business rules ──
+  const settings = await StylistSettings.findOne({ stylistId });
+  const leadTimeMinutes = settings?.business?.bookingLeadTime ?? 0;
+  const maxFutureDays = settings?.business?.maxFutureBookings ?? 60;
+
+  // ── 3. Enforce maximum future booking window ──
+  const maxFutureDate = new Date();
+  maxFutureDate.setDate(maxFutureDate.getDate() + maxFutureDays);
+  maxFutureDate.setHours(23, 59, 59, 999);
+  if (targetDate > maxFutureDate) {
+    const services = await Service.find({ stylistId }).select('name duration price');
+    return sendSuccess(res, { slots: [], services, date: targetDate.toISOString() });
+  }
+
+  // ── 4. Determine day-of-week in stylist's timezone ──
+  const dayOfWeek = targetDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    timeZone: timezone,
+  }).toLowerCase();
+
+  // ── 5. Compute stylist's local day range in UTC (for booking queries) ──
+  const [localDayStartUTC, localDayEndUTC] = localDayRangeUTC(targetDateStr, timezone);
+
+  // ── 6. Load service for duration ──
+  let serviceDuration = 30;
+  if (serviceId && mongoose.Types.ObjectId.isValid(serviceId as string)) {
+    const svc = await Service.findOne({ _id: serviceId, stylistId }).select('duration');
+    if (svc) serviceDuration = svc.duration;
+  }
+
+  // ── 7. Check date overrides ──
+  let workStartMin: number;
+  let workEndMin: number;
+  let breaks: { start: string; end: string }[] = [];
+
+  const override = (availability.dateOverrides || []).find(o => {
+    const od = o.date instanceof Date ? o.date : new Date(o.date);
+    return od.toISOString().slice(0, 10) === targetDateStr;
+  });
+
+  if (override) {
+    if (!override.available) {
+      const services = await Service.find({ stylistId }).select('name duration price');
+      return sendSuccess(res, { slots: [], services, date: targetDate.toISOString() });
+    }
+    workStartMin = override.start ? timeToMinutes(override.start) : 0;
+    workEndMin = override.end ? timeToMinutes(override.end) : 24 * 60 - 1;
+  } else {
+    // ── 8. Use weekly schedule ──
+    const schedule = availability.schedule;
+    const daySchedule = schedule instanceof Map
+      ? schedule.get(dayOfWeek)
+      : (schedule as any)?.[dayOfWeek];
+
+    if (!daySchedule || !daySchedule.enabled) {
+      const services = await Service.find({ stylistId }).select('name duration price');
+      return sendSuccess(res, { slots: [], services, date: targetDate.toISOString() });
+    }
+
+    workStartMin = timeToMinutes(daySchedule.start);
+    workEndMin = timeToMinutes(daySchedule.end);
+    breaks = daySchedule.breaks || [];
+  }
+
+  // ── 9. Compute blocked intervals from breaks ──
+  const breakIntervals = breaks.map(b => ({
+    start: timeToMinutes(b.start),
+    end: timeToMinutes(b.end),
+  }));
+
+  // ── 10. Compute blocked intervals from existing bookings (including buffer) ──
+  const bufferMinutes = availability.bufferMinutes || 0;
+
   const existingBookings = await Booking.find({
     stylistId,
     status: { $ne: 'cancelled' },
-    startTime: { $gte: dayStart, $lte: dayEnd }
+    startTime: { $lt: localDayEndUTC },
+    endTime: { $gt: localDayStartUTC },
   }).select('startTime endTime');
 
-  // Try to get stylist's available hours from schedule
-  let availableHours: { start: string; end: string }[] = [];
-  const schedule = (stylist as any).schedule;
-  if (schedule && schedule[dayOfWeek]) {
-    availableHours = schedule[dayOfWeek];
-  }
+  const blockedByBooking = existingBookings.map(b => {
+    const bs = b.startTime.getTime();
+    const be = b.endTime.getTime();
+    // Convert to minutes since start of local day
+    const dayStartMs = localDayStartUTC.getTime();
+    const blockStart = Math.max(0, (bs - bufferMinutes * 60000 - dayStartMs) / 60000);
+    const blockEnd = Math.min(24 * 60, (be + bufferMinutes * 60000 - dayStartMs) / 60000);
+    return { start: blockStart, end: blockEnd };
+  });
 
-  if (availableHours.length === 0) {
-    // Default business hours if no schedule set
-    availableHours = [{ start: '09:00', end: '17:00' }];
-  }
+  const now = Date.now();
 
-  // Generate 30-min slots
+  // ── 11. Generate slots at 30-minute increments ──
   const slots: { time: string; available: boolean }[] = [];
-  for (const range of availableHours) {
-    const [startH, startM] = range.start.split(':').map(Number);
-    const [endH, endM] = range.end.split(':').map(Number);
-    let slotStart = new Date(targetDate);
-    slotStart.setHours(startH, startM, 0, 0);
-    const slotEnd = new Date(targetDate);
-    slotEnd.setHours(endH, endM, 0, 0);
+  const increment = 30;
 
-    while (slotStart < slotEnd) {
-      const slotEndTime = new Date(slotStart.getTime() + 30 * 60000);
-      const isBooked = existingBookings.some(b => {
-        const bs = b.startTime.getTime();
-        const be = b.endTime.getTime();
-        const ss = slotStart.getTime();
-        const se = slotEndTime.getTime();
-        return (ss < be && se > bs);
-      });
+  for (let slotStartMin = workStartMin; slotStartMin + serviceDuration <= workEndMin; slotStartMin += increment) {
+    const slotEndMin = slotStartMin + serviceDuration;
 
-      slots.push({
-        time: slotStart.toTimeString().slice(0, 5),
-        available: !isBooked
-      });
-      slotStart = slotEndTime;
-    }
+    // Check against break intervals
+    const inBreak = breakIntervals.some(br => slotStartMin < br.end && slotEndMin > br.start);
+    if (inBreak) continue;
+
+    // Check against existing bookings (with buffer)
+    const conflicts = blockedByBooking.some(bl => slotStartMin < bl.end && slotEndMin > bl.start);
+    if (conflicts) continue;
+
+    // Compute UTC time for this slot to check lead time and past
+    const slotDate = localTimeToUTC(
+      targetDateStr,
+      `${Math.floor(slotStartMin / 60).toString().padStart(2, '0')}:${(slotStartMin % 60).toString().padStart(2, '0')}`,
+      timezone,
+    );
+    const slotStartMs = slotDate.getTime();
+
+    // Slot must be in the future (with 1-minute grace)
+    if (slotStartMs < now - 60000) continue;
+
+    // Enforce lead time
+    if (leadTimeMinutes > 0 && slotStartMs < now + leadTimeMinutes * 60000) continue;
+
+    slots.push({
+      time: `${Math.floor(slotStartMin / 60).toString().padStart(2, '0')}:${(slotStartMin % 60).toString().padStart(2, '0')}`,
+      available: true,
+    });
   }
 
-  // Fetch services for pricing/duration to show in slot picker
+  // ── 12. Fetch services for the slot picker ──
   const services = await Service.find({ stylistId }).select('name duration price');
 
   return sendSuccess(res, { slots, services, date: targetDate.toISOString() });

@@ -7,6 +7,7 @@ import { connectRedis } from './config/redis';
 import { initializeFirebase } from './config/firebase';
 import { prewarmFirebaseKeys } from './utils/firebase-verify';
 import { initSocket } from './socket';
+import { runMigrations } from './migrate';
 import { syncRedisEngagementToMongo } from './services/trending.service';
 import logger from './utils/logger';
 
@@ -19,14 +20,31 @@ const REQUIRED_ENV_VARS = [
   'JWT_REFRESH_SECRET',
   'MONGODB_URI',
 ];
+const PROD_REQUIRED = [
+  'PAYSTACK_SECRET_KEY',
+  'REDIS_URL',
+];
 const MISSING_VARS = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
 if (MISSING_VARS.length > 0) {
   logger.error(`Missing required environment variables: ${MISSING_VARS.join(', ')}`);
   process.exit(1);
 }
+if (appConfig.env === 'production') {
+  const missingProd = PROD_REQUIRED.filter((key) => !process.env[key]);
+  if (missingProd.length > 0) {
+    logger.warn(`Production missing optional vars (system will have degraded functionality): ${missingProd.join(', ')}`);
+    if (missingProd.includes('PAYSTACK_SECRET_KEY')) {
+      logger.warn('Payments will be disabled without PAYSTACK_SECRET_KEY');
+    }
+    if (missingProd.includes('REDIS_URL')) {
+      logger.warn('Socket.IO will run in single-instance mode without REDIS_URL');
+    }
+  }
+}
 
 const start = async () => {
   await connectDB();
+  await runMigrations();
   await connectRedis();
   initializeFirebase();
 
@@ -38,7 +56,7 @@ const start = async () => {
     logger.warn('HF_TOKEN is not set — AI hairstyle generation will use template overlay (returns original image). Set HF_TOKEN in .env for AI-powered generation.');
   }
 
-  initSocket(server);
+  await initSocket(server);
 
   cron.schedule('*/5 * * * *', () => {
     syncRedisEngagementToMongo().catch((err) =>

@@ -26,7 +26,7 @@ export default function SearchResultsPage() {
 
   useEffect(() => {
     getStylists()
-      .then(setStylists)
+      .then(({ stylists }) => setStylists(stylists))
       .catch(() => setError("Could not load stylists. Please try again."))
       .finally(() => setLoading(false));
   }, []);

@@ -18,7 +18,7 @@ export default function LiveStylists() {
 
   const fetchLiveStylists = useCallback(() => {
     return getStylists({ isLive: true })
-      .then(setLiveStylists)
+      .then(({ stylists }) => setLiveStylists(stylists))
       .catch(() => {});
   }, []);
 

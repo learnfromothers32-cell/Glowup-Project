@@ -13,6 +13,17 @@ export const validate = (schema: ZodSchema) =>
     next();
   };
 
+export const validateQuery = (schema: ZodSchema) =>
+  (req: Request, _res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.query);
+    if (!result.success) {
+      const message = result.error.errors.map(e => e.message).join(', ');
+      throw new ApiError(400, message);
+    }
+    req.query = result.data;
+    next();
+  };
+
 export const registerSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
   email: z.string().trim().email('Invalid email'),
@@ -58,12 +69,26 @@ export const trendingReportSchema = z.object({
   reason: z.string().min(1, 'reason is required').max(500, 'Reason must be under 500 characters'),
 });
 
+const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+
 export const createBookingSchema = z.object({
-  stylistId: z.string().min(1, 'stylistId is required'),
-  serviceId: z.string().min(1, 'serviceId is required'),
-  startTime: z.string().min(1, 'startTime is required'),
+  stylistId: z.string().regex(objectIdRegex, 'Invalid stylistId format (must be a 24-character hex string)'),
+  serviceId: z.string().regex(objectIdRegex, 'Invalid serviceId format (must be a 24-character hex string)'),
+  startTime: z.string()
+    .min(1, 'startTime is required')
+    .refine(val => !isNaN(new Date(val).getTime()), 'startTime must be a valid ISO date string'),
   notes: z.string().max(500, 'Notes must be under 500 characters').optional(),
-  paymentMethod: z.string().optional(),
+  paymentMethod: z.enum(['card', 'mobile-money', 'cash']).optional(),
+  timezone: z.string().optional(),
+});
+
+export const getAvailableSlotsSchema = z.object({
+  date: z.string()
+    .optional()
+    .refine(val => val === undefined || !isNaN(new Date(val).getTime()), 'date must be a valid ISO date string'),
+  serviceId: z.string()
+    .regex(objectIdRegex, 'Invalid serviceId format (must be a 24-character hex string)')
+    .optional(),
 });
 
 export const rescheduleBookingSchema = z.object({

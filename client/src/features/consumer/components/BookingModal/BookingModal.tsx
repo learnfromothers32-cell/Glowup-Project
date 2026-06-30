@@ -37,8 +37,13 @@ export type ServiceObject = {
   popular?: boolean;
 };
 
-interface UnavailableSlots {
-  [date: string]: string[];
+interface SlotInfo {
+  time: string;
+  available: boolean;
+}
+
+interface SlotsByDate {
+  [date: string]: SlotInfo[];
 }
 
 interface BookingModalProps {
@@ -82,7 +87,7 @@ export default function BookingModal({
     queuePosition: number;
     estimatedWaitMinutes: number;
   } | null>(null);
-  const [unavailableSlots, setUnavailableSlots] = useState<UnavailableSlots>({});
+  const [slotsByDate, setSlotsByDate] = useState<SlotsByDate>({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -95,9 +100,8 @@ export default function BookingModal({
   const [joiningWaitlistBm, setJoiningWaitlistBm] = useState(false);
   const [waitlistJoinedBm, setWaitlistJoinedBm] = useState(false);
 
-  const TIME_SLOTS_COUNT = 9;
-  const dateUnavailable = unavailableSlots[state.selectedDate ?? ""] || [];
-  const allSlotsUnavailable = state.selectedDate !== null && dateUnavailable.length >= TIME_SLOTS_COUNT && !loadingSlots;
+  const dateSlots = slotsByDate[state.selectedDate ?? ""] || [];
+  const allSlotsUnavailable = state.selectedDate !== null && dateSlots.length > 0 && dateSlots.every(s => !s.available) && !loadingSlots;
 
   const serviceComplete = state.selectedService !== null;
   const dateComplete = state.selectedDate !== null;
@@ -114,19 +118,22 @@ export default function BookingModal({
   const activeSection = getActiveSection();
 
   useEffect(() => {
-    if (!state.selectedDate || !state.selectedService) return;
+    if (!state.selectedDate) return;
     setLoadingSlots(true);
     const controller = new AbortController();
-    fetch(`/api/bookings/stylists/${stylist.id}/available-slots?date=${state.selectedDate}`, {
+
+    const serviceId =
+      (state.selectedService as any)?._id || (state.selectedService as any)?.id || '';
+    const params = new URLSearchParams({ date: state.selectedDate });
+    if (serviceId) params.set('serviceId', serviceId);
+
+    fetch(`/api/bookings/stylists/${stylist.id}/available-slots?${params}`, {
       signal: controller.signal,
     })
       .then((r) => r.json())
       .then((res) => {
         if (res.success && res.data?.slots) {
-          const unavailable = res.data.slots
-            .filter((s: any) => !s.available)
-            .map((s: any) => s.time);
-          setUnavailableSlots((prev) => ({ ...prev, [state.selectedDate!]: unavailable }));
+          setSlotsByDate((prev) => ({ ...prev, [state.selectedDate!]: res.data.slots }));
         }
       })
       .catch(() => {})
@@ -170,6 +177,7 @@ export default function BookingModal({
       startTime: startDateTime.toISOString(),
       notes: state.note,
       paymentMethod: state.paymentMethod,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
 
     return {
@@ -437,7 +445,7 @@ export default function BookingModal({
                     selectedTime={state.selectedTime}
                     onSelect={(time) => update("selectedTime", time)}
                     loading={loadingSlots}
-                    unavailableSlots={unavailableSlots}
+                    slots={dateSlots}
                     active={activeSection === "section-time"}
                     completed={timeComplete}
                     disabled={!dateComplete}

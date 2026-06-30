@@ -20,11 +20,11 @@ import {
 } from '../controllers/stylist.controller';
 import { softAuth, protect, requireRole } from '../middleware/auth.middleware';
 import { upload } from '../utils/upload';
-import { generalLimiter } from '../middleware/rateLimiter';
+import { generalLimiter, readLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
-router.get('/', softAuth, getStylists);
+router.get('/', softAuth, readLimiter, getStylists);
 router.get('/me', protect, requireRole('stylist'), getMyStylistProfile);
 router.put('/me', protect, requireRole('stylist'), generalLimiter, updateMyProfile);
 router.get('/me/trending', protect, requireRole('stylist'), getMyTrendingStats);

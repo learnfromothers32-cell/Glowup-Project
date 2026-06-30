@@ -39,14 +39,23 @@ export const getMyStylistProfile = asyncHandler(async (req: Request, res: Respon
   return sendSuccess(res, { stylist: toPublicStylist(stylist, services) });
 });
 
+const VALID_SORTS = new Set(['recommended', 'rating', 'price', 'reviews']);
+
 export const getStylists = asyncHandler(async (req: Request, res: Response) => {
-  const stylists = await getStylistsWithServices({
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+
+  const sort = typeof req.query.sort === 'string' && VALID_SORTS.has(req.query.sort)
+    ? req.query.sort
+    : undefined;
+
+  const result = await getStylistsWithServices({
     category: typeof req.query.category === 'string' ? req.query.category : undefined,
     search: typeof req.query.search === 'string' ? req.query.search : undefined,
     isLive: parseBoolean(req.query.isLive),
     isVerified: parseBoolean(req.query.isVerified),
     area: typeof req.query.area === 'string' ? req.query.area : undefined,
-  });
+  }, page, limit, sort);
 
   let favs: string[] = [];
   if (req.user?.id) {
@@ -54,12 +63,21 @@ export const getStylists = asyncHandler(async (req: Request, res: Response) => {
     favs = (user?.favorites || []).map((f: any) => f.toString());
   }
 
-  const result = stylists.map((s) => ({
+  const stylists = result.stylists.map((s) => ({
     ...s,
     isFollowing: favs.includes(s.id),
   }));
 
-  return sendSuccess(res, { stylists: result });
+  res.set('Cache-Control', 'public, max-age=30');
+  return sendSuccess(res, {
+    stylists,
+    pagination: {
+      page: result.page,
+      limit,
+      total: result.total,
+      totalPages: result.totalPages
+    }
+  });
 });
 
 export const getStylistById = asyncHandler(async (req: Request, res: Response) => {
@@ -219,10 +237,20 @@ export const updateMyProfile = asyncHandler(async (req: Request, res: Response) 
     const oldLat = stylist.location.lat;
     const oldLng = stylist.location.lng;
 
+    const newLat = location.lat ?? stylist.location.lat;
+    const newLng = location.lng ?? stylist.location.lng;
+
+    if (newLat !== undefined && (typeof newLat !== 'number' || newLat < -90 || newLat > 90)) {
+      throw new ApiError(400, 'Invalid latitude value');
+    }
+    if (newLng !== undefined && (typeof newLng !== 'number' || newLng < -180 || newLng > 180)) {
+      throw new ApiError(400, 'Invalid longitude value');
+    }
+
     stylist.location = {
       area: location.area || stylist.location.area,
-      lat: location.lat ?? stylist.location.lat,
-      lng: location.lng ?? stylist.location.lng
+      lat: newLat,
+      lng: newLng
     };
 
     if (oldArea !== location.area || oldLat !== location.lat || oldLng !== location.lng) {

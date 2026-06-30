@@ -6,6 +6,7 @@ export interface CreateBookingData {
   startTime: string;
   notes?: string;
   paymentMethod?: string;
+  timezone?: string;
 }
 
 export const createBooking = async (bookingData: CreateBookingData) => {

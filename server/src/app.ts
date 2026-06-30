@@ -10,9 +10,13 @@ import apiRoutes from './routes';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { csrfProtect } from './middleware/csrf.middleware';
 import { generalLimiter } from './middleware/rateLimiter';
+import { correlationId } from './middleware/correlationId';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
+app.use(correlationId);
 app.use(helmet());
 app.use(cors({
   origin: (origin, cb) => {

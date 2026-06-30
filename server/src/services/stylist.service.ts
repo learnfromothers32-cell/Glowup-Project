@@ -9,6 +9,13 @@ export interface StylistFilters {
   area?: string;
 }
 
+const SORT_MAP: Record<string, Record<string, 1 | -1>> = {
+  recommended: { isLive: -1, isVerified: -1, rating: -1, createdAt: -1, _id: 1 },
+  rating: { rating: -1, isLive: -1, isVerified: -1, createdAt: -1, _id: 1 },
+  price: { price: 1, isLive: -1, isVerified: -1, rating: -1, createdAt: -1, _id: 1 },
+  reviews: { reviewCount: -1, isLive: -1, isVerified: -1, rating: -1, createdAt: -1, _id: 1 },
+};
+
 const formatPrice = (price: number) => `$${price}`;
 const formatDuration = (duration: number) => `${duration} min`;
 
@@ -93,22 +100,22 @@ export const buildStylistFilter = (filters: StylistFilters) => {
   }
 
   if (filters.area) {
-    const escaped = filters.area.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    query['location.area'] = new RegExp(escaped, 'i');
+    query['location.area'] = filters.area;
   }
 
   return query;
 };
 
-export const getStylistsWithServices = async (filters: StylistFilters) => {
+export const getStylistsWithServices = async (filters: StylistFilters, page = 1, limit = 50, sort?: string) => {
   const query = buildStylistFilter(filters);
 
-  const stylists = await Stylist.find(query).sort({
-    isLive: -1,
-    isVerified: -1,
-    rating: -1,
-    createdAt: -1
-  });
+  const total = await Stylist.countDocuments(query);
+  const totalPages = Math.ceil(total / limit);
+  const skip = (page - 1) * limit;
+
+  const sortOrder = SORT_MAP[sort ?? 'recommended'] ?? SORT_MAP.recommended;
+
+  const stylists = await Stylist.find(query).sort(sortOrder).skip(skip).limit(limit);
 
   const stylistIds = stylists.map((stylist) => stylist._id);
   const services = await Service.find({
@@ -123,7 +130,12 @@ export const getStylistsWithServices = async (filters: StylistFilters) => {
     servicesByStylist.set(key, [...(servicesByStylist.get(key) || []), service]);
   });
 
-  return stylists.map((stylist) =>
-    toPublicStylist(stylist, servicesByStylist.get(String(stylist._id)) || [])
-  );
+  return {
+    stylists: stylists.map((stylist) =>
+      toPublicStylist(stylist, servicesByStylist.get(String(stylist._id)) || [])
+    ),
+    total,
+    page,
+    totalPages
+  };
 };

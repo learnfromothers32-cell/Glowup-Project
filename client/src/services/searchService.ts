@@ -10,10 +10,10 @@ let loadingPromise: Promise<Stylist[]> | null = null;
 async function loadStylists(): Promise<Stylist[]> {
   if (stylistsCache) return stylistsCache;
   if (loadingPromise) return loadingPromise;
-  loadingPromise = getStylists().then((data) => {
-    stylistsCache = data;
+  loadingPromise = getStylists().then(({ stylists }) => {
+    stylistsCache = stylists;
     loadingPromise = null;
-    return data;
+    return stylists;
   });
   return loadingPromise;
 }

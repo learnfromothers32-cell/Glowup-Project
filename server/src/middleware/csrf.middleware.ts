@@ -4,30 +4,30 @@ import { ApiError } from '../utils/apiError';
 
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 
+// Allowed origins for state-changing requests
+const ALLOWED_ORIGINS = [
+  appConfig.clientUrl,
+  'http://localhost:5173',
+  'http://localhost:5000',
+].filter(Boolean);
+
 export const csrfProtect = (req: Request, _res: Response, next: NextFunction) => {
   if (SAFE_METHODS.includes(req.method)) {
     return next();
   }
 
-  // SPA uses Bearer tokens for auth (not cookies), so CSRF risk is minimal.
-  // This check ensures state-changing requests come from the app's origin.
-
   const origin = req.headers.origin || req.headers.referer;
-  if (!origin) {
-    // Allow requests without Origin/Referer (e.g., mobile apps, curl, Postman)
-    return next();
-  }
 
-  const allowedOrigins = [
-    appConfig.clientUrl,
-    'http://localhost:5173',
-    'http://localhost:5000',
-  ];
-
-  const originOk = allowedOrigins.some((allowed) => origin?.toString().startsWith(allowed));
-  if (!originOk) {
-    throw new ApiError(403, 'Cross-origin request blocked');
+  if (origin) {
+    // If an origin is present, it MUST match our allowed list
+    const originOk = ALLOWED_ORIGINS.some((allowed) => origin.toString().startsWith(allowed));
+    if (!originOk) {
+      throw new ApiError(403, 'Cross-origin request blocked');
+    }
   }
+  // Note: Requests without Origin/Referer (mobile apps, curl, server-to-server) are allowed.
+  // Cookie-based CSRF is mitigated separately: the refresh cookie is httpOnly + sameSite=lax,
+  // and the /auth/refresh endpoint performs its own Origin check.
 
   next();
 };

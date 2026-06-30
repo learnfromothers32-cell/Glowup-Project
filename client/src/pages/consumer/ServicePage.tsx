@@ -15,7 +15,7 @@ export default function ServicePage() {
 
   useEffect(() => {
     getStylists()
-      .then((all) => {
+      .then(({ stylists: all }) => {
         if (service) {
           const filtered = all.filter(
             (s) => s.category?.toLowerCase() === service.toLowerCase(),

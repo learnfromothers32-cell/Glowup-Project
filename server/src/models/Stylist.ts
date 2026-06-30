@@ -161,6 +161,7 @@ const stylistSchema = new Schema<IStylist>(
 );
 
 stylistSchema.index({ name: 'text', bio: 'text', category: 'text', 'location.area': 'text' });
-stylistSchema.index({ rating: -1, reviewCount: -1, isLive: -1, createdAt: -1 });
+stylistSchema.index({ isLive: -1, isVerified: -1, rating: -1, createdAt: -1, _id: 1 });
+stylistSchema.index({ 'location': '2dsphere' });
 
 export const Stylist = model<IStylist>('Stylist', stylistSchema);
