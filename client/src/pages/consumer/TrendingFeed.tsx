@@ -119,6 +119,7 @@ export default function TrendingFeed() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const videoCanplayCleanup = useRef<Map<string, () => void>>(new Map());
   const commentInputRef = useRef<HTMLInputElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const viewedPostsRef = useRef<Set<string>>(new Set());
@@ -131,6 +132,9 @@ export default function TrendingFeed() {
   const isTransitioningRef = useRef(false);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
+  const doubleTapTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const [heartBursts, setHeartBursts] = useState<{ id: number; x: number; y: number; scale: number }[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -243,6 +247,7 @@ export default function TrendingFeed() {
       window.removeEventListener("click", handler);
       window.removeEventListener("touchstart", handler);
       window.removeEventListener("keydown", handler);
+      if (doubleTapTimeoutRef.current) clearTimeout(doubleTapTimeoutRef.current);
     };
   }, []);
 
@@ -267,6 +272,8 @@ export default function TrendingFeed() {
     }, 30000);
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      videoCanplayCleanup.current.forEach((cleanup) => cleanup());
+      videoCanplayCleanup.current.clear();
     };
   }, [fetchTrending]);
 
@@ -326,6 +333,41 @@ export default function TrendingFeed() {
       }
     },
     [likedItems, addPoints, incrementAction, spawnHearts, isAuthenticated],
+  );
+
+  const handleMediaTap = useCallback(
+    (e: React.MouseEvent | React.TouchEvent, itemId: string, onSingleTap?: () => void) => {
+      const now = Date.now();
+      let clientX: number, clientY: number;
+      if ("touches" in e) {
+        const touch = (e as React.TouchEvent).changedTouches?.[0] || (e as React.TouchEvent).touches[0];
+        clientX = touch.clientX;
+        clientY = touch.clientY;
+      } else {
+        clientX = (e as React.MouseEvent).clientX;
+        clientY = (e as React.MouseEvent).clientY;
+      }
+
+      if (lastTapRef.current && now - lastTapRef.current.time < 300 &&
+          Math.abs(clientX - lastTapRef.current.x) < 50 &&
+          Math.abs(clientY - lastTapRef.current.y) < 50) {
+        /* double tap — like */
+        if (doubleTapTimeoutRef.current) clearTimeout(doubleTapTimeoutRef.current);
+        lastTapRef.current = null;
+        handleLike(itemId);
+        const burst = { id: Date.now(), x: clientX, y: clientY, scale: 1.2 };
+        setHeartBursts((prev) => [...prev, burst]);
+        setTimeout(() => setHeartBursts((prev) => prev.filter((b) => b.id !== burst.id)), 800);
+        return;
+      }
+
+      lastTapRef.current = { time: now, x: clientX, y: clientY };
+      doubleTapTimeoutRef.current = setTimeout(() => {
+        lastTapRef.current = null;
+        onSingleTap?.();
+      }, 300);
+    },
+    [handleLike],
   );
 
   const handleBookmark = useCallback(
@@ -543,9 +585,14 @@ export default function TrendingFeed() {
   useEffect(() => {
     if (loading || items.length === 0) return;
 
+    /* clear stale canplay listeners */
+    videoCanplayCleanup.current.forEach((cleanup) => cleanup());
+    videoCanplayCleanup.current.clear();
+
     items.forEach((item, idx) => {
       const video = videoRefs.current.get(item.id);
       if (!video) return;
+
       if (idx === currentIndex) {
         if (manuallyPausedRef.current.has(item.id)) {
           video.muted = true;
@@ -553,9 +600,21 @@ export default function TrendingFeed() {
           return;
         }
         video.muted = !soundOn;
-        video.load();
-        const playPromise = video.play();
-        if (playPromise) playPromise.catch(() => {});
+
+        const tryPlay = () => {
+          const promise = video.play();
+          if (promise) promise.catch(() => {});
+        };
+
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          tryPlay();
+        } else {
+          const onCanPlay = () => tryPlay();
+          video.addEventListener("canplay", onCanPlay, { once: true });
+          videoCanplayCleanup.current.set(item.id, () =>
+            video.removeEventListener("canplay", onCanPlay),
+          );
+        }
       } else {
         video.pause();
         video.muted = true;
@@ -567,7 +626,6 @@ export default function TrendingFeed() {
       if (pi >= 0 && pi < items.length) {
         const pv = videoRefs.current.get(items[pi].id);
         if (pv) {
-          pv.muted = true;
           pv.preload = "auto";
         }
       }
@@ -816,7 +874,7 @@ export default function TrendingFeed() {
                   {item.mediaType === "video" ? (
                     <div
                       className="relative w-full h-full bg-black flex items-center justify-center cursor-pointer"
-                      onClick={() => togglePlay(item.id)}
+                      onClick={(e) => handleMediaTap(e, item.id, () => togglePlay(item.id))}
                     >
                       <video
                         ref={(el) => {
@@ -847,7 +905,7 @@ export default function TrendingFeed() {
                       )}
                     </div>
                   ) : item.before ? (
-                    <div className="grid grid-cols-2 w-full h-full">
+                    <div className="grid grid-cols-2 w-full h-full cursor-pointer" onClick={(e) => handleMediaTap(e, item.id)}>
                       <div className="relative overflow-hidden">
                         <img src={imgUrl(item.before)} alt="Before" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
@@ -864,7 +922,7 @@ export default function TrendingFeed() {
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-black relative">
+                    <div className="w-full h-full flex items-center justify-center bg-black relative cursor-pointer" onClick={(e) => handleMediaTap(e, item.id)}>
                       <img src={imgUrl(item.after)} alt="Transformation" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
                       <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-[9px] font-bold text-white" style={{ backgroundColor: TIKTOK_RED }}>
@@ -999,41 +1057,43 @@ export default function TrendingFeed() {
                   </button>
                 </div>
 
-                {/* Bottom-left creator info */}
-                <div className="absolute bottom-20 sm:bottom-28 left-4 right-20 z-10">
-                  <div className="flex items-center gap-3 mb-2">
-                    {item.stylistImage ? (
-                      <img
-                        src={imgUrl(item.stylistImage)}
-                        className="w-12 h-12 rounded-full border-2 border-white object-cover shrink-0"
-                        alt={item.stylistName}
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full border-2 border-white bg-white/10 flex items-center justify-center shrink-0">
-                        <span className="text-white/60 text-base font-bold">
-                          {item.stylistName[0]}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => navigate(`/app/stylist/${item.stylistId}`)}
-                          className="text-white font-bold text-base hover:underline truncate"
-                        >
+                {/* Bottom-left creator info — TikTok-style */}
+                <div className="absolute bottom-24 left-0 right-24 z-10 px-4">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigate(`/app/stylist/${item.stylistId}`)}
+                        className="flex items-center gap-2"
+                      >
+                        {item.stylistImage ? (
+                          <img
+                            src={imgUrl(item.stylistImage)}
+                            className="w-9 h-9 rounded-full border-2 border-white object-cover shrink-0"
+                            alt={item.stylistName}
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full border-2 border-white bg-white/10 flex items-center justify-center shrink-0">
+                            <span className="text-white/60 text-sm font-bold">
+                              {item.stylistName[0]}
+                            </span>
+                          </div>
+                        )}
+                        <span className="text-white font-bold text-sm hover:underline">
                           {item.stylistName}
-                        </button>
-                        <button
-                          onClick={() => navigate(`/app/stylist/${item.stylistId}`)}
-                          className="px-3 py-0.5 rounded text-[12px] font-semibold border border-white/40 text-white/90 hover:bg-white/10 transition-colors"
-                        >
-                          Follow
-                        </button>
-                      </div>
-                      <p className="text-white/90 text-sm mt-0.5 line-clamp-3 leading-snug">
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => navigate(`/app/stylist/${item.stylistId}`)}
+                        className="px-3 py-0.5 rounded text-[11px] font-semibold border border-white/30 text-white/90 hover:bg-white/15 transition-colors"
+                      >
+                        Follow
+                      </button>
+                    </div>
+                    {item.caption && (
+                      <p className="text-white/80 text-xs leading-relaxed line-clamp-2">
                         {item.caption}
                       </p>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -1063,8 +1123,51 @@ export default function TrendingFeed() {
         {/* Infinite scroll sentinel */}
         <div ref={sentinelRef} className="h-4 w-full" />
 
+        {/* Double-tap heart burst overlay */}
+        <div className="absolute inset-0 pointer-events-none z-30">
+          {heartBursts.map((b) => {
+            const elapsed = Date.now() - b.id;
+            const progress = Math.min(elapsed / 800, 1);
+            const y = progress * -120;
+            const opacity = 1 - progress;
+            const scale = b.scale * (1 + progress * 0.6);
+            return (
+              <span
+                key={b.id}
+                className="absolute text-5xl"
+                style={{
+                  left: `${(b.x / (typeof window !== "undefined" ? window.innerWidth : 400)) * 100}%`,
+                  top: `${(b.y / (typeof window !== "undefined" ? window.innerHeight : 800)) * 100}%`,
+                  transform: `translate(-50%, -50%) translateY(${y}px) scale(${scale})`,
+                  opacity,
+                  transition: `opacity 200ms ease-out`,
+                }}
+              >
+                ❤️
+              </span>
+            );
+          })}
+        </div>
+
+        {/* TikTok-style progress indicator */}
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-1.5">
+          {items.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => goToIndex(idx)}
+              className="rounded-full transition-all duration-300"
+              style={{
+                width: idx === currentIndex ? 8 : 4,
+                height: idx === currentIndex ? 8 : 4,
+                backgroundColor: idx === currentIndex ? "#ffffff" : "rgba(255,255,255,0.3)",
+              }}
+              aria-label={`Go to item ${idx + 1}`}
+            />
+          ))}
+        </div>
+
         {/* Fixed top header */}
-        <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 bg-gradient-to-b from-black/60 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center px-4 py-3 bg-gradient-to-b from-black/70 to-transparent">
           <button onClick={() => navigate(-1)} className="text-white text-sm font-medium" aria-label="Go back">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
