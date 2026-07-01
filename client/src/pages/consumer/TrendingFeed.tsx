@@ -247,6 +247,20 @@ export default function TrendingFeed() {
   }, []);
 
   useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (currentIndexRef.current > 0) goToIndex(currentIndexRef.current - 1);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (currentIndexRef.current < items.length - 1) goToIndex(currentIndexRef.current + 1);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [items.length, goToIndex]);
+
+  useEffect(() => {
     pollIntervalRef.current = setInterval(() => {
       if (document.hidden) return;
       fetchTrending(undefined, false);
@@ -539,6 +553,7 @@ export default function TrendingFeed() {
           return;
         }
         video.muted = !soundOn;
+        video.load();
         const playPromise = video.play();
         if (playPromise) playPromise.catch(() => {});
       } else {
@@ -643,6 +658,15 @@ export default function TrendingFeed() {
     [items.length],
   );
 
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (isTransitioningRef.current) return;
+    if (e.deltaY > 0 && currentIndexRef.current < items.length - 1) {
+      goToIndex(currentIndexRef.current + 1);
+    } else if (e.deltaY < 0 && currentIndexRef.current > 0) {
+      goToIndex(currentIndexRef.current - 1);
+    }
+  }, [items.length, goToIndex]);
+
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
       if (!touchStartRef.current) return;
@@ -702,15 +726,18 @@ export default function TrendingFeed() {
 
   return (
     <>
-      {/* ── Mobile swipe view ───────────────────────────── */}
+      {/* ── Swipe feed ──────────────────────────────────── */}
       <div
         ref={containerRef}
-        className="fixed inset-0 bg-black z-50 overflow-hidden lg:hidden"
+        className="fixed inset-0 bg-black z-50 overflow-hidden"
         style={{ touchAction: "none" }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onWheel={handleWheel}
       >
+        <div className="relative w-full h-full lg:flex lg:items-center lg:justify-center">
+          <div className="relative w-full h-full lg:max-w-xl lg:max-h-[95vh] lg:rounded-2xl lg:overflow-hidden lg:bg-black lg:shadow-2xl">
         {/* Floating hearts */}
         <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
           {floatingHearts.map((h) => {
@@ -1047,200 +1074,11 @@ export default function TrendingFeed() {
           <button onClick={handleRefresh} className="text-white/60 hover:text-white" aria-label="Refresh feed">
             <RefreshCw size={18} />
           </button>
-        </div>
-      </div>
-
-      {/* ── Desktop TikTok-style card view ─────────────── */}
-      <div className="fixed inset-0 z-50 overflow-y-auto hidden lg:block bg-black" style={{ scrollBehavior: "smooth" }}>
-        {/* Top bar */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-all"
-            aria-label="Go back"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <h1 className="text-white font-bold text-lg">Trending</h1>
-          <button
-            onClick={handleRefresh}
-            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/20 transition-all"
-            aria-label="Refresh feed"
-          >
-            <RefreshCw size={18} />
-          </button>
-        </div>
-
-        {/* Cards */}
-        {items.map((item, idx) => {
-          const engagementRate = getEngagementRate(item);
-          const isViral = engagementRate >= VIRAL_ENGAGEMENT_THRESHOLD;
-
-          return (
-            <div key={item.id} className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
-              <div className="flex bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl w-full max-w-5xl" style={{ maxHeight: "85vh" }}>
-                {/* ── Left: Media ── */}
-                <div className="w-3/5 max-w-lg relative bg-black flex items-center justify-center">
-                  {item.mediaType === "video" ? (
-                    <video
-                      src={imgUrl(item.after)}
-                      className="w-full h-full object-contain"
-                      muted
-                      loop
-                      autoPlay
-                      playsInline
-                    />
-                  ) : item.before ? (
-                    <div className="grid grid-cols-2 w-full h-full">
-                      <div className="relative overflow-hidden">
-                        <img src={imgUrl(item.before)} alt="Before" className="w-full h-full object-cover" />
-                        <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-[10px] font-bold text-white bg-black/60">
-                          BEFORE
-                        </span>
-                      </div>
-                      <div className="relative overflow-hidden">
-                        <img src={imgUrl(item.after)} alt="After" className="w-full h-full object-cover" />
-                        <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-[10px] font-bold text-white" style={{ backgroundColor: TIKTOK_RED }}>
-                          AFTER
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-black">
-                      <img src={imgUrl(item.after)} alt="Transformation" className="w-full h-full object-contain" />
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Right: Actions + Info ── */}
-                <div className="w-2/5 flex flex-col justify-between p-6">
-                  {/* Viral badge */}
-                  {isViral && (
-                    <div className="flex items-center gap-1.5 mb-4">
-                      <div className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white flex items-center gap-1" style={{ backgroundColor: TIKTOK_RED }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                          <polyline points="17 6 23 6 23 12" />
-                        </svg>
-                        Trending
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-6 mb-6">
-                    <button
-                      onClick={() => handleLike(item.id)}
-                      className="flex flex-col items-center gap-1 group"
-                      disabled={likeCooldown}
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors flex items-center justify-center">
-                        <Heart
-                          size={24}
-                          className={likedItems.has(item.id) ? "" : "text-white"}
-                          style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined}
-                        />
-                      </div>
-                      <span className="text-white/60 text-[12px] font-semibold tabular-nums">{formatCount(item.likes)}</span>
-                    </button>
-
-                    <button
-                      onClick={() => openComments(item.id, item.stylistId)}
-                      className="flex flex-col items-center gap-1 group"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors flex items-center justify-center">
-                        <MessageCircle size={24} className="text-white" />
-                      </div>
-                      <span className="text-white/60 text-[12px] font-semibold tabular-nums">{formatCount(item.commentCount)}</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleShare(item)}
-                      className="flex flex-col items-center gap-1 group"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors flex items-center justify-center">
-                        <Share2 size={24} className="text-white" />
-                      </div>
-                      <span className="text-white/60 text-[12px] font-semibold tabular-nums">{formatCount(item.shares)}</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleBookmark(item.id)}
-                      className="flex flex-col items-center gap-1 group"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors flex items-center justify-center">
-                        <Bookmark
-                          size={24}
-                          className="text-white"
-                          style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined}
-                        />
-                      </div>
-                      <span className="text-white/60 text-[12px] font-semibold tabular-nums">{formatCount(item.bookmarks)}</span>
-                    </button>
-                  </div>
-
-                  {/* Creator info */}
-                  <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
-                    {item.stylistImage ? (
-                      <img src={imgUrl(item.stylistImage)} className="w-10 h-10 rounded-full object-cover ring-1 ring-white/20" alt="" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                        <span className="text-white/50 text-sm font-bold">{item.stylistName[0]}</span>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <button
-                        onClick={() => navigate(`/app/stylist/${item.stylistId}`)}
-                        className="text-white font-semibold text-sm hover:underline truncate block"
-                      >
-                        {item.stylistName}
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => navigate(`/app/stylist/${item.stylistId}`)}
-                      className="px-4 py-1.5 rounded-full text-[12px] font-semibold border border-white/30 text-white/90 hover:bg-white/10 transition-colors shrink-0"
-                    >
-                      Follow
-                    </button>
-                  </div>
-
-                  {/* Caption */}
-                  {item.caption && (
-                    <p className="text-white/70 text-sm leading-relaxed">
-                      {item.caption}
-                    </p>
-                  )}
-
-                  {/* Report */}
-                  <button
-                    onClick={() => {
-                      setActivePostId(item.id);
-                      setActiveStylistId(item.stylistId);
-                      setReportModalOpen(true);
-                    }}
-                    className="self-start mt-4 text-white/30 hover:text-white/60 text-[11px] font-medium transition-colors flex items-center gap-1.5"
-                  >
-                    <Flag size={12} />
-                    Report
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Loading more indicator */}
-        {loadingMore && (
-          <div className="flex justify-center py-8">
-            <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
           </div>
-        )}
-
-        {/* Infinite scroll sentinel */}
-        <div ref={sentinelRef} className="h-4 w-full" />
+        </div>
       </div>
+
+
 
       {/* Share menu */}
       {shareMenuOpen && shareItemId && (
