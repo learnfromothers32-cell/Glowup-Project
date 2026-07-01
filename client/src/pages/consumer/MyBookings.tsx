@@ -70,9 +70,9 @@ function BookingRow({
   const isPast = filterKey === "past" || (booking.status === "confirmed" && dateStr < todayStr());
   const showReview = isPast && filterKey !== "cancelled" && booking.status === "completed";
   const showActions = !isCancelled && !isPast;
-  const stylistName = typeof booking.stylistId === "object" ? (booking.stylistId as any).name || "Stylist" : "Stylist";
-  const stylistImage = typeof booking.stylistId === "object" ? (booking.stylistId as any).image : undefined;
-  const serviceName = typeof booking.serviceId === "object" ? (booking.serviceId as any).name || "Service" : "Service";
+  const stylistName = booking.stylistId && typeof booking.stylistId === "object" ? (booking.stylistId as any).name || "Stylist" : "Stylist";
+  const stylistImage = booking.stylistId && typeof booking.stylistId === "object" ? (booking.stylistId as any).image : undefined;
+  const serviceName = booking.serviceId && typeof booking.serviceId === "object" ? (booking.serviceId as any).name || "Service" : "Service";
 
   return (
     <motion.div
@@ -262,8 +262,8 @@ export default function MyBookings() {
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((b) => {
-        const name = typeof b.stylistId === "object" ? (b.stylistId as any).name || "" : "";
-        const svcName = typeof b.serviceId === "object" ? (b.serviceId as any).name || "" : "";
+        const name = b.stylistId && typeof b.stylistId === "object" ? (b.stylistId as any).name || "" : "";
+        const svcName = b.serviceId && typeof b.serviceId === "object" ? (b.serviceId as any).name || "" : "";
         return svcName.toLowerCase().includes(q) || name.toLowerCase().includes(q) || b.startTime?.includes(q);
       });
     }
@@ -392,27 +392,27 @@ export default function MyBookings() {
 
       <AnimatePresence>
         {reschedule && (
-          <RescheduleModal booking={reschedule} stylistName={typeof reschedule.stylistId === "object" ? (reschedule.stylistId as any).name : undefined}
+          <RescheduleModal booking={reschedule} stylistName={reschedule.stylistId && typeof reschedule.stylistId === "object" ? (reschedule.stylistId as any).name : undefined}
             newDate={newDate} newTime={newTime} onDateChange={setNewDate} onTimeChange={setNewTime}
             onConfirm={handleReschedule} onClose={() => setReschedule(null)} loading={actionLoading === reschedule._id} />
         )}
       </AnimatePresence>
       <AnimatePresence>
         {review && (
-          <ReviewModal stylistName={typeof review.stylistId === "object" ? (review.stylistId as any).name : undefined}
+          <ReviewModal stylistName={review.stylistId && typeof review.stylistId === "object" ? (review.stylistId as any).name : undefined}
             bookingDate={review.startTime} onRatingChange={setRating} onCommentChange={setComment}
             onSubmit={handleReview} onClose={() => setReview(null)} loading={actionLoading === review._id} />
         )}
       </AnimatePresence>
       <AnimatePresence>
         {cancel && (
-          <CancelModal booking={cancel} stylistImage={typeof cancel.stylistId === "object" ? (cancel.stylistId as any).image : undefined}
-            stylistName={typeof cancel.stylistId === "object" ? (cancel.stylistId as any).name : undefined}
+          <CancelModal booking={cancel} stylistImage={cancel.stylistId && typeof cancel.stylistId === "object" ? (cancel.stylistId as any).image : undefined}
+            stylistName={cancel.stylistId && typeof cancel.stylistId === "object" ? (cancel.stylistId as any).name : undefined}
             onConfirm={handleCancel} onClose={() => setCancel(null)} loading={actionLoading === cancel._id} />
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {detail && <BookingDetailModal booking={detail} stylistImage={typeof detail.stylistId === "object" ? (detail.stylistId as any).image : undefined} onClose={() => setDetail(null)} />}
+        {detail && <BookingDetailModal booking={detail} stylistImage={detail.stylistId && typeof detail.stylistId === "object" ? (detail.stylistId as any).image : undefined} onClose={() => setDetail(null)} />}
       </AnimatePresence>
 
       <Toast message={toast.message} visible={toast.visible} />
