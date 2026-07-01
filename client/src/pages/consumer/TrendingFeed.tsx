@@ -1050,13 +1050,14 @@ export default function TrendingFeed() {
         </div>
       </div>
 
-      {/* ── Desktop grid view ───────────────────────────── */}
-      <div className="fixed inset-0 z-50 overflow-y-auto hidden lg:block bg-gradient-to-b from-gray-900 via-black to-gray-950">
+      {/* ── Desktop TikTok-style card view ─────────────── */}
+      <div className="fixed inset-0 z-50 overflow-y-auto hidden lg:block bg-black" style={{ scrollBehavior: "smooth" }}>
         {/* Top bar */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
           <button
             onClick={() => navigate(-1)}
             className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-all"
+            aria-label="Go back"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
@@ -1066,153 +1067,179 @@ export default function TrendingFeed() {
           <button
             onClick={handleRefresh}
             className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/50 hover:text-white hover:bg-white/20 transition-all"
+            aria-label="Refresh feed"
           >
             <RefreshCw size={18} />
           </button>
         </div>
 
-        {/* Grid */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-8">
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {items.map((item) => {
-              const engagementRate = getEngagementRate(item);
-              const isViral = engagementRate >= VIRAL_ENGAGEMENT_THRESHOLD;
+        {/* Cards */}
+        {items.map((item, idx) => {
+          const engagementRate = getEngagementRate(item);
+          const isViral = engagementRate >= VIRAL_ENGAGEMENT_THRESHOLD;
 
-              return (
-                <div
-                  key={item.id}
-                  className="group relative bg-gray-900/80 rounded-2xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300"
-                >
-                  {/* Media */}
-                  <div className="relative aspect-[3/4] overflow-hidden">
-                    {item.mediaType === "video" ? (
-                      <video
-                        src={imgUrl(item.after)}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        muted
-                        loop
-                        playsInline
-                      />
-                    ) : item.before ? (
-                      <div className="grid grid-cols-2 w-full h-full">
-                        <div className="relative overflow-hidden">
-                          <img src={imgUrl(item.before)} alt="Before" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-bold text-white bg-black/60">
-                            BEFORE
-                          </span>
-                        </div>
-                        <div className="relative overflow-hidden">
-                          <img src={imgUrl(item.after)} alt="After" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-bold text-white" style={{ backgroundColor: TIKTOK_RED }}>
-                            AFTER
-                          </span>
-                        </div>
+          return (
+            <div key={item.id} className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
+              <div className="flex bg-neutral-900 rounded-2xl overflow-hidden shadow-2xl w-full max-w-5xl" style={{ maxHeight: "85vh" }}>
+                {/* ── Left: Media ── */}
+                <div className="w-3/5 max-w-lg relative bg-black flex items-center justify-center">
+                  {item.mediaType === "video" ? (
+                    <video
+                      src={imgUrl(item.after)}
+                      className="w-full h-full object-contain"
+                      muted
+                      loop
+                      autoPlay
+                      playsInline
+                    />
+                  ) : item.before ? (
+                    <div className="grid grid-cols-2 w-full h-full">
+                      <div className="relative overflow-hidden">
+                        <img src={imgUrl(item.before)} alt="Before" className="w-full h-full object-cover" />
+                        <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-[10px] font-bold text-white bg-black/60">
+                          BEFORE
+                        </span>
                       </div>
-                    ) : (
-                      <img
-                        src={imgUrl(item.after)}
-                        alt="Transformation"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    )}
-
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/10 pointer-events-none" />
-
-                    {/* Viral badge */}
-                    {isViral && (
-                      <div className="absolute top-3 left-3 z-10">
-                        <div className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white flex items-center gap-1 bg-black/50 backdrop-blur-sm">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                            <polyline points="17 6 23 6 23 12" />
-                          </svg>
-                          Trending
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Hover actions overlay */}
-                    <div className="absolute inset-0 flex items-end justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                      <div className="flex items-center gap-3 pointer-events-auto">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleLike(item.id); }}
-                          className="flex flex-col items-center gap-0.5"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                            <Heart size={20} className={likedItems.has(item.id) ? "text-white" : "text-white"} style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined} />
-                          </div>
-                          <span className="text-white text-[11px] font-semibold tabular-nums">{formatCount(item.likes)}</span>
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openComments(item.id, item.stylistId); }}
-                          className="flex flex-col items-center gap-0.5"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                            <MessageCircle size={20} className="text-white" />
-                          </div>
-                          <span className="text-white text-[11px] font-semibold tabular-nums">{formatCount(item.commentCount)}</span>
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleShare(item); }}
-                          className="flex flex-col items-center gap-0.5"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                            <Share2 size={20} className="text-white" />
-                          </div>
-                          <span className="text-white text-[11px] font-semibold tabular-nums">{formatCount(item.shares)}</span>
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleBookmark(item.id); }}
-                          className="flex flex-col items-center gap-0.5"
-                        >
-                          <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                            <Bookmark size={20} className="text-white" style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined} />
-                          </div>
-                          <span className="text-white text-[11px] font-semibold tabular-nums">{formatCount(item.bookmarks)}</span>
-                        </button>
+                      <div className="relative overflow-hidden">
+                        <img src={imgUrl(item.after)} alt="After" className="w-full h-full object-cover" />
+                        <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-[10px] font-bold text-white" style={{ backgroundColor: TIKTOK_RED }}>
+                          AFTER
+                        </span>
                       </div>
                     </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-black">
+                      <img src={imgUrl(item.after)} alt="Transformation" className="w-full h-full object-contain" />
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Right: Actions + Info ── */}
+                <div className="w-2/5 flex flex-col justify-between p-6">
+                  {/* Viral badge */}
+                  {isViral && (
+                    <div className="flex items-center gap-1.5 mb-4">
+                      <div className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white flex items-center gap-1" style={{ backgroundColor: TIKTOK_RED }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                          <polyline points="17 6 23 6 23 12" />
+                        </svg>
+                        Trending
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-6 mb-6">
+                    <button
+                      onClick={() => handleLike(item.id)}
+                      className="flex flex-col items-center gap-1 group"
+                      disabled={likeCooldown}
+                    >
+                      <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors flex items-center justify-center">
+                        <Heart
+                          size={24}
+                          className={likedItems.has(item.id) ? "" : "text-white"}
+                          style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined}
+                        />
+                      </div>
+                      <span className="text-white/60 text-[12px] font-semibold tabular-nums">{formatCount(item.likes)}</span>
+                    </button>
+
+                    <button
+                      onClick={() => openComments(item.id, item.stylistId)}
+                      className="flex flex-col items-center gap-1 group"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors flex items-center justify-center">
+                        <MessageCircle size={24} className="text-white" />
+                      </div>
+                      <span className="text-white/60 text-[12px] font-semibold tabular-nums">{formatCount(item.commentCount)}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleShare(item)}
+                      className="flex flex-col items-center gap-1 group"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors flex items-center justify-center">
+                        <Share2 size={24} className="text-white" />
+                      </div>
+                      <span className="text-white/60 text-[12px] font-semibold tabular-nums">{formatCount(item.shares)}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleBookmark(item.id)}
+                      className="flex flex-col items-center gap-1 group"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-white/10 group-hover:bg-white/20 transition-colors flex items-center justify-center">
+                        <Bookmark
+                          size={24}
+                          className="text-white"
+                          style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined}
+                        />
+                      </div>
+                      <span className="text-white/60 text-[12px] font-semibold tabular-nums">{formatCount(item.bookmarks)}</span>
+                    </button>
                   </div>
 
-                  {/* Card footer */}
-                  <div className="p-3">
-                    <div className="flex items-center gap-2">
-                      {item.stylistImage ? (
-                        <img src={imgUrl(item.stylistImage)} className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-white/20" alt="" />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                          <span className="text-white/50 text-[10px] font-bold">{item.stylistName[0]}</span>
-                        </div>
-                      )}
+                  {/* Creator info */}
+                  <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
+                    {item.stylistImage ? (
+                      <img src={imgUrl(item.stylistImage)} className="w-10 h-10 rounded-full object-cover ring-1 ring-white/20" alt="" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                        <span className="text-white/50 text-sm font-bold">{item.stylistName[0]}</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
                       <button
                         onClick={() => navigate(`/app/stylist/${item.stylistId}`)}
-                        className="text-white text-sm font-semibold truncate hover:underline"
+                        className="text-white font-semibold text-sm hover:underline truncate block"
                       >
                         {item.stylistName}
                       </button>
                     </div>
-                    {item.caption && (
-                      <p className="text-white/50 text-[12px] mt-1.5 line-clamp-2 leading-relaxed">
-                        {item.caption}
-                      </p>
-                    )}
+                    <button
+                      onClick={() => navigate(`/app/stylist/${item.stylistId}`)}
+                      className="px-4 py-1.5 rounded-full text-[12px] font-semibold border border-white/30 text-white/90 hover:bg-white/10 transition-colors shrink-0"
+                    >
+                      Follow
+                    </button>
                   </div>
+
+                  {/* Caption */}
+                  {item.caption && (
+                    <p className="text-white/70 text-sm leading-relaxed">
+                      {item.caption}
+                    </p>
+                  )}
+
+                  {/* Report */}
+                  <button
+                    onClick={() => {
+                      setActivePostId(item.id);
+                      setActiveStylistId(item.stylistId);
+                      setReportModalOpen(true);
+                    }}
+                    className="self-start mt-4 text-white/30 hover:text-white/60 text-[11px] font-medium transition-colors flex items-center gap-1.5"
+                  >
+                    <Flag size={12} />
+                    Report
+                  </button>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Loading more indicator */}
-          {loadingMore && (
-            <div className="flex justify-center py-8">
-              <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+              </div>
             </div>
-          )}
+          );
+        })}
 
-          {/* Infinite scroll sentinel */}
-          <div ref={sentinelRef} className="h-4 w-full" />
-        </div>
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="flex justify-center py-8">
+            <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+          </div>
+        )}
+
+        {/* Infinite scroll sentinel */}
+        <div ref={sentinelRef} className="h-4 w-full" />
       </div>
 
       {/* Share menu */}
