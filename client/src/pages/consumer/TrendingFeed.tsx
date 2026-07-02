@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   getTrendingTransformations,
@@ -779,8 +779,14 @@ export default function TrendingFeed() {
     );
   }
 
-  const slideHeight = typeof window !== "undefined" ? window.innerHeight : 800;
-  const translateY = -(currentIndex * slideHeight) + (isDragging ? -dragOffset : 0);
+  const slideHeight = useMemo(
+    () => typeof window !== "undefined" ? window.innerHeight : 800,
+    []
+  );
+  const translateY = useMemo(
+    () => -(currentIndex * slideHeight) + (isDragging ? -dragOffset : 0),
+    [currentIndex, slideHeight, isDragging, dragOffset]
+  );
 
   return (
     <>
@@ -1508,6 +1514,7 @@ export default function TrendingFeed() {
       <style>{`
         div::-webkit-scrollbar { display: none; }
       `}</style>
+      </div>
     </>
   );
 }
