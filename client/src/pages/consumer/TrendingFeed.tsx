@@ -251,6 +251,25 @@ export default function TrendingFeed() {
     };
   }, []);
 
+  const goToIndex = useCallback(
+    (newIndex: number) => {
+      if (isTransitioningRef.current) return;
+      if (newIndex < 0 || newIndex >= items.length) return;
+      if (newIndex === currentIndexRef.current) return;
+
+      isTransitioningRef.current = true;
+      currentIndexRef.current = newIndex;
+      setCurrentIndex(newIndex);
+      setDragOffset(0);
+      setIsDragging(false);
+
+      setTimeout(() => {
+        isTransitioningRef.current = false;
+      }, TRANSITION_MS + 50);
+    },
+    [items.length],
+  );
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowUp") {
@@ -562,25 +581,6 @@ export default function TrendingFeed() {
     }
     setReportSubmitted(true);
   };
-
-  const goToIndex = useCallback(
-    (newIndex: number) => {
-      if (isTransitioningRef.current) return;
-      if (newIndex < 0 || newIndex >= items.length) return;
-      if (newIndex === currentIndexRef.current) return;
-
-      isTransitioningRef.current = true;
-      currentIndexRef.current = newIndex;
-      setCurrentIndex(newIndex);
-      setDragOffset(0);
-      setIsDragging(false);
-
-      setTimeout(() => {
-        isTransitioningRef.current = false;
-      }, TRANSITION_MS + 50);
-    },
-    [items.length],
-  );
 
   useEffect(() => {
     if (loading || items.length === 0) return;
