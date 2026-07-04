@@ -857,8 +857,8 @@ export default function TrendingFeed() {
                 {/* ── Desktop: side-by-side layout ── */}
                 <div className="h-full lg:flex lg:items-center">
                   {/* Media area */}
-                  <div className="relative w-full h-full lg:flex-1 lg:flex lg:items-center lg:justify-center lg:bg-black/95">
-                    <div className="relative w-full h-full lg:max-h-[88vh] lg:aspect-[9/12] lg:rounded-xl lg:overflow-hidden lg:shadow-2xl">
+                  <div className="relative w-full h-full lg:flex lg:items-center lg:justify-center lg:flex-1">
+                    <div className="relative w-full h-full lg:max-h-[85vh] lg:aspect-[9/12] lg:rounded-2xl lg:overflow-hidden lg:shadow-2xl lg:border lg:border-white/[0.06]">
                       {/* Video / Image */}
                       <div className="absolute inset-0">
                         {item.mediaType === "video" ? (
@@ -922,7 +922,7 @@ export default function TrendingFeed() {
                         )}
 
                         {/* Dark gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none lg:bg-gradient-to-t lg:from-black/40 lg:via-transparent lg:to-black/20" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none lg:bg-gradient-to-t lg:from-black/20 lg:via-transparent lg:to-black/10" />
                       </div>
 
                       {/* Trending badge */}
@@ -1072,63 +1072,65 @@ export default function TrendingFeed() {
                     </div>
                   </div>
 
-                  {/* ── Desktop side panel (info + actions) ── */}
-                  <div className="hidden lg:flex lg:w-72 lg:flex-col lg:gap-6 lg:pl-2">
-                    {/* Action buttons row */}
-                    <div className="flex items-center gap-6">
-                      <button onClick={() => handleLike(item.id)} className="flex flex-col items-center gap-1 group" disabled={likeCooldown}>
-                        <div className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center">
-                          <Heart size={30} className={likedItems.has(item.id) ? "" : "text-white"} style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined} />
-                        </div>
-                        <span className="text-white/70 text-[13px] font-semibold">{formatCount(item.likes)}</span>
+                  {/* ── Desktop side panel (TikTok-style) ── */}
+                  <div className="hidden lg:flex lg:w-80 lg:flex-col lg:gap-4 lg:pl-6 lg:pb-2">
+                    {/* Creator section */}
+                    <div className="flex items-center gap-3 pb-4 border-b border-white/[0.06]">
+                      <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="shrink-0">
+                        {item.stylistImage ? (
+                          <img src={imgUrl(item.stylistImage)} className="w-11 h-11 rounded-full border-2 border-white/20 object-cover" alt={item.stylistName} />
+                        ) : (
+                          <div className="w-11 h-11 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center">
+                            <span className="text-white/60 text-base font-bold">{item.stylistName[0]}</span>
+                          </div>
+                        )}
                       </button>
-                      <button onClick={() => openComments(item.id, item.stylistId)} className="flex flex-col items-center gap-1 group">
-                        <div className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center">
-                          <MessageCircle size={30} className="text-white" />
-                        </div>
-                        <span className="text-white/70 text-[13px] font-semibold">{formatCount(item.commentCount)}</span>
-                      </button>
-                      <button onClick={() => handleShare(item)} className="flex flex-col items-center gap-1 group">
-                        <div className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center">
-                          <Share2 size={30} className="text-white" />
-                        </div>
-                        <span className="text-white/70 text-[13px] font-semibold">{formatCount(item.shares)}</span>
-                      </button>
-                      <button onClick={() => handleBookmark(item.id)} className="flex flex-col items-center gap-1 group">
-                        <div className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center">
-                          <Bookmark size={30} className={bookmarkedItems.has(item.id) ? "" : "text-white"} style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined} />
-                        </div>
-                        <span className="text-white/70 text-[13px] font-semibold">{formatCount(item.bookmarks)}</span>
-                      </button>
+                      <div className="flex-1 min-w-0">
+                        <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="hover:underline">
+                          <p className="text-white font-semibold text-base truncate">{item.stylistName}</p>
+                        </button>
+                        <p className="text-white/40 text-xs">Stylist</p>
+                      </div>
+                      <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="shrink-0 px-4 py-1.5 rounded-full text-[12px] font-semibold border border-white/30 text-white/90 hover:bg-white/10 transition-colors">Follow</button>
                     </div>
 
-                    {/* Creator info & caption */}
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="flex items-center gap-2 group">
-                          {item.stylistImage ? (
-                            <img src={imgUrl(item.stylistImage)} className="w-11 h-11 rounded-full border-2 border-white/30 object-cover shrink-0" alt={item.stylistName} />
-                          ) : (
-                            <div className="w-11 h-11 rounded-full border-2 border-white/30 bg-white/10 flex items-center justify-center shrink-0">
-                              <span className="text-white/50 text-base font-bold">{item.stylistName[0]}</span>
-                            </div>
-                          )}
-                          <div className="text-left">
-                            <p className="text-white font-semibold text-base group-hover:underline leading-tight">{item.stylistName}</p>
-                            <p className="text-white/40 text-[11px]">Stylist</p>
-                          </div>
-                        </button>
-                        <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="ml-auto px-4 py-1.5 rounded-full text-[12px] font-semibold border border-white/30 text-white/90 hover:bg-white/10 transition-colors">Follow</button>
-                      </div>
-                      {item.caption && (
-                        <p className="text-white/70 text-sm leading-relaxed">{item.caption}</p>
-                      )}
+                    {/* Caption */}
+                    {item.caption && (
+                      <p className="text-white/70 text-sm leading-relaxed line-clamp-3">{item.caption}</p>
+                    )}
+
+                    {/* Action buttons row */}
+                    <div className="flex items-center gap-5 pt-1">
+                      <button onClick={() => handleLike(item.id)} className="flex flex-col items-center gap-1 group" disabled={likeCooldown}>
+                        <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center">
+                          <Heart size={26} className={likedItems.has(item.id) ? "" : "text-white"} style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined} />
+                        </div>
+                        <span className="text-white/60 text-[11px] font-semibold tabular-nums">{formatCount(item.likes)}</span>
+                      </button>
+                      <button onClick={() => openComments(item.id, item.stylistId)} className="flex flex-col items-center gap-1 group">
+                        <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center">
+                          <MessageCircle size={26} className="text-white" />
+                        </div>
+                        <span className="text-white/60 text-[11px] font-semibold tabular-nums">{formatCount(item.commentCount)}</span>
+                      </button>
+                      <button onClick={() => handleShare(item)} className="flex flex-col items-center gap-1 group">
+                        <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center">
+                          <Share2 size={26} className="text-white" />
+                        </div>
+                        <span className="text-white/60 text-[11px] font-semibold tabular-nums">{formatCount(item.shares)}</span>
+                      </button>
+                      <button onClick={() => handleBookmark(item.id)} className="flex flex-col items-center gap-1 group">
+                        <div className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center">
+                          <Bookmark size={26} className={bookmarkedItems.has(item.id) ? "" : "text-white"} style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined} />
+                        </div>
+                        <span className="text-white/60 text-[11px] font-semibold tabular-nums">{formatCount(item.bookmarks)}</span>
+                      </button>
                     </div>
 
                     {/* Report */}
                     <button
                       onClick={() => { setActivePostId(item.id); setActiveStylistId(item.stylistId); setReportModalOpen(true); }}
-                      className="self-start text-white/30 hover:text-white/50 text-[11px] font-medium transition-colors flex items-center gap-1.5 mt-1"
+                      className="self-start text-white/40 hover:text-white/60 text-[11px] font-medium transition-colors flex items-center gap-1.5 mt-1"
                     >
                       <Flag size={13} />
                       Report
@@ -1177,7 +1179,7 @@ export default function TrendingFeed() {
         </div>
 
         {/* TikTok-style progress indicator */}
-        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 lg:fixed lg:right-4 flex flex-col items-center gap-1.5">
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 lg:right-3 flex flex-col items-center gap-1.5">
           {items.map((_, idx) => (
             <button
               key={idx}
@@ -1194,14 +1196,14 @@ export default function TrendingFeed() {
         </div>
 
         {/* Fixed top header */}
-        <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center px-4 py-3 bg-gradient-to-b from-black/70 to-transparent">
-          <button onClick={() => navigate(-1)} className="text-white text-sm font-medium" aria-label="Go back">
+        <div className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center px-4 py-3 bg-gradient-to-b from-black/70 to-transparent lg:bg-gradient-to-b lg:from-black/50 lg:to-transparent">
+          <button onClick={() => navigate(-1)} className="text-white/80 hover:text-white p-1" aria-label="Go back">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          <h1 className="text-white font-bold text-base">Trending</h1>
-          <button onClick={handleRefresh} className="text-white/60 hover:text-white" aria-label="Refresh feed">
+          <h1 className="text-white font-bold text-base lg:hidden">Trending</h1>
+          <button onClick={handleRefresh} className="text-white/40 hover:text-white/70 p-1" aria-label="Refresh feed">
             <RefreshCw size={18} />
           </button>
           </div>
