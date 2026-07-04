@@ -51,8 +51,8 @@ const ServiceDetailPage = lazy(() => import("../pages/consumer/ServiceDetailPage
 const SearchResultsPage = lazy(() => import("../pages/consumer/SearchResultsPage"));
 const BrowseStylists = lazy(() => import("../pages/consumer/BrowseStylists"));
 const QueueScreen = lazy(() => import("../features/consumer/components/QueueScreen"));
-const ScrollToTop = lazy(() => import("../pages/consumer/ScrollToTop"));
 const PaymentCallback = lazy(() => import("../pages/consumer/PaymentCallback"));
+import ScrollToTop from "../pages/consumer/ScrollToTop";
 const PaymentHistory = lazy(() => import("../pages/consumer/PaymentHistory"));
 const StylistDashboard = lazy(() => import("../pages/stylist/Dashboard"));
 const StylistServices = lazy(() => import("../pages/stylist/Services"));
