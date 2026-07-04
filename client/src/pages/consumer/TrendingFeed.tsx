@@ -759,6 +759,15 @@ export default function TrendingFeed() {
     [items.length, goToIndex],
   );
 
+  const slideHeight = useMemo(
+    () => typeof window !== "undefined" ? window.innerHeight : 800,
+    []
+  );
+  const translateY = useMemo(
+    () => -(currentIndex * slideHeight) + (isDragging ? -dragOffset : 0),
+    [currentIndex, slideHeight, isDragging, dragOffset]
+  );
+
   const imgUrl = (url: string) =>
     url?.startsWith("http") ? url : `${API_SERVER_URL}${url}`;
 
@@ -778,15 +787,6 @@ export default function TrendingFeed() {
       </div>
     );
   }
-
-  const slideHeight = useMemo(
-    () => typeof window !== "undefined" ? window.innerHeight : 800,
-    []
-  );
-  const translateY = useMemo(
-    () => -(currentIndex * slideHeight) + (isDragging ? -dragOffset : 0),
-    [currentIndex, slideHeight, isDragging, dragOffset]
-  );
 
   return (
     <>
