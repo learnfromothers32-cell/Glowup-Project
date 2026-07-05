@@ -136,6 +136,21 @@ export default function TrendingFeed() {
   const doubleTapTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [heartBursts, setHeartBursts] = useState<{ id: number; x: number; y: number; scale: number }[]>([]);
 
+  const desktopFeedRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const desktopSentinelRef = useRef<HTMLDivElement>(null);
+
+  const categories = useMemo(() => [...new Set(items.map(it => it.category).filter(Boolean) as string[])], [items]);
+  const stylists = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; image?: string; category?: string }>();
+    items.forEach(it => {
+      if (!map.has(it.stylistId)) map.set(it.stylistId, { id: it.stylistId, name: it.stylistName, image: it.stylistImage, category: it.category });
+    });
+    return Array.from(map.values());
+  }, [items]);
+  const services = useMemo(() => [...new Set(items.map(it => it.serviceName).filter(Boolean) as string[])], [items]);
+  const tags = useMemo(() => [...new Set(items.flatMap(it => it.tags || []))], [items]);
+
   useEffect(() => {
     if (!isAuthenticated) return;
     let cancelled = false;
@@ -225,6 +240,44 @@ export default function TrendingFeed() {
       { rootMargin: "400px" },
     );
     observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [cursor, hasMore, loadingMore, fetchTrending]);
+
+  /* Desktop card active tracking */
+  useEffect(() => {
+    const els = cardRefs.current.filter(Boolean) as HTMLDivElement[];
+    if (els.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const idx = Number((entry.target as HTMLElement).dataset.index);
+            if (!isNaN(idx)) {
+              currentIndexRef.current = idx;
+              setCurrentIndex(idx);
+            }
+          }
+        }
+      },
+      { rootMargin: "-40% 0px -40% 0px" },
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [items.length]);
+
+  /* Desktop infinite scroll sentinel */
+  useEffect(() => {
+    if (!desktopSentinelRef.current || !hasMore || loadingMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          setLoadingMore(true);
+          fetchTrending(cursor, true).finally(() => setLoadingMore(false));
+        }
+      },
+      { rootMargin: "400px" },
+    );
+    observer.observe(desktopSentinelRef.current);
     return () => observer.disconnect();
   }, [cursor, hasMore, loadingMore, fetchTrending]);
 
@@ -793,7 +846,7 @@ export default function TrendingFeed() {
       {/* ── Swipe feed ──────────────────────────────────── */}
       <div
         ref={containerRef}
-        className="fixed inset-0 bg-black z-50 overflow-hidden"
+        className="fixed inset-0 bg-black z-50 overflow-hidden block md:hidden"
         style={{ touchAction: "none" }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -1211,8 +1264,236 @@ export default function TrendingFeed() {
           </div>
         </div>
       </div>
+    </div>
 
+    {/* ── Desktop & Tablet: Scrollable Feed (768px+) ── */}
+    <div className="hidden md:block min-h-screen bg-black">
+      <div className="flex">
+        {/* Left Sidebar (lg+) */}
+        <aside className="hidden lg:flex lg:w-[240px] xl:w-[280px] 2xl:w-[300px] shrink-0 sticky top-0 h-screen flex-col bg-zinc-950/50 border-r border-white/[0.06]">
+          <div className="px-5 py-6 border-b border-white/[0.06]">
+            <h1 className="text-white font-bold text-xl tracking-tight">GlowUp</h1>
+          </div>
+          <nav className="px-3 py-4 flex flex-col gap-1">
+            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white font-semibold bg-white/10" aria-label="For You">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              For You
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Following">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Following
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Trending">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              Trending
+            </button>
+          </nav>
+          {categories.length > 0 && (
+            <div className="px-5 py-4 border-t border-white/[0.06]">
+              <p className="text-white/30 text-xs font-semibold uppercase tracking-wider mb-3">Categories</p>
+              <div className="flex flex-wrap gap-2">
+                {categories.map(cat => (
+                  <span key={cat} className="px-3 py-1 rounded-full text-xs bg-white/10 text-white/70">{cat}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {tags.length > 0 && (
+            <div className="px-5 py-4 border-t border-white/[0.06]">
+              <p className="text-white/30 text-xs font-semibold uppercase tracking-wider mb-3">Trending Tags</p>
+              <div className="flex flex-wrap gap-2">
+                {tags.map(tag => (
+                  <span key={tag} className="px-3 py-1 rounded-full text-xs bg-[#FE2C55]/10 text-[#FE2C55]">#{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="mt-auto px-5 py-4 border-t border-white/[0.06]">
+            <p className="text-white/20 text-xs">2026 GlowUp</p>
+          </div>
+        </aside>
 
+        {/* Center Feed */}
+        <main className="flex-1 min-w-0 overflow-y-auto h-screen" ref={desktopFeedRef}>
+          <div className="lg:hidden sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
+            <button onClick={() => navigate(-1)} className="text-white/70 hover:text-white p-1" aria-label="Go back">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
+            <h1 className="text-white font-bold text-base">Trending Transformations</h1>
+            <button onClick={handleRefresh} className="text-white/40 hover:text-white/70 p-1" aria-label="Refresh feed">
+              <RefreshCw size={18} />
+            </button>
+          </div>
+          <div className="hidden lg:flex items-center justify-between px-6 py-4 border-b border-white/[0.04]">
+            <h1 className="text-white font-bold text-lg">Trending Transformations</h1>
+            <span className="text-white/40 text-sm">{items.length} posts</span>
+          </div>
+          <div className="px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
+            {items.map((item, idx) => {
+              const engagementRate = getEngagementRate(item);
+              const isViral = engagementRate >= VIRAL_ENGAGEMENT_THRESHOLD;
+              return (
+                <div
+                  key={item.id}
+                  ref={(el) => { cardRefs.current[idx] = el; }}
+                  data-index={idx}
+                  className="flex gap-4 md:gap-6 lg:gap-8 mb-6 md:mb-8 lg:mb-12 pb-6 md:pb-8 lg:pb-10 border-b border-white/[0.06] last:border-b-0"
+                >
+                  <div className="w-[260px] md:w-[320px] lg:w-[380px] xl:w-[420px] shrink-0">
+                    <div className="aspect-[9/16] rounded-xl md:rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-zinc-900 relative">
+                      {item.mediaType === "video" ? (
+                        <div className="relative w-full h-full bg-black flex items-center justify-center cursor-pointer" onClick={(e) => handleMediaTap(e, item.id, () => togglePlay(item.id))}>
+                          <video
+                            ref={(el) => { if (el) videoRefs.current.set(item.id, el); }}
+                            src={imgUrl(item.after)}
+                            className="w-full h-full object-cover"
+                            loop
+                            playsInline
+                            muted
+                            preload={Math.abs(idx - currentIndex) <= 2 ? "auto" : "none"}
+                          />
+                        </div>
+                      ) : item.before ? (
+                        <div className="grid grid-cols-2 w-full h-full cursor-pointer" onClick={(e) => handleMediaTap(e, item.id)}>
+                          <div className="relative overflow-hidden bg-black">
+                            <img src={imgUrl(item.before)} alt="Before" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-bold text-white bg-black/50">BEFORE</span>
+                          </div>
+                          <div className="relative overflow-hidden bg-black">
+                            <img src={imgUrl(item.after)} alt="After" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[8px] font-bold text-white" style={{ backgroundColor: TIKTOK_RED }}>AFTER</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-black relative cursor-pointer" onClick={(e) => handleMediaTap(e, item.id)}>
+                          <img src={imgUrl(item.after)} alt="Transformation" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        </div>
+                      )}
+                      {isViral && (
+                        <div className="absolute top-3 left-3 z-20">
+                          <div className="px-2 py-0.5 rounded-full text-[9px] font-bold text-white flex items-center gap-1" style={{ backgroundColor: TIKTOK_RED }}>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>
+                            Trending
+                          </div>
+                        </div>
+                      )}
+                      <button onClick={toggleSound} className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/80 hover:bg-black/60 transition-all" aria-label={soundOn ? "Mute" : "Unmute"}>
+                        {soundOn ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0 pt-1 flex flex-col gap-3 md:gap-4">
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="relative w-10 h-10 shrink-0">
+                        {item.stylistImage ? (
+                          <img src={imgUrl(item.stylistImage)} className="absolute inset-0 w-full h-full rounded-full border-2 border-white/20 object-cover z-10" alt={item.stylistName} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        ) : null}
+                        <div className="w-10 h-10 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center">
+                          <span className="text-white/60 text-base font-bold">{item.stylistName[0]}</span>
+                        </div>
+                      </button>
+                      <div className="min-w-0">
+                        <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="hover:underline">
+                          <p className="text-white font-semibold text-sm md:text-base truncate">{item.stylistName}</p>
+                        </button>
+                        <p className="text-white/40 text-xs">{item.category || 'Stylist'} · {item.location || 'Near you'}</p>
+                      </div>
+                      <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="shrink-0 px-4 py-1.5 rounded-full text-[11px] font-semibold bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 ml-auto">+ Follow</button>
+                    </div>
+                    {item.caption && (
+                      <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.04]">
+                        <p className="text-white/75 text-sm leading-relaxed">{item.caption}</p>
+                        {item.serviceName && <span className="inline-block mt-2 text-[11px] font-medium text-white/40 bg-white/5 px-2.5 py-1 rounded-full">{item.serviceName}</span>}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <button onClick={() => handleLike(item.id)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] transition-all border border-white/[0.04] group" disabled={likeCooldown}>
+                        <Heart size={18} className={likedItems.has(item.id) ? "" : "text-white/70 group-hover:text-white"} style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined} />
+                        <span className="text-white/50 text-xs font-semibold tabular-nums">{formatCount(item.likes)}</span>
+                      </button>
+                      <button onClick={() => openComments(item.id, item.stylistId)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] transition-all border border-white/[0.04] group">
+                        <MessageCircle size={18} className="text-white/70 group-hover:text-white" />
+                        <span className="text-white/50 text-xs font-semibold tabular-nums">{formatCount(item.commentCount)}</span>
+                      </button>
+                      <button onClick={() => handleShare(item)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] transition-all border border-white/[0.04] group">
+                        <Share2 size={18} className="text-white/70 group-hover:text-white" />
+                        <span className="text-white/50 text-xs font-semibold tabular-nums">{formatCount(item.shares)}</span>
+                      </button>
+                      <button onClick={() => handleBookmark(item.id)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] transition-all border border-white/[0.04] group">
+                        <Bookmark size={18} className={bookmarkedItems.has(item.id) ? "" : "text-white/70 group-hover:text-white"} style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined} />
+                        <span className="text-white/50 text-xs font-semibold tabular-nums">{formatCount(item.bookmarks)}</span>
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap mt-1">
+                      {item.tags?.map(tag => (
+                        <span key={tag} className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/5 text-white/40">{tag}</span>
+                      ))}
+                    </div>
+                    <button onClick={() => { setActivePostId(item.id); setActiveStylistId(item.stylistId); setReportModalOpen(true); }} className="self-start text-white/20 hover:text-white/40 text-[11px] font-medium transition-colors flex items-center gap-1.5 mt-auto pt-2">
+                      <Flag size={11} />
+                      Report
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {loadingMore && (
+            <div className="flex justify-center py-8">
+              <RefreshCw size={20} className="text-white/40 animate-spin" />
+            </div>
+          )}
+          <div ref={desktopSentinelRef} className="h-4" />
+        </main>
+
+        {/* Right Panel (xl+) */}
+        <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 sticky top-0 h-screen flex-col bg-zinc-950/50 border-l border-white/[0.06]">
+          <div className="px-4 py-5 border-b border-white/[0.06]">
+            <div className="relative">
+              <input type="text" placeholder="Search transformations..." className="w-full bg-white/10 rounded-full px-4 py-2.5 pl-10 text-white text-sm placeholder:text-white/30 outline-none focus:bg-white/[0.15] transition-colors" />
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            </div>
+          </div>
+          {stylists.length > 0 && (
+            <div className="px-4 py-4 border-b border-white/[0.06]">
+              <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">Popular Stylists</p>
+              <div className="flex flex-col gap-3">
+                {stylists.slice(0, 5).map(s => (
+                  <button key={s.id} onClick={() => navigate(`/app/stylist/${s.id}`)} className="flex items-center gap-3 group">
+                    <div className="relative w-8 h-8 shrink-0">
+                      {s.image ? (
+                        <img src={imgUrl(s.image)} className="absolute inset-0 w-full h-full rounded-full object-cover z-10" alt={s.name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      ) : null}
+                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                        <span className="text-white/50 text-xs font-bold">{s.name[0]}</span>
+                      </div>
+                    </div>
+                    <div className="min-w-0 text-left">
+                      <p className="text-white text-sm font-medium truncate group-hover:underline">{s.name}</p>
+                      <p className="text-white/30 text-xs truncate">{s.category || 'Stylist'}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {services.length > 0 && (
+            <div className="px-4 py-4 border-b border-white/[0.06]">
+              <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">Trending Services</p>
+              <div className="flex flex-wrap gap-2">
+                {services.slice(0, 8).map(s => (
+                  <span key={s} className="px-3 py-1.5 rounded-full text-xs bg-white/10 text-white/60">{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
 
       {/* Share menu */}
       {shareMenuOpen && shareItemId && (
@@ -1521,7 +1802,6 @@ export default function TrendingFeed() {
       <style>{`
         div::-webkit-scrollbar { display: none; }
       `}</style>
-      </div>
     </>
   );
 }
