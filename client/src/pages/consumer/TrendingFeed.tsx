@@ -41,6 +41,9 @@ const HEART_ANIM_MS = 500;
 const VIRAL_ENGAGEMENT_THRESHOLD = 0.02;
 const TRANSITION_MS = 300;
 
+const imgUrl = (url: string) =>
+  url?.startsWith("http") ? url : `${API_SERVER_URL}${url}`;
+
 function formatCount(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
   if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
@@ -821,14 +824,41 @@ export default function TrendingFeed() {
     [currentIndex, slideHeight, isDragging, dragOffset]
   );
 
-  const imgUrl = (url: string) =>
-    url?.startsWith("http") ? url : `${API_SERVER_URL}${url}`;
-
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center gap-4">
-        <div className="w-20 h-20 rounded-full bg-white/10 animate-pulse" />
-        <div className="text-white/40 text-sm">Loading transformations...</div>
+      <div className="fixed inset-0 bg-black">
+        <div className="hidden md:block min-h-screen bg-black">
+          <div className="flex">
+            <aside className="hidden lg:flex lg:w-[240px] xl:w-[280px] 2xl:w-[300px] shrink-0 h-screen bg-zinc-950/50 border-r border-white/[0.06]" />
+            <main className="flex-1 min-w-0 h-screen overflow-y-auto scrollbar-thin">
+              <div className="px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-8 md:space-y-10 lg:space-y-14">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="flex gap-6 md:gap-8 lg:gap-10 pb-8 md:pb-10 lg:pb-12 border-b border-white/[0.06] animate-pulse">
+                    <div className="w-[280px] md:w-[340px] lg:w-[380px] xl:w-[420px] shrink-0 aspect-[9/16] rounded-xl md:rounded-2xl bg-white/[0.04]" />
+                    <div className="flex-1 space-y-4 pt-1">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-white/[0.04]" />
+                        <div className="space-y-2 flex-1">
+                          <div className="h-4 w-32 rounded bg-white/[0.04]" />
+                          <div className="h-3 w-20 rounded bg-white/[0.04]" />
+                        </div>
+                      </div>
+                      <div className="h-16 rounded-xl bg-white/[0.03]" />
+                      <div className="h-10 rounded-xl bg-white/[0.03]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </main>
+            <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 h-screen bg-zinc-950/50 border-l border-white/[0.06]" />
+          </div>
+        </div>
+        <div className="flex md:hidden items-center justify-center h-full">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-20 h-20 rounded-full bg-white/10 animate-pulse" />
+            <div className="text-white/40 text-sm">Loading transformations...</div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -836,7 +866,13 @@ export default function TrendingFeed() {
   if (items.length === 0) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="text-white/60 text-sm">No before/after posts yet</div>
+        <div className="flex flex-col items-center gap-3 text-center px-4">
+          <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/20"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <p className="text-white/40 text-sm font-medium">No transformations yet</p>
+          <p className="text-white/20 text-xs max-w-[240px]">Stylists haven't posted any before/after transformations. Check back soon!</p>
+        </div>
       </div>
     );
   }
@@ -846,7 +882,7 @@ export default function TrendingFeed() {
       {/* ── Swipe feed ──────────────────────────────────── */}
       <div
         ref={containerRef}
-        className="fixed inset-0 bg-black z-50 overflow-hidden block md:hidden"
+        className="fixed inset-0 bg-black z-50 overflow-hidden block md:hidden scrollbar-none"
         style={{ touchAction: "none" }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -1275,26 +1311,26 @@ export default function TrendingFeed() {
             <h1 className="text-white font-bold text-xl tracking-tight">GlowUp</h1>
           </div>
           <nav className="px-3 py-4 flex flex-col gap-1">
-            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white font-semibold bg-white/10" aria-label="For You">
+            <span className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white font-semibold bg-white/10 cursor-default select-none">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
               For You
-            </button>
-            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Following">
+            </span>
+            <span className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/40 cursor-default select-none" aria-disabled="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Following
-            </button>
-            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Trending">
+            </span>
+            <span className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 cursor-default select-none bg-white/[0.03]">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
               Trending
-            </button>
-            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Saved">
+            </span>
+            <span className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/40 cursor-default select-none" aria-disabled="true">
               <Bookmark size={18} />
               Saved
-            </button>
-            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Messages">
+            </span>
+            <span className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/40 cursor-default select-none" aria-disabled="true">
               <MessageCircle size={18} />
               Messages
-            </button>
+            </span>
             <button onClick={() => navigate('/app/profile')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Profile">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               Profile
@@ -1334,7 +1370,7 @@ export default function TrendingFeed() {
         </aside>
 
         {/* Center Feed */}
-        <main className="flex-1 min-w-0 overflow-y-auto h-screen" ref={desktopFeedRef}>
+        <main className="flex-1 min-w-0 overflow-y-auto h-screen scrollbar-thin" ref={desktopFeedRef}>
           <div className="lg:hidden sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
             <button onClick={() => navigate(-1)} className="text-white/70 hover:text-white p-1" aria-label="Go back">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
@@ -1481,102 +1517,104 @@ export default function TrendingFeed() {
         </main>
 
         {/* Right Panel (xl+) */}
-        <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 sticky top-0 h-screen flex-col bg-zinc-950/50 border-l border-white/[0.06] overflow-y-auto">
+        <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 sticky top-0 h-screen flex-col bg-zinc-950/50 border-l border-white/[0.06]">
           {/* Search */}
           <div className="px-4 py-5 border-b border-white/[0.06] shrink-0">
             <div className="relative">
-              <input type="text" placeholder="Search transformations..." className="w-full bg-white/10 rounded-full px-4 py-2.5 pl-10 text-white text-sm placeholder:text-white/30 outline-none focus:bg-white/[0.15] transition-colors" />
+              <input type="text" placeholder="Search transformations..." aria-label="Search transformations" className="w-full bg-white/10 rounded-full px-4 py-2.5 pl-10 text-white text-sm placeholder:text-white/30 outline-none focus:bg-white/[0.15] transition-colors" />
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
             </div>
           </div>
 
-          {/* Featured Stylist */}
-          {stylists.length > 0 && (
-            <div className="px-4 py-5 border-b border-white/[0.06]">
-              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-4">Featured Stylist</p>
-              <button onClick={() => navigate(`/app/stylist/${stylists[0].id}`)} className="relative w-full aspect-[16/10] rounded-xl overflow-hidden group block">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
-                {stylists[0].image ? (
-                  <img src={imgUrl(stylists[0].image)} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={stylists[0].name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                ) : (
-                  <div className="absolute inset-0 bg-white/5 flex items-center justify-center">
-                    <span className="text-white/20 text-4xl font-bold">{stylists[0].name[0]}</span>
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            {/* Featured Stylist */}
+            {stylists.length > 0 && (
+              <div className="px-4 py-5 border-b border-white/[0.06]">
+                <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-4">Featured Stylist</p>
+                <button onClick={() => navigate(`/app/stylist/${stylists[0].id}`)} className="relative w-full aspect-[16/10] rounded-xl overflow-hidden group block">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
+                  {stylists[0].image ? (
+                    <img src={imgUrl(stylists[0].image)} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={stylists[0].name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  ) : (
+                    <div className="absolute inset-0 bg-white/5 flex items-center justify-center">
+                      <span className="text-white/20 text-4xl font-bold">{stylists[0].name[0]}</span>
+                    </div>
+                  )}
+                  <div className="absolute bottom-3 left-3 right-3 z-20">
+                    <p className="text-white font-semibold text-sm truncate">{stylists[0].name}</p>
+                    <p className="text-white/60 text-[11px] mt-0.5 truncate">{stylists[0].category || 'Stylist'} · Featured</p>
                   </div>
-                )}
-                <div className="absolute bottom-3 left-3 right-3 z-20">
-                  <p className="text-white font-semibold text-sm truncate">{stylists[0].name}</p>
-                  <p className="text-white/60 text-[11px] mt-0.5 truncate">{stylists[0].category || 'Stylist'} · Featured</p>
-                </div>
-              </button>
-            </div>
-          )}
+                </button>
+              </div>
+            )}
 
-          {/* Popular Stylists */}
-          {stylists.length > 1 && (
-            <div className="px-4 py-5 border-b border-white/[0.06]">
-              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Popular Stylists</p>
-              <div className="flex flex-col gap-3">
-                {stylists.slice(1, 5).map(s => (
-                  <button key={s.id} onClick={() => navigate(`/app/stylist/${s.id}`)} className="flex items-center gap-3 group">
-                    <div className="relative w-8 h-8 shrink-0">
-                      {s.image ? (
-                        <img src={imgUrl(s.image)} className="absolute inset-0 w-full h-full rounded-full object-cover z-10" alt={s.name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                      ) : null}
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                        <span className="text-white/50 text-xs font-bold">{s.name[0]}</span>
+            {/* Popular Stylists */}
+            {stylists.length > 1 && (
+              <div className="px-4 py-5 border-b border-white/[0.06]">
+                <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Popular Stylists</p>
+                <div className="flex flex-col gap-3">
+                  {stylists.slice(1, 5).map(s => (
+                    <button key={s.id} onClick={() => navigate(`/app/stylist/${s.id}`)} className="flex items-center gap-3 group">
+                      <div className="relative w-8 h-8 shrink-0">
+                        {s.image ? (
+                          <img src={imgUrl(s.image)} className="absolute inset-0 w-full h-full rounded-full object-cover z-10" alt={s.name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        ) : null}
+                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                          <span className="text-white/50 text-xs font-bold">{s.name[0]}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="min-w-0 text-left flex-1">
-                      <p className="text-white text-sm font-medium truncate group-hover:underline">{s.name}</p>
-                      <p className="text-white/30 text-[11px] truncate">{s.category || 'Stylist'}</p>
-                    </div>
-                    <span className="text-white/20 text-[10px] font-medium group-hover:text-white/40 transition-colors">Follow</span>
-                  </button>
-                ))}
+                      <div className="min-w-0 text-left flex-1">
+                        <p className="text-white text-sm font-medium truncate group-hover:underline">{s.name}</p>
+                        <p className="text-white/30 text-[11px] truncate">{s.category || 'Stylist'}</p>
+                      </div>
+                      <span className="text-white/20 text-[10px] font-medium group-hover:text-white/40 transition-colors">Follow</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Trending Collections */}
-          {tags.length > 0 && (
+            {/* Trending Collections */}
+            {tags.length > 0 && (
+              <div className="px-4 py-5 border-b border-white/[0.06]">
+                <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Trending Collections</p>
+                <div className="flex flex-wrap gap-2">
+                  {tags.slice(0, 4).map(tag => (
+                    <button key={tag} className="px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.04] hover:bg-white/[0.06] transition-colors text-left">
+                      <span className="text-white/70 text-xs font-medium">#{tag}</span>
+                      <span className="text-white/20 text-[10px] mt-0.5 block">Trending now</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Community Tip */}
             <div className="px-4 py-5 border-b border-white/[0.06]">
-              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Trending Collections</p>
-              <div className="flex flex-wrap gap-2">
-                {tags.slice(0, 4).map(tag => (
-                  <div key={tag} className="px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.04] hover:bg-white/[0.06] transition-colors cursor-pointer">
-                    <p className="text-white/70 text-xs font-medium">#{tag}</p>
-                    <p className="text-white/20 text-[10px] mt-0.5">Trending now</p>
-                  </div>
-                ))}
+              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Community Tip</p>
+              <div className="bg-gradient-to-br from-[#FE2C55]/5 to-transparent rounded-xl p-4 border border-[#FE2C55]/10">
+                <p className="text-white/60 text-xs leading-relaxed">
+                  Double-tap any transformation to show appreciation. Your engagement helps stylists reach more people!
+                </p>
               </div>
             </div>
-          )}
 
-          {/* Community Tip */}
-          <div className="px-4 py-5 border-b border-white/[0.06]">
-            <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Community Tip</p>
-            <div className="bg-gradient-to-br from-[#FE2C55]/5 to-transparent rounded-xl p-4 border border-[#FE2C55]/10">
-              <p className="text-white/60 text-xs leading-relaxed">
-                Double-tap any transformation to show appreciation. Your engagement helps stylists reach more people!
-              </p>
-            </div>
-          </div>
-
-          {/* Trending Services */}
-          {services.length > 0 && (
-            <div className="px-4 py-5 border-b border-white/[0.06]">
-              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Trending Services</p>
-              <div className="flex flex-wrap gap-2">
-                {services.slice(0, 8).map(s => (
-                  <span key={s} className="px-3 py-1.5 rounded-full text-xs bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/70 transition-colors cursor-default">{s}</span>
-                ))}
+            {/* Trending Services */}
+            {services.length > 0 && (
+              <div className="px-4 py-5 border-b border-white/[0.06]">
+                <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Trending Services</p>
+                <div className="flex flex-wrap gap-2">
+                  {services.slice(0, 8).map(s => (
+                    <span key={s} className="px-3 py-1.5 rounded-full text-xs bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/70 transition-colors cursor-default">{s}</span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Footer */}
-          <div className="px-4 py-5">
-            <p className="text-white/15 text-[10px]">2026 GlowUp · Discover your transformation</p>
+            {/* Footer */}
+            <div className="px-4 py-5">
+              <p className="text-white/15 text-[10px]">2026 GlowUp · Discover your transformation</p>
+            </div>
           </div>
         </aside>
       </div>
@@ -1887,7 +1925,12 @@ export default function TrendingFeed() {
       )}
 
       <style>{`
-        div::-webkit-scrollbar { display: none; }
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+        button:focus-visible, a:focus-visible, [tabindex]:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #FE2C55; outline-offset: 2px; }
       `}</style>
     </>
   );
