@@ -827,10 +827,10 @@ export default function TrendingFeed() {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black">
-        <div className="hidden md:block min-h-screen bg-black">
-          <div className="flex">
-            <aside className="hidden lg:flex lg:w-[240px] xl:w-[280px] 2xl:w-[300px] shrink-0 h-screen bg-zinc-950/50 border-r border-white/[0.06]" />
-            <main className="flex-1 min-w-0 h-screen overflow-y-auto scrollbar-thin">
+        <div className="hidden md:block fixed inset-0 z-40 bg-black">
+          <div className="flex w-full h-full">
+            <aside className="hidden lg:flex lg:w-[240px] xl:w-[280px] 2xl:w-[300px] shrink-0 h-full bg-zinc-950/50 border-r border-white/[0.06]" />
+            <main className="flex-1 min-w-0 h-full overflow-y-auto scrollbar-thin">
               <div className="px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-8 md:space-y-10 lg:space-y-14">
                 {[1, 2, 3].map((n) => (
                   <div key={n} className="flex gap-6 md:gap-8 lg:gap-10 pb-8 md:pb-10 lg:pb-12 border-b border-white/[0.06] animate-pulse">
@@ -850,7 +850,7 @@ export default function TrendingFeed() {
                 ))}
               </div>
             </main>
-            <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 h-screen bg-zinc-950/50 border-l border-white/[0.06]" />
+            <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 h-full bg-zinc-950/50 border-l border-white/[0.06]" />
           </div>
         </div>
         <div className="flex md:hidden items-center justify-center h-full">
@@ -1303,10 +1303,10 @@ export default function TrendingFeed() {
     </div>
 
     {/* ── Desktop & Tablet: Scrollable Feed (768px+) ── */}
-    <div className="hidden md:block min-h-screen bg-black overflow-x-hidden">
-      <div className="flex w-full max-w-full">
+    <div className="hidden md:block fixed inset-0 z-40 bg-black overflow-x-hidden">
+      <div className="flex w-full h-full">
         {/* Left Sidebar (lg+) */}
-        <aside className="hidden lg:flex lg:w-[240px] xl:w-[280px] 2xl:w-[300px] shrink-0 sticky top-0 h-screen flex-col bg-zinc-950/50 border-r border-white/[0.06]">
+        <aside className="hidden lg:flex lg:w-[240px] xl:w-[280px] 2xl:w-[300px] shrink-0 sticky top-0 h-full flex-col bg-zinc-950/50 border-r border-white/[0.06]">
           <div className="px-5 py-6 border-b border-white/[0.06]">
             <h1 className="text-white font-bold text-xl tracking-tight">GlowUp</h1>
           </div>
@@ -1370,7 +1370,7 @@ export default function TrendingFeed() {
         </aside>
 
         {/* Center Feed */}
-        <main className="flex-1 min-w-0 overflow-y-auto h-screen scrollbar-thin" ref={desktopFeedRef}>
+        <main className="flex-1 min-w-0 overflow-y-auto h-full scrollbar-thin" ref={desktopFeedRef}>
           <div className="lg:hidden sticky top-0 z-10 bg-black/80 backdrop-blur-md border-b border-white/[0.06] px-4 py-3 flex items-center justify-between">
             <button onClick={() => navigate(-1)} className="text-white/70 hover:text-white p-1" aria-label="Go back">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
@@ -1468,25 +1468,25 @@ export default function TrendingFeed() {
                         )}
                       </div>
                     )}
-                    <div className="flex items-center gap-1 bg-white/[0.02] rounded-xl md:rounded-2xl p-1 border border-white/[0.04]">
-                      <button onClick={() => handleLike(item.id)} className="flex-1 min-w-0 flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-white/[0.04] transition-all group/btn" disabled={likeCooldown}>
-                        <Heart size={16} className={likedItems.has(item.id) ? "" : "text-white/50 group-hover/btn:text-white/80 shrink-0"} style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined} />
-                        <span className="text-white/40 group-hover/btn:text-white/60 text-xs font-semibold tabular-nums transition-colors shrink-0">{formatCount(item.likes)}</span>
+                    <div className="flex items-center gap-px bg-white/[0.03] rounded-xl md:rounded-2xl overflow-hidden border border-white/[0.04]">
+                      <button onClick={() => handleLike(item.id)} className="flex-1 min-w-0 flex items-center justify-center gap-2 px-2 md:px-3 py-2.5 md:py-3 hover:bg-white/[0.04] transition-all group/btn" disabled={likeCooldown}>
+                        <Heart size={17} className={likedItems.has(item.id) ? "" : "text-white/40 group-hover/btn:text-white/70 shrink-0 transition-colors"} style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined} />
+                        <span className="text-white/30 group-hover/btn:text-white/50 text-xs font-semibold tabular-nums transition-colors shrink-0">{formatCount(item.likes)}</span>
                       </button>
-                      <div className="w-px h-6 bg-white/[0.04] shrink-0" />
-                      <button onClick={() => openComments(item.id, item.stylistId)} className="flex-1 min-w-0 flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-white/[0.04] transition-all group/btn">
-                        <MessageCircle size={16} className="text-white/50 group-hover/btn:text-white/80 shrink-0" />
-                        <span className="text-white/40 group-hover/btn:text-white/60 text-xs font-semibold tabular-nums transition-colors shrink-0">{formatCount(item.commentCount)}</span>
+                      <div className="w-px h-5 bg-white/[0.04] shrink-0" />
+                      <button onClick={() => openComments(item.id, item.stylistId)} className="flex-1 min-w-0 flex items-center justify-center gap-2 px-2 md:px-3 py-2.5 md:py-3 hover:bg-white/[0.04] transition-all group/btn">
+                        <MessageCircle size={17} className="text-white/40 group-hover/btn:text-white/70 shrink-0 transition-colors" />
+                        <span className="text-white/30 group-hover/btn:text-white/50 text-xs font-semibold tabular-nums transition-colors shrink-0">{formatCount(item.commentCount)}</span>
                       </button>
-                      <div className="w-px h-6 bg-white/[0.04] shrink-0" />
-                      <button onClick={() => handleShare(item)} className="flex-1 min-w-0 flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-white/[0.04] transition-all group/btn">
-                        <Share2 size={16} className="text-white/50 group-hover/btn:text-white/80 shrink-0" />
-                        <span className="text-white/40 group-hover/btn:text-white/60 text-xs font-semibold tabular-nums transition-colors shrink-0">{formatCount(item.shares)}</span>
+                      <div className="w-px h-5 bg-white/[0.04] shrink-0" />
+                      <button onClick={() => handleShare(item)} className="flex-1 min-w-0 flex items-center justify-center gap-2 px-2 md:px-3 py-2.5 md:py-3 hover:bg-white/[0.04] transition-all group/btn">
+                        <Share2 size={17} className="text-white/40 group-hover/btn:text-white/70 shrink-0 transition-colors" />
+                        <span className="text-white/30 group-hover/btn:text-white/50 text-xs font-semibold tabular-nums transition-colors shrink-0">{formatCount(item.shares)}</span>
                       </button>
-                      <div className="w-px h-6 bg-white/[0.04] shrink-0" />
-                      <button onClick={() => handleBookmark(item.id)} className="flex-1 min-w-0 flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-white/[0.04] transition-all group/btn">
-                        <Bookmark size={16} className={bookmarkedItems.has(item.id) ? "" : "text-white/50 group-hover/btn:text-white/80 shrink-0"} style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined} />
-                        <span className="text-white/40 group-hover/btn:text-white/60 text-xs font-semibold tabular-nums transition-colors shrink-0">{formatCount(item.bookmarks)}</span>
+                      <div className="w-px h-5 bg-white/[0.04] shrink-0" />
+                      <button onClick={() => handleBookmark(item.id)} className="flex-1 min-w-0 flex items-center justify-center gap-2 px-2 md:px-3 py-2.5 md:py-3 hover:bg-white/[0.04] transition-all group/btn">
+                        <Bookmark size={17} className={bookmarkedItems.has(item.id) ? "" : "text-white/40 group-hover/btn:text-white/70 shrink-0 transition-colors"} style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined} />
+                        <span className="text-white/30 group-hover/btn:text-white/50 text-xs font-semibold tabular-nums transition-colors shrink-0">{formatCount(item.bookmarks)}</span>
                       </button>
                     </div>
                     {item.tags && item.tags.length > 0 && (
@@ -1496,12 +1496,12 @@ export default function TrendingFeed() {
                         ))}
                       </div>
                     )}
-                    <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="w-full py-2.5 md:py-3 rounded-xl md:rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] hover:opacity-90" style={{ backgroundColor: TIKTOK_RED }}>
+                    <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="w-full py-2.5 md:py-3 rounded-xl md:rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.97] hover:brightness-110 shadow-lg shadow-[#FE2C55]/20" style={{ backgroundColor: TIKTOK_RED }}>
                       Book Appointment
                     </button>
                     <button onClick={() => { setActivePostId(item.id); setActiveStylistId(item.stylistId); setReportModalOpen(true); }} className="self-start text-white/20 hover:text-white/40 text-[11px] font-medium transition-colors flex items-center gap-1.5">
-                      <Flag size={11} />
-                      Report this post
+                      <Flag size={12} />
+                      Report
                     </button>
                   </div>
                 </div>
@@ -1517,7 +1517,7 @@ export default function TrendingFeed() {
         </main>
 
         {/* Right Panel (xl+) */}
-        <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 sticky top-0 h-screen flex-col bg-zinc-950/50 border-l border-white/[0.06]">
+        <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 sticky top-0 h-full flex-col bg-zinc-950/50 border-l border-white/[0.06]">
           {/* Search */}
           <div className="px-4 py-5 border-b border-white/[0.06] shrink-0">
             <div className="relative">
