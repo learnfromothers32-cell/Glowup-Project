@@ -1287,29 +1287,49 @@ export default function TrendingFeed() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
               Trending
             </button>
+            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Saved">
+              <Bookmark size={18} />
+              Saved
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Messages">
+              <MessageCircle size={18} />
+              Messages
+            </button>
+            <button onClick={() => navigate('/app/profile')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-colors" aria-label="Profile">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Profile
+            </button>
           </nav>
           {categories.length > 0 && (
-            <div className="px-5 py-4 border-t border-white/[0.06]">
+            <div className="px-5 py-5 border-t border-white/[0.06]">
               <p className="text-white/30 text-xs font-semibold uppercase tracking-wider mb-3">Categories</p>
               <div className="flex flex-wrap gap-2">
                 {categories.map(cat => (
-                  <span key={cat} className="px-3 py-1 rounded-full text-xs bg-white/10 text-white/70">{cat}</span>
+                  <span key={cat} className="px-3 py-1.5 rounded-full text-xs bg-white/[0.06] text-white/70 hover:bg-white/10 hover:text-white/90 transition-colors cursor-default">{cat}</span>
                 ))}
               </div>
             </div>
           )}
           {tags.length > 0 && (
-            <div className="px-5 py-4 border-t border-white/[0.06]">
+            <div className="px-5 py-5 border-t border-white/[0.06]">
               <p className="text-white/30 text-xs font-semibold uppercase tracking-wider mb-3">Trending Tags</p>
               <div className="flex flex-wrap gap-2">
                 {tags.map(tag => (
-                  <span key={tag} className="px-3 py-1 rounded-full text-xs bg-[#FE2C55]/10 text-[#FE2C55]">#{tag}</span>
+                  <span key={tag} className="px-3 py-1.5 rounded-full text-xs bg-[#FE2C55]/10 text-[#FE2C55] hover:bg-[#FE2C55]/20 transition-colors cursor-default">#{tag}</span>
                 ))}
               </div>
             </div>
           )}
-          <div className="mt-auto px-5 py-4 border-t border-white/[0.06]">
-            <p className="text-white/20 text-xs">2026 GlowUp</p>
+          <div className="mt-auto px-5 py-5 border-t border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                <span className="text-white/50 text-xs font-bold">{user?.name?.[0]?.toUpperCase() || 'U'}</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-white/70 text-sm font-medium truncate">{user?.name || 'Guest'}</p>
+                <p className="text-white/30 text-[11px] truncate">{user?.email || ''}</p>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -1337,10 +1357,10 @@ export default function TrendingFeed() {
                   key={item.id}
                   ref={(el) => { cardRefs.current[idx] = el; }}
                   data-index={idx}
-                  className="flex gap-4 md:gap-6 lg:gap-8 mb-6 md:mb-8 lg:mb-12 pb-6 md:pb-8 lg:pb-10 border-b border-white/[0.06] last:border-b-0"
+                  className="flex gap-6 md:gap-8 lg:gap-10 mb-8 md:mb-10 lg:mb-14 pb-8 md:pb-10 lg:pb-12 border-b border-white/[0.06] last:border-b-0 group/card"
                 >
-                  <div className="w-[260px] md:w-[320px] lg:w-[380px] xl:w-[420px] shrink-0">
-                    <div className="aspect-[9/16] rounded-xl md:rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-zinc-900 relative">
+                  <div className="w-[280px] md:w-[340px] lg:w-[380px] xl:w-[420px] shrink-0 transition-transform duration-300 group-hover/card:scale-[1.01]">
+                    <div className="aspect-[9/16] rounded-xl md:rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-zinc-900 relative ring-1 ring-white/[0.04] transition-shadow duration-300 group-hover/card:shadow-2xl group-hover/card:ring-white/[0.08]">
                       {item.mediaType === "video" ? (
                         <div className="relative w-full h-full bg-black flex items-center justify-center cursor-pointer" onClick={(e) => handleMediaTap(e, item.id, () => togglePlay(item.id))}>
                           <video
@@ -1386,56 +1406,66 @@ export default function TrendingFeed() {
                       </button>
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0 pt-1 flex flex-col gap-3 md:gap-4">
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="relative w-10 h-10 shrink-0">
+                  <div className="flex-1 min-w-0 flex flex-col gap-4 md:gap-5">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="relative w-11 h-11 md:w-12 md:h-12 shrink-0">
                         {item.stylistImage ? (
                           <img src={imgUrl(item.stylistImage)} className="absolute inset-0 w-full h-full rounded-full border-2 border-white/20 object-cover z-10" alt={item.stylistName} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                         ) : null}
-                        <div className="w-10 h-10 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center">
-                          <span className="text-white/60 text-base font-bold">{item.stylistName[0]}</span>
+                        <div className="w-11 h-11 md:w-12 md:h-12 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center">
+                          <span className="text-white/60 text-base md:text-lg font-bold">{item.stylistName[0]}</span>
                         </div>
                       </button>
                       <div className="min-w-0">
                         <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="hover:underline">
-                          <p className="text-white font-semibold text-sm md:text-base truncate">{item.stylistName}</p>
+                          <p className="text-white font-semibold text-sm md:text-base lg:text-[15px] truncate">{item.stylistName}</p>
                         </button>
-                        <p className="text-white/40 text-xs">{item.category || 'Stylist'} · {item.location || 'Near you'}</p>
+                        <p className="text-white/40 text-xs md:text-[13px] mt-0.5">{item.category || 'Stylist'} · {item.location || 'Near you'}</p>
                       </div>
-                      <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="shrink-0 px-4 py-1.5 rounded-full text-[11px] font-semibold bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 ml-auto">+ Follow</button>
+                      <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="shrink-0 px-4 md:px-5 py-1.5 md:py-2 rounded-full text-[11px] md:text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition-all active:scale-95 ml-auto">+ Follow</button>
                     </div>
                     {item.caption && (
-                      <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.04]">
-                        <p className="text-white/75 text-sm leading-relaxed">{item.caption}</p>
-                        {item.serviceName && <span className="inline-block mt-2 text-[11px] font-medium text-white/40 bg-white/5 px-2.5 py-1 rounded-full">{item.serviceName}</span>}
+                      <div className="bg-white/[0.03] rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/[0.04]">
+                        <p className="text-white/75 text-sm md:text-[14px] leading-relaxed md:leading-[1.65]">{item.caption}</p>
+                        {item.serviceName && (
+                          <span className="inline-block mt-3 text-[11px] md:text-xs font-medium text-white/40 bg-white/5 px-3 py-1 rounded-full">{item.serviceName}</span>
+                        )}
                       </div>
                     )}
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <button onClick={() => handleLike(item.id)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] transition-all border border-white/[0.04] group" disabled={likeCooldown}>
-                        <Heart size={18} className={likedItems.has(item.id) ? "" : "text-white/70 group-hover:text-white"} style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined} />
-                        <span className="text-white/50 text-xs font-semibold tabular-nums">{formatCount(item.likes)}</span>
+                    <div className="flex items-center gap-1 bg-white/[0.02] rounded-xl md:rounded-2xl p-1 border border-white/[0.04]">
+                      <button onClick={() => handleLike(item.id)} className="flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-white/[0.04] transition-all group/btn" disabled={likeCooldown}>
+                        <Heart size={16} className={likedItems.has(item.id) ? "" : "text-white/50 group-hover/btn:text-white/80"} style={likedItems.has(item.id) ? { color: TIKTOK_RED, fill: TIKTOK_RED } : undefined} />
+                        <span className="text-white/40 group-hover/btn:text-white/60 text-xs font-semibold tabular-nums transition-colors">{formatCount(item.likes)}</span>
                       </button>
-                      <button onClick={() => openComments(item.id, item.stylistId)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] transition-all border border-white/[0.04] group">
-                        <MessageCircle size={18} className="text-white/70 group-hover:text-white" />
-                        <span className="text-white/50 text-xs font-semibold tabular-nums">{formatCount(item.commentCount)}</span>
+                      <div className="w-px h-6 bg-white/[0.04]" />
+                      <button onClick={() => openComments(item.id, item.stylistId)} className="flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-white/[0.04] transition-all group/btn">
+                        <MessageCircle size={16} className="text-white/50 group-hover/btn:text-white/80" />
+                        <span className="text-white/40 group-hover/btn:text-white/60 text-xs font-semibold tabular-nums transition-colors">{formatCount(item.commentCount)}</span>
                       </button>
-                      <button onClick={() => handleShare(item)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] transition-all border border-white/[0.04] group">
-                        <Share2 size={18} className="text-white/70 group-hover:text-white" />
-                        <span className="text-white/50 text-xs font-semibold tabular-nums">{formatCount(item.shares)}</span>
+                      <div className="w-px h-6 bg-white/[0.04]" />
+                      <button onClick={() => handleShare(item)} className="flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-white/[0.04] transition-all group/btn">
+                        <Share2 size={16} className="text-white/50 group-hover/btn:text-white/80" />
+                        <span className="text-white/40 group-hover/btn:text-white/60 text-xs font-semibold tabular-nums transition-colors">{formatCount(item.shares)}</span>
                       </button>
-                      <button onClick={() => handleBookmark(item.id)} className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] transition-all border border-white/[0.04] group">
-                        <Bookmark size={18} className={bookmarkedItems.has(item.id) ? "" : "text-white/70 group-hover:text-white"} style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined} />
-                        <span className="text-white/50 text-xs font-semibold tabular-nums">{formatCount(item.bookmarks)}</span>
+                      <div className="w-px h-6 bg-white/[0.04]" />
+                      <button onClick={() => handleBookmark(item.id)} className="flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-white/[0.04] transition-all group/btn">
+                        <Bookmark size={16} className={bookmarkedItems.has(item.id) ? "" : "text-white/50 group-hover/btn:text-white/80"} style={bookmarkedItems.has(item.id) ? { color: "#FACC15", fill: "#FACC15" } : undefined} />
+                        <span className="text-white/40 group-hover/btn:text-white/60 text-xs font-semibold tabular-nums transition-colors">{formatCount(item.bookmarks)}</span>
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap mt-1">
-                      {item.tags?.map(tag => (
-                        <span key={tag} className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/5 text-white/40">{tag}</span>
-                      ))}
-                    </div>
-                    <button onClick={() => { setActivePostId(item.id); setActiveStylistId(item.stylistId); setReportModalOpen(true); }} className="self-start text-white/20 hover:text-white/40 text-[11px] font-medium transition-colors flex items-center gap-1.5 mt-auto pt-2">
+                    {item.tags && item.tags.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {item.tags.map(tag => (
+                          <span key={tag} className="px-2.5 md:px-3 py-1 rounded-full text-[11px] md:text-xs font-medium bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60 transition-colors">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={() => navigate(`/app/stylist/${item.stylistId}`)} className="w-full py-2.5 md:py-3 rounded-xl md:rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] hover:opacity-90" style={{ backgroundColor: TIKTOK_RED }}>
+                      Book Appointment
+                    </button>
+                    <button onClick={() => { setActivePostId(item.id); setActiveStylistId(item.stylistId); setReportModalOpen(true); }} className="self-start text-white/20 hover:text-white/40 text-[11px] font-medium transition-colors flex items-center gap-1.5">
                       <Flag size={11} />
-                      Report
+                      Report this post
                     </button>
                   </div>
                 </div>
@@ -1451,18 +1481,42 @@ export default function TrendingFeed() {
         </main>
 
         {/* Right Panel (xl+) */}
-        <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 sticky top-0 h-screen flex-col bg-zinc-950/50 border-l border-white/[0.06]">
-          <div className="px-4 py-5 border-b border-white/[0.06]">
+        <aside className="hidden xl:flex xl:w-[300px] 2xl:w-[340px] shrink-0 sticky top-0 h-screen flex-col bg-zinc-950/50 border-l border-white/[0.06] overflow-y-auto">
+          {/* Search */}
+          <div className="px-4 py-5 border-b border-white/[0.06] shrink-0">
             <div className="relative">
               <input type="text" placeholder="Search transformations..." className="w-full bg-white/10 rounded-full px-4 py-2.5 pl-10 text-white text-sm placeholder:text-white/30 outline-none focus:bg-white/[0.15] transition-colors" />
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
             </div>
           </div>
+
+          {/* Featured Stylist */}
           {stylists.length > 0 && (
-            <div className="px-4 py-4 border-b border-white/[0.06]">
-              <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">Popular Stylists</p>
+            <div className="px-4 py-5 border-b border-white/[0.06]">
+              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-4">Featured Stylist</p>
+              <button onClick={() => navigate(`/app/stylist/${stylists[0].id}`)} className="relative w-full aspect-[16/10] rounded-xl overflow-hidden group block">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
+                {stylists[0].image ? (
+                  <img src={imgUrl(stylists[0].image)} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={stylists[0].name} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                ) : (
+                  <div className="absolute inset-0 bg-white/5 flex items-center justify-center">
+                    <span className="text-white/20 text-4xl font-bold">{stylists[0].name[0]}</span>
+                  </div>
+                )}
+                <div className="absolute bottom-3 left-3 right-3 z-20">
+                  <p className="text-white font-semibold text-sm truncate">{stylists[0].name}</p>
+                  <p className="text-white/60 text-[11px] mt-0.5 truncate">{stylists[0].category || 'Stylist'} · Featured</p>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Popular Stylists */}
+          {stylists.length > 1 && (
+            <div className="px-4 py-5 border-b border-white/[0.06]">
+              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Popular Stylists</p>
               <div className="flex flex-col gap-3">
-                {stylists.slice(0, 5).map(s => (
+                {stylists.slice(1, 5).map(s => (
                   <button key={s.id} onClick={() => navigate(`/app/stylist/${s.id}`)} className="flex items-center gap-3 group">
                     <div className="relative w-8 h-8 shrink-0">
                       {s.image ? (
@@ -1472,25 +1526,58 @@ export default function TrendingFeed() {
                         <span className="text-white/50 text-xs font-bold">{s.name[0]}</span>
                       </div>
                     </div>
-                    <div className="min-w-0 text-left">
+                    <div className="min-w-0 text-left flex-1">
                       <p className="text-white text-sm font-medium truncate group-hover:underline">{s.name}</p>
-                      <p className="text-white/30 text-xs truncate">{s.category || 'Stylist'}</p>
+                      <p className="text-white/30 text-[11px] truncate">{s.category || 'Stylist'}</p>
                     </div>
+                    <span className="text-white/20 text-[10px] font-medium group-hover:text-white/40 transition-colors">Follow</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
-          {services.length > 0 && (
-            <div className="px-4 py-4 border-b border-white/[0.06]">
-              <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">Trending Services</p>
+
+          {/* Trending Collections */}
+          {tags.length > 0 && (
+            <div className="px-4 py-5 border-b border-white/[0.06]">
+              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Trending Collections</p>
               <div className="flex flex-wrap gap-2">
-                {services.slice(0, 8).map(s => (
-                  <span key={s} className="px-3 py-1.5 rounded-full text-xs bg-white/10 text-white/60">{s}</span>
+                {tags.slice(0, 4).map(tag => (
+                  <div key={tag} className="px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.04] hover:bg-white/[0.06] transition-colors cursor-pointer">
+                    <p className="text-white/70 text-xs font-medium">#{tag}</p>
+                    <p className="text-white/20 text-[10px] mt-0.5">Trending now</p>
+                  </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Community Tip */}
+          <div className="px-4 py-5 border-b border-white/[0.06]">
+            <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Community Tip</p>
+            <div className="bg-gradient-to-br from-[#FE2C55]/5 to-transparent rounded-xl p-4 border border-[#FE2C55]/10">
+              <p className="text-white/60 text-xs leading-relaxed">
+                Double-tap any transformation to show appreciation. Your engagement helps stylists reach more people!
+              </p>
+            </div>
+          </div>
+
+          {/* Trending Services */}
+          {services.length > 0 && (
+            <div className="px-4 py-5 border-b border-white/[0.06]">
+              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wider mb-3">Trending Services</p>
+              <div className="flex flex-wrap gap-2">
+                {services.slice(0, 8).map(s => (
+                  <span key={s} className="px-3 py-1.5 rounded-full text-xs bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white/70 transition-colors cursor-default">{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="px-4 py-5">
+            <p className="text-white/15 text-[10px]">2026 GlowUp · Discover your transformation</p>
+          </div>
         </aside>
       </div>
     </div>
