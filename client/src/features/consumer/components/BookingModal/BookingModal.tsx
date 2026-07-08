@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Check } from "lucide-react";
+import { X, Loader2, Check, ChevronLeft, ChevronRight, Star, MapPin } from "lucide-react";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import type { PaymentMethod } from "@/domain/booking/booking.types";
+import { getLocationString } from "@/utils/location";
 import { useCreateBookingMutation } from "@/domain/booking/booking.hooks";
 import { useGamification } from "@/hooks/useGamification";
 import { useAuth } from "@/context/authUtils";
@@ -99,6 +100,51 @@ export default function BookingModal({
   const [copied, setCopied] = useState(false);
   const [joiningWaitlistBm, setJoiningWaitlistBm] = useState(false);
   const [waitlistJoinedBm, setWaitlistJoinedBm] = useState(false);
+
+  // ── Image carousel ──────────────────────────────────────
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const touchStartX = useRef(0);
+
+  const allImages = useMemo(() => {
+    const images: string[] = [];
+    if (stylist.image) images.push(stylist.image);
+    if (stylist.portfolioImages?.length) {
+      stylist.portfolioImages.forEach((p) => {
+        if (p.type === "image" && p.url) images.push(p.url);
+      });
+    }
+    return images;
+  }, [stylist]);
+
+  const currentImage = allImages[currentImageIndex] ?? stylist.image ?? "";
+
+  const goToNext = useCallback(() => {
+    if (allImages.length > 1) {
+      setCurrentImageIndex((p) => (p + 1) % allImages.length);
+    }
+  }, [allImages.length]);
+
+  const goToPrev = useCallback(() => {
+    if (allImages.length > 1) {
+      setCurrentImageIndex((p) => (p - 1 + allImages.length) % allImages.length);
+    }
+  }, [allImages.length]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const diff = touchStartX.current - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) goToNext();
+        else goToPrev();
+      }
+    },
+    [goToNext, goToPrev],
+  );
+  // ─────────────────────────────────────────────────────────
 
   const dateSlots = slotsByDate[state.selectedDate ?? ""] || [];
   const allSlotsUnavailable = state.selectedDate !== null && dateSlots.length > 0 && dateSlots.every(s => !s.available) && !loadingSlots;
@@ -342,31 +388,130 @@ export default function BookingModal({
         >
           <OfflineBanner />
 
-          <div className="flex justify-center pt-3 pb-1 lg:hidden">
-            <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-          </div>
+          {phase === "success" ? (
+            <>
+              <div className="flex justify-center pt-3 pb-1 lg:hidden">
+                <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+              </div>
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-gray-700/40 shrink-0">
+                <h2 className="text-base font-semibold text-text-primary dark:text-text-dark-primary">Booking Placed</h2>
+                <button
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted dark:text-text-dark-muted hover:text-text-primary dark:hover:text-text-dark-primary hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* ── Hero image carousel ── */}
+              <div
+                className="relative h-56 lg:h-64 shrink-0 overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950 dark:to-purple-950"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                {currentImage ? (
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={currentImageIndex}
+                      src={currentImage}
+                      alt={stylist.name}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="w-full h-full object-cover"
+                    />
+                  </AnimatePresence>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-5xl">✂️</span>
+                  </div>
+                )}
 
-          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-gray-700/40 shrink-0">
-            <div>
-              <h2 className="text-base font-semibold text-text-primary dark:text-text-dark-primary">
-                {phase === "success" ? "Booking Placed" : `Book with ${stylist.name}`}
-              </h2>
-              {phase !== "success" && (
-                <p className="text-xs text-text-muted dark:text-text-dark-muted mt-0.5">
-                  Complete each section below to finish your booking
-                </p>
-              )}
-            </div>
-            <button
-              onClick={onClose}
-              aria-label="Close"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted dark:text-text-dark-muted hover:text-text-primary dark:hover:text-text-dark-primary hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
 
-          <div className="flex-1 overflow-y-auto">
+                {/* Stylist info overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-5 pointer-events-none">
+                  <h2 className="text-xl font-bold text-white drop-shadow-sm">{stylist.name}</h2>
+                  <div className="flex items-center gap-2 mt-1 text-sm text-white/80">
+                    {stylist.rating && (
+                      <span className="flex items-center gap-1">
+                        <Star size={14} fill="#f59e0b" stroke="#f59e0b" />
+                        {stylist.rating}
+                      </span>
+                    )}
+                    <span>·</span>
+                    <span>{stylist.reviewCount ?? 0} review{(stylist.reviewCount ?? 0) !== 1 ? "s" : ""}</span>
+                    {stylist.location && (
+                      <>
+                        <span>·</span>
+                        <span className="flex items-center gap-1">
+                          <MapPin size={12} />
+                          {getLocationString(stylist.location)}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center bg-black/30 text-white hover:bg-black/50 transition-colors backdrop-blur-sm"
+                >
+                  <X size={16} />
+                </button>
+
+                {/* Navigation arrows */}
+                {allImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={goToPrev}
+                      aria-label="Previous image"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center bg-white/20 text-white hover:bg-white/40 transition-colors backdrop-blur-sm"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button
+                      onClick={goToNext}
+                      aria-label="Next image"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center bg-white/20 text-white hover:bg-white/40 transition-colors backdrop-blur-sm"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </>
+                )}
+
+                {/* Dot indicators */}
+                {allImages.length > 1 && (
+                  <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+                    {allImages.map((_, i) => (
+                      <span
+                        key={i}
+                        className={` rounded-full transition-all duration-300 ${
+                          i === currentImageIndex
+                            ? "w-5 h-1.5 bg-white"
+                            : "w-1.5 h-1.5 bg-white/50"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile drag handle */}
+              <div className="flex justify-center pt-3 pb-1 lg:hidden">
+                <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+              </div>
+            </>
+          )}
+
+          <div className="flex-1 overflow-y-auto scroll-smooth">
             {phase === "success" && bookingResponse ? (
               <SuccessView
                 stylist={stylist}
@@ -386,20 +531,29 @@ export default function BookingModal({
               />
             ) : (
               <div className="lg:flex lg:min-h-0">
-                <div className="hidden lg:block w-72 shrink-0 p-5 border-r border-gray-100 dark:border-gray-700/40 bg-gray-50/50 dark:bg-surface-dark-tertiary/50 overflow-y-auto">
-                  <LiveSummary stylist={stylist} state={state} />
+                {/* Desktop sidebar */}
+                <div className="hidden lg:block w-72 shrink-0 p-5 border-r border-gray-100 dark:border-gray-700/20 bg-gray-50/30 dark:bg-surface-dark-tertiary/20">
+                  <div className="sticky top-0">
+                    <LiveSummary stylist={stylist} state={state} />
+                  </div>
                 </div>
 
-                <div className="flex-1 p-4 lg:p-6 space-y-3 overflow-y-auto">
+                {/* Form steps */}
+                <div className="flex-1 p-4 lg:p-6 lg:pt-6 space-y-4 overflow-y-auto">
+                  {/* Mobile summary strip */}
                   <div className="lg:hidden">
-                    <div className="rounded-2xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-surface-dark-tertiary p-3">
+                    <div className="rounded-2xl border border-gray-100 dark:border-gray-700/30 bg-white dark:bg-surface-dark-secondary p-3.5 shadow-sm">
                       <div className="flex items-center gap-3">
-                        {stylist.image && (
-                          <img src={stylist.image} alt={stylist.name} className="w-10 h-10 rounded-xl object-cover" />
-                        )}
+                        <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950 dark:to-purple-950 shrink-0 ring-2 ring-white dark:ring-gray-800">
+                          {stylist.image ? (
+                            <img src={stylist.image} alt={stylist.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs">✂️</div>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-text-primary dark:text-text-dark-primary truncate">{stylist.name}</p>
-                          <p className="text-xs text-text-muted dark:text-text-dark-muted">
+                          <p className="text-xs text-text-muted dark:text-text-dark-muted truncate">
                             {[
                               state.selectedService?.name,
                               state.selectedDate && new Date(state.selectedDate).toLocaleDateString("en-US", {
@@ -418,7 +572,7 @@ export default function BookingModal({
                           </p>
                         </div>
                         {state.selectedService && (
-                          <p className="text-sm font-bold text-text-primary dark:text-text-dark-primary shrink-0">{state.selectedService.price}</p>
+                          <p className="text-sm font-extrabold text-text-primary dark:text-text-dark-primary shrink-0">{state.selectedService.price}</p>
                         )}
                       </div>
                     </div>

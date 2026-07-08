@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CreditCard, Smartphone, Wallet, Check, Shield, AlertCircle, ArrowRight, Lock, Receipt } from "lucide-react";
+import { CreditCard, Smartphone, Wallet, Check, Shield, AlertCircle, ArrowRight, Lock, Receipt, Calendar, Clock, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import Section from "./Section";
@@ -15,10 +15,11 @@ const PAYMENT_METHODS: {
   detail: string;
   icon: typeof CreditCard;
   badge?: string;
+  gradient: string;
 }[] = [
-  { id: "card", label: "Credit / Debit Card", detail: "Visa, Mastercard, Amex", icon: CreditCard, badge: "Popular" },
-  { id: "mobile-money", label: "Mobile Money", detail: "MTN MoMo · Vodafone Cash · AirtelTigo", icon: Smartphone, badge: "Fast" },
-  { id: "cash", label: "Cash at Salon", detail: "Pay on arrival after service", icon: Wallet },
+  { id: "card", label: "Credit / Debit Card", detail: "Visa, Mastercard, Amex", icon: CreditCard, badge: "Popular", gradient: "from-blue-500 to-indigo-500" },
+  { id: "mobile-money", label: "Mobile Money", detail: "MTN MoMo · Vodafone Cash · AirtelTigo", icon: Smartphone, badge: "Fast", gradient: "from-yellow-500 to-orange-500" },
+  { id: "cash", label: "Cash at Salon", detail: "Pay on arrival after service", icon: Wallet, badge: "", gradient: "from-emerald-500 to-teal-500" },
 ];
 
 function calcPrice(priceStr: string | undefined) {
@@ -78,38 +79,54 @@ export default function PaymentStep({
       active={active}
       disabled={disabled}
     >
-      <div className="mt-2 space-y-5">
-        <div className="rounded-2xl border border-gray-100 dark:border-gray-700/40 bg-gray-50/50 dark:bg-surface-dark-tertiary/50 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/40 flex items-center gap-2">
+      <div className="mt-1 space-y-5">
+        {/* Order Summary */}
+        <div className="rounded-2xl border border-gray-100 dark:border-gray-700/30 bg-gradient-to-br from-gray-50/80 to-white dark:from-surface-dark-tertiary/60 dark:to-surface-dark-secondary overflow-hidden shadow-sm">
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/20 flex items-center gap-2">
             <Receipt size={13} className="text-text-muted dark:text-text-dark-muted" />
             <span className="text-[11px] font-semibold text-text-secondary dark:text-text-dark-secondary uppercase tracking-wider">Order Summary</span>
           </div>
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-text-secondary dark:text-text-dark-secondary">{selectedService?.name || "Service"}</span>
-              <span className="font-semibold text-text-primary dark:text-text-dark-primary">GH₵ {price.subtotal.toFixed(2)}</span>
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-brand-100 dark:bg-brand-950/40 flex items-center justify-center text-brand-600 dark:text-brand-400">
+                  <Receipt size={15} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-text-primary dark:text-text-dark-primary">{selectedService?.name || "Service"}</p>
+                  {selectedDate && selectedTime && (
+                    <p className="text-[11px] text-text-muted dark:text-text-dark-muted flex items-center gap-1 mt-0.5">
+                      <Calendar size={9} />
+                      {formatDate(selectedDate)}
+                      <Clock size={9} className="ml-1" />
+                      {formatSlot(selectedTime)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <span className="text-sm font-bold text-text-primary dark:text-text-dark-primary">GH₵ {price.subtotal.toFixed(2)}</span>
             </div>
-            {selectedDate && selectedTime && (
-              <div className="text-xs text-text-muted dark:text-text-dark-muted">
-                {formatDate(selectedDate)} · {formatSlot(selectedTime)}
-              </div>
-            )}
-            <div className="border-t border-gray-200 dark:border-gray-600 pt-3 space-y-1.5">
+            <div className="border-t border-gray-100 dark:border-gray-700/30 mt-3 pt-3 space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-text-muted dark:text-text-dark-muted">Platform fee <span className="text-[10px]">(13%)</span></span>
-                <span className="text-text-secondary dark:text-text-dark-secondary">GH₵ {price.fee.toFixed(2)}</span>
+                <span className="text-text-muted dark:text-text-dark-muted flex items-center gap-1">
+                  Platform fee <span className="text-[10px] opacity-60">(13%)</span>
+                </span>
+                <span className="text-text-secondary dark:text-text-dark-secondary font-medium">GH₵ {price.fee.toFixed(2)}</span>
               </div>
-              <div className="flex items-center justify-between text-sm font-semibold border-t border-gray-200 dark:border-gray-600 pt-1.5">
-                <span className="text-text-primary dark:text-text-dark-primary">Total</span>
-                <span className="text-text-primary dark:text-text-dark-primary">GH₵ {price.total.toFixed(2)}</span>
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700/30">
+                <span className="text-sm font-semibold text-text-primary dark:text-text-dark-primary">Total</span>
+                <span className="text-lg font-bold text-text-primary dark:text-text-dark-primary">GH₵ {price.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Payment Method */}
         <div>
-          <p className="text-xs font-semibold text-text-secondary dark:text-text-dark-secondary uppercase tracking-wider mb-2.5">Payment Method</p>
-          <div className="space-y-2">
+          <p className="text-xs font-semibold text-text-secondary dark:text-text-dark-secondary uppercase tracking-wider mb-3">
+            Payment Method
+          </p>
+          <div className="space-y-2.5">
             {PAYMENT_METHODS.map((method) => {
               const isSelected = paymentMethod === method.id;
               const Icon = method.icon;
@@ -118,14 +135,18 @@ export default function PaymentStep({
                   key={method.id}
                   type="button"
                   onClick={() => onPaymentMethodChange(method.id)}
-                  className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all duration-200 ${
-                    isSelected ? "border-brand-500 bg-brand-50 dark:bg-brand-950/20" : "border-gray-100 dark:border-gray-700/40 hover:border-gray-200 dark:hover:border-gray-600 bg-white dark:bg-surface-dark-secondary"
+                  className={`group w-full flex items-center gap-3.5 p-4 rounded-2xl border-2 text-left transition-all duration-200 ${
+                    isSelected
+                      ? "border-brand-500 bg-brand-50/80 dark:bg-brand-950/20 shadow-md shadow-brand-500/10"
+                      : "border-gray-100 dark:border-gray-700/30 bg-white dark:bg-surface-dark-secondary hover:border-gray-200 dark:hover:border-gray-600 hover:shadow-sm"
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    isSelected ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-gray-800 text-text-muted dark:text-text-dark-muted"
-                  }`}>
-                    <Icon size={17} />
+                  <div
+                    className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 bg-gradient-to-br ${
+                      isSelected ? method.gradient + " text-white shadow-md scale-105" : "from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-750 text-text-muted dark:text-text-dark-muted group-hover:scale-105"
+                    }`}
+                  >
+                    <Icon size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -134,11 +155,13 @@ export default function PaymentStep({
                         <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-brand-500 text-white">{method.badge}</span>
                       )}
                     </div>
-                    <p className="text-[11px] text-text-muted dark:text-text-dark-muted">{method.detail}</p>
+                    <p className="text-[11px] text-text-muted dark:text-text-dark-muted mt-0.5">{method.detail}</p>
                   </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                    isSelected ? "border-brand-500 bg-brand-500" : "border-gray-300 dark:border-gray-600"
-                  }`}>
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200 ${
+                      isSelected ? "border-brand-500 bg-brand-500 scale-110" : "border-gray-300 dark:border-gray-600"
+                    }`}
+                  >
                     {isSelected && <Check size={10} className="text-white" strokeWidth={3} />}
                   </div>
                 </button>
@@ -147,9 +170,11 @@ export default function PaymentStep({
           </div>
         </div>
 
+        {/* Note */}
         <div>
-          <label htmlFor={noteId} className="text-xs font-semibold text-text-secondary dark:text-text-dark-secondary uppercase tracking-wider block mb-2">
-            Note <span className="normal-case font-normal text-text-muted dark:text-text-dark-muted">(optional)</span>
+          <label htmlFor={noteId} className="text-xs font-semibold text-text-secondary dark:text-text-dark-secondary flex items-center gap-1.5 mb-2.5">
+            <Edit3 size={11} className="text-text-muted" />
+            Note <span className="font-normal text-text-muted dark:text-text-dark-muted">(optional)</span>
           </label>
           <Textarea
             id={noteId}
@@ -158,18 +183,19 @@ export default function PaymentStep({
             maxLength={200}
             rows={2}
             placeholder="Any special requests for your stylist?"
-            className="resize-none min-h-0"
+            className="resize-none min-h-0 rounded-2xl border-gray-100 dark:border-gray-700/30 focus:border-brand-300 dark:focus:border-brand-700"
           />
-          <p className="text-right text-[11px] text-text-muted dark:text-text-dark-muted mt-1">{note.length}/200</p>
+          <p className="text-right text-[10px] text-text-muted dark:text-text-dark-muted mt-1.5 font-medium">{note.length}/200</p>
         </div>
 
+        {/* Error */}
         <AnimatePresence>
           {paymentError && (
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              className="flex items-start gap-3 p-3.5 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm"
+              className="flex items-start gap-3 p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 text-red-700 dark:text-red-400 text-sm"
             >
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
               <span>{paymentError}</span>
@@ -177,24 +203,28 @@ export default function PaymentStep({
           )}
         </AnimatePresence>
 
-        <div className="flex flex-wrap items-center gap-3 text-[11px] text-text-muted dark:text-text-dark-muted">
-          <span className="flex items-center gap-1.5"><Lock size={11} /> 256-bit SSL</span>
-          <span className="flex items-center gap-1.5"><Shield size={11} /> Secured by Paystack</span>
-          <span className="flex items-center gap-1.5 text-green-600 font-medium">No hidden fees</span>
+        {/* Security badges */}
+        <div className="flex flex-wrap items-center gap-4 text-[11px] text-text-muted dark:text-text-dark-muted bg-gray-50/80 dark:bg-surface-dark-tertiary/50 rounded-2xl px-4 py-3 border border-gray-100 dark:border-gray-700/20">
+          <span className="flex items-center gap-1.5"><Lock size={11} className="text-green-500" /> 256-bit SSL</span>
+          <span className="flex items-center gap-1.5"><Shield size={11} className="text-brand-500" /> Secured by Paystack</span>
+          <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium"><Check size={11} /> No hidden fees</span>
         </div>
 
+        {/* CTA */}
         <Button
           onClick={onPay}
           disabled={phase === "paying"}
           variant="primary"
           size="lg"
           loading={phase === "paying"}
-          className="w-full shadow-lg shadow-brand-500/20"
+          className="w-full shadow-lg shadow-brand-500/25 h-12 rounded-2xl text-sm font-bold"
         >
-          {phase === "paying" ? "Processing payment…" : (
+          {phase === "paying" ? (
+            "Processing payment…"
+          ) : (
             <>
               Pay GH₵ {price.total.toFixed(2)}
-              <ArrowRight size={14} />
+              <ArrowRight size={15} />
             </>
           )}
         </Button>
