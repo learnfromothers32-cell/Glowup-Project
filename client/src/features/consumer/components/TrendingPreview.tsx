@@ -17,14 +17,10 @@ import {
   Share2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatCount } from "../../../utils/format";
 
 function imgUrl(url: string): string {
   return url?.startsWith("http") ? url : `${API_SERVER_URL}${url}`;
-}
-
-function formatCount(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return String(n);
 }
 
 function TrendingSkeleton() {

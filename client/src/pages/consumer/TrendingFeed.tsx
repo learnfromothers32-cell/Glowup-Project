@@ -17,6 +17,7 @@ import { useGamification } from "../../hooks/useGamification";
 import { useAuth } from "../../context/authUtils";
 import { API_SERVER_URL } from "../../api/axios";
 import { logger } from "../../utils/logger";
+import { formatCount } from "../../utils/format";
 import {
   Heart,
   Bookmark,
@@ -43,12 +44,6 @@ const TRANSITION_MS = 300;
 
 const imgUrl = (url: string) =>
   url?.startsWith("http") ? url : `${API_SERVER_URL}${url}`;
-
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-  return n ? String(n) : "";
-}
 
 function formatRelativeTime(dateStr: string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime();

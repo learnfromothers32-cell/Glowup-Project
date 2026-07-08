@@ -17,6 +17,7 @@ import { getStylistProducts } from "../../api/products";
 import { getStylistPackages, purchasePackage } from "../../api/packages";
 import { subscribeToTier, getStylistTiers } from "../../api/memberships";
 import type { Stylist } from "@/domain/stylist/stylist.types";
+import { formatCount } from "../../utils/format";
 interface BeforeAfter {
   _id?: string;
   before: string;
@@ -85,7 +86,7 @@ interface Review {
   date: string;
 }
 interface ExtendedStylist extends Omit<Stylist, "bio"> {
-  portfolioImages?: string[];
+  portfolioImages?: Stylist["portfolioImages"];
   beforeAfter?: BeforeAfter[];
   bio?: string;
   reviews: Review[];
@@ -118,12 +119,6 @@ function getInitials(name: string) {
     .toUpperCase()
     .slice(0, 2);
 }
-const formatCount = (n: number) =>
-  n >= 1000
-    ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "K"
-    : n
-      ? String(n)
-      : "0";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getLocationString(loc: any): string {
   if (!loc) return "";
@@ -549,12 +544,14 @@ function PortfolioCarousel({
 function PortfolioTab({
   images,
   beforeAfter,
+  totalViews,
   onOpenImage,
   onPlayVideo,
   onViewTransform,
 }: {
   images: Array<{ url: string; type: "image" | "video" }>;
   beforeAfter: BeforeAfter[];
+  totalViews: number;
   onOpenImage: (i: number) => void;
   onPlayVideo: (url: string) => void;
   onViewTransform: (i: number) => void;
@@ -580,9 +577,7 @@ function PortfolioTab({
           { label: "Transforms", value: beforeAfter.length, icon: Scissors },
           {
             label: "Views",
-            value: formatCount(
-              beforeAfter.reduce((s, i) => s + (((i as unknown) as { views?: number }).views || 0), 0),
-            ),
+            value: formatCount(totalViews),
             icon: Eye,
           },
         ].map(({ label, value, icon: Icon }) => (
@@ -695,7 +690,7 @@ function PortfolioTab({
               type: t.mediaType || "image",
               caption: t.caption,
               service: t.service,
-              likes: (t as unknown as { likes?: number }).likes,
+              likes: t.likes,
             }))}
             onView={onViewTransform}
           />
@@ -743,7 +738,7 @@ function PortfolioTab({
                 <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/50 backdrop-blur-sm">
                   <Eye size={9} className="text-white" />
                   <span className="text-[10px] font-semibold text-white">
-                    {(item as unknown as { views?: number }).views ?? 0}
+                    {formatCount(item.views ?? 0)}
                   </span>
                 </div>
               </motion.button>
@@ -1580,7 +1575,7 @@ export default function StylistDetail() {
       key: "portfolio",
       label: "Portfolio",
       icon: ImageIcon,
-      count: stylist.portfolioImages?.length,
+      count: (stylist.portfolioImages?.length ?? 0) + (stylist.beforeAfter?.length ?? 0),
     },
     {
       key: "services",
@@ -2020,6 +2015,7 @@ export default function StylistDetail() {
                   <PortfolioTab
                     images={stylist.portfolioImages || []}
                     beforeAfter={stylist.beforeAfter || []}
+                    totalViews={stylist.totalViews ?? 0}
                     onOpenImage={(i) => setLightbox({ open: true, index: i })}
                     onPlayVideo={(url) => setActiveVideoUrl(url)}
                     onViewTransform={(i) =>
