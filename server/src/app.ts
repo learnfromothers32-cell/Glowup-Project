@@ -9,6 +9,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import * as Sentry from '@sentry/node';
 import { appConfig } from './config/app';
 import apiRoutes from './routes';
+import configRoutes from './routes/config.routes';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { csrfProtect } from './middleware/csrf.middleware';
 import { generalLimiter } from './middleware/rateLimiter';
@@ -54,6 +55,7 @@ app.use('/api', csrfProtect);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+app.use('/api/config', configRoutes);
 app.use('/api', apiRoutes);
 
 app.use(notFound);

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { isProduction } from '../config/app';
+import { isProduction, appConfig } from '../config/app';
 import { ApiError } from '../utils/apiError';
 import logger from '../utils/logger';
 
@@ -13,6 +13,21 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
+  if (error.name === 'MulterError') {
+    const multerErr = error as any;
+    const statusCode = multerErr.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
+    const message = multerErr.code === 'LIMIT_FILE_SIZE'
+      ? `File exceeds the ${appConfig.maxUploadSizeMB}MB upload limit`
+      : multerErr.message;
+
+    logger.warn(`[${statusCode}] ${req.method} ${req.originalUrl}`, { error: message });
+    return res.status(statusCode).json({
+      success: false,
+      message,
+      ...(isProduction ? {} : { stack: error.stack })
+    });
+  }
+
   const statusCode = error instanceof ApiError ? error.statusCode : 500;
 
   if (statusCode === 500) {

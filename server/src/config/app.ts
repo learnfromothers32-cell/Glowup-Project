@@ -21,6 +21,7 @@ export const appConfig = {
   hfToken: process.env.HF_TOKEN || '',
   hfModel: process.env.HF_MODEL || 'black-forest-labs/FLUX.1-schnell',
   sentryDsn: process.env.SENTRY_DSN || '',
+  maxUploadSizeMB: Number(process.env.MAX_UPLOAD_SIZE_MB) || 100,
 };
 
 export const isProduction = appConfig.env === 'production';

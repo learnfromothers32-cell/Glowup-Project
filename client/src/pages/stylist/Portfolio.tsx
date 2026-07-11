@@ -263,8 +263,8 @@ export default function Portfolio() {
   const [transformCaption, setTransformCaption] = useState("");
   const [transformService, setTransformService] = useState("");
   const [transformFileError, setTransformFileError] = useState<string | null>(null);
-
-  const MAX_FILE_SIZE = 100 * 1024 * 1024;
+  const [uploadLimitMB, setUploadLimitMB] = useState(100);
+  const uploadLimitBytes = uploadLimitMB * 1024 * 1024;
   const transformUrlRef = useRef<string | null>(null);
 
   const getErrorMessage = (error: unknown, fallback: string) => {
@@ -297,8 +297,8 @@ export default function Portfolio() {
       setTransformFileName("");
       return;
     }
-    if (file.size > MAX_FILE_SIZE) {
-      setTransformFileError("File exceeds 100MB limit");
+    if (file.size > uploadLimitBytes) {
+      setTransformFileError(`File exceeds ${uploadLimitMB}MB limit`);
       setTransformPreview(null);
       setTransformFileName("");
       return;
@@ -376,6 +376,13 @@ export default function Portfolio() {
   useEffect(() => {
     mountedRef.current = true;
     fetchPortfolio();
+    api.get<{ data: { maxUploadSizeMB: number } }>('/config/public')
+      .then(({ data }) => {
+        if (data?.data?.maxUploadSizeMB && mountedRef.current) {
+          setUploadLimitMB(data.data.maxUploadSizeMB);
+        }
+      })
+      .catch(() => {});
   }, [fetchPortfolio]);
 
   const showSuccess = (msg: string) => {
@@ -388,29 +395,42 @@ export default function Portfolio() {
     return url.startsWith("http") ? url : `${API_SERVER_URL}${url}`;
   };
 
+  const addPendingFiles = (files: FileList, type: "image" | "video") => {
+    const oversize: string[] = [];
+    const valid: PendingFile[] = [];
+    for (const file of Array.from(files)) {
+      if (file.size > uploadLimitBytes) {
+        oversize.push(file.name);
+      } else {
+        valid.push({
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+          file,
+          preview: URL.createObjectURL(file),
+          type,
+        });
+      }
+    }
+    if (oversize.length > 0) {
+      setError(
+        `${oversize.join(", ")} ${oversize.length === 1 ? "exceeds" : "exceed"} the ${uploadLimitMB}MB upload limit`,
+      );
+    }
+    if (valid.length > 0) {
+      setPendingFiles((prev) => [...prev, ...valid]);
+    }
+  };
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length) return;
-    const newPending: PendingFile[] = Array.from(files).map((file) => ({
-      id: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-      file,
-      preview: URL.createObjectURL(file),
-      type: "image" as const,
-    }));
-    setPendingFiles((prev) => [...prev, ...newPending]);
+    addPendingFiles(files, "image");
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length) return;
-    const newPending: PendingFile[] = Array.from(files).map((file) => ({
-      id: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-      file,
-      preview: URL.createObjectURL(file),
-      type: "video" as const,
-    }));
-    setPendingFiles((prev) => [...prev, ...newPending]);
+    addPendingFiles(files, "video");
     if (videoInputRef.current) videoInputRef.current.value = "";
   };
 
@@ -891,7 +911,7 @@ export default function Portfolio() {
                             Upload transformation photo
                           </p>
                           <p className="text-[11px] text-text-muted dark:text-text-dark-muted">
-                            Tap to select · PNG, JPG, MP4 up to 100MB
+                            {`Tap to select · PNG, JPG, MP4 up to ${uploadLimitMB}MB`}
                           </p>
                         </div>
                       )}
@@ -928,8 +948,8 @@ export default function Portfolio() {
                       setTransformFileError("Please select a photo");
                       return;
                     }
-                    if (file.size > MAX_FILE_SIZE) {
-                      setTransformFileError("File must be under 100MB");
+                    if (file.size > uploadLimitBytes) {
+                      setTransformFileError(`File must be under ${uploadLimitMB}MB`);
                       return;
                     }
                     setTransformUploading(true);
