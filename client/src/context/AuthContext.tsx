@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return user;
     } catch (err: any) {
       dispatch({ type: "SET_LOADING", payload: false });
-      throw new Error(err.response?.data?.message || "Invalid email or password");
+      throw new Error(err.response?.data?.message || "Invalid email or password", { cause: err });
     }
   }, []);
 
@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return user;
       } catch (err: any) {
         dispatch({ type: "SET_LOADING", payload: false });
-        throw new Error(err.response?.data?.message || "Registration failed");
+        throw new Error(err.response?.data?.message || "Registration failed", { cause: err });
       }
     },
     [],
@@ -175,7 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return user;
       } catch (err: any) {
         dispatch({ type: "SET_LOADING", payload: false });
-        throw new Error(err.response?.data?.message || "Social login failed");
+        throw new Error(err.response?.data?.message || "Social login failed", { cause: err });
       }
     },
     [],

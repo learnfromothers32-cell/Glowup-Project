@@ -1,3 +1,6 @@
+process.env.JWT_SECRET = 'test-secret-for-ci';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-for-ci';
+
 import { Request, Response, NextFunction } from 'express';
 import { protect, softAuth, requireRole } from '../middleware/auth.middleware';
 import { signAccessToken } from '../utils/token';
