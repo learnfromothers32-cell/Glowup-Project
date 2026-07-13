@@ -6,6 +6,17 @@ let cachedKeys: Record<string, string> | null = null;
 let keysFetchedAt = 0;
 const KEY_CACHE_TTL = 60 * 60 * 1000;
 
+function getFirebaseProjectId(): string {
+  const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (rawServiceAccount) {
+    try {
+      const parsed = JSON.parse(rawServiceAccount);
+      if (parsed.project_id) return parsed.project_id;
+    } catch { /* fall through */ }
+  }
+  return process.env.VITE_FIREBASE_PROJECT_ID || 'startup-16d5b';
+}
+
 async function getFirebasePublicKeys(): Promise<Record<string, string>> {
   if (cachedKeys && Date.now() - keysFetchedAt < KEY_CACHE_TTL) {
     return cachedKeys;
@@ -28,7 +39,7 @@ export async function prewarmFirebaseKeys(): Promise<void> {
 }
 
 export async function verifyFirebaseToken(idToken: string) {
-  const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'startup-16d5b';
+  const projectId = getFirebaseProjectId();
 
   const decoded = jwt.decode(idToken, { complete: true });
   if (!decoded || typeof decoded === 'string' || !decoded.header?.kid) {

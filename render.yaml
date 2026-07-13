@@ -39,3 +39,15 @@ services:
         sync: false
       - key: VITE_SENTRY_DSN
         sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: LOG_LEVEL
+        value: info
