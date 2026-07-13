@@ -39,6 +39,8 @@ services:
         sync: false
       - key: VITE_SENTRY_DSN
         sync: false
+      - key: VITE_CLARITY_PROJECT_ID
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
