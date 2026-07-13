@@ -30,8 +30,8 @@
 
 | Platform | URL |
 |----------|-----|
-| **Frontend** (Vercel) | [glowup-frontend.vercel.app](https://glowup-frontend.vercel.app) |
-| **Backend API** (Render) | [glowup-backend.onrender.com](https://glowup-backend.onrender.com) |
+| **Frontend** (Vercel) | [glowup-one.vercel.app](https://glowup-one.vercel.app) |
+| **Backend API** (Render) | [glowup-backend-jcos.onrender.com](https://glowup-backend-jcos.onrender.com) |
 
 > First-time Render spins may take 30–60 seconds to wake up.
 
