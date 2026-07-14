@@ -91,6 +91,7 @@ export default function StylistLive() {
     };
 
     const handleUserJoined = async (data: { userId: string; userRole: string; socketId: string }) => {
+      console.log(`[LIVE-DEBUG] stylist received user-joined: userId=${data.userId} role=${data.userRole} socketId=${data.socketId}`);
       if (data.userRole === 'stylist') return;
       if (pcs.has(data.socketId)) return;
       if (pcs.size >= MAX_VIEWERS) return;
@@ -98,6 +99,7 @@ export default function StylistLive() {
       setActiveViewers(prev => new Set(prev).add(data.userId));
 
       const stream = await getStream();
+      console.log(`[LIVE-DEBUG] stylist creating PC for consumer: socketId=${data.socketId} tracks=${stream.getTracks().length}`);
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcs.set(data.socketId, pc);
 
@@ -112,6 +114,7 @@ export default function StylistLive() {
       };
 
       pc.oniceconnectionstatechange = () => {
+        console.log(`[LIVE-DEBUG] stylist PC state for ${data.socketId}: ${pc.iceConnectionState}`);
         if (pc.iceConnectionState === 'connected') {
           setWebrtcConnected(true);
         }
@@ -135,6 +138,7 @@ export default function StylistLive() {
       try {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        console.log(`[LIVE-DEBUG] stylist sending webrtc-offer to consumer: socketId=${data.socketId}`);
         socket.emit('live:webrtc-offer', {
           stylistId, offer: pc.localDescription, targetSocketId: data.socketId,
         });
@@ -154,9 +158,12 @@ export default function StylistLive() {
     };
 
     const handleAnswer = (data: { answer: RTCSessionDescriptionInit; senderSocketId: string }) => {
+      console.log(`[LIVE-DEBUG] stylist received webrtc-answer from=${data.senderSocketId}`);
       const pc = pcs.get(data.senderSocketId);
       if (pc && !pc.currentRemoteDescription) {
         pc.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(console.error);
+      } else {
+        console.log(`[LIVE-DEBUG] stylist ignoring answer: pc=${!!pc} alreadySet=${!!pc?.currentRemoteDescription}`);
       }
     };
 
@@ -168,6 +175,7 @@ export default function StylistLive() {
     };
 
     const handleRequestStream = async (data: { userId: string; socketId: string }) => {
+      console.log(`[LIVE-DEBUG] stylist received request-stream from=${data.socketId} userId=${data.userId}`);
       if (pcs.size >= MAX_VIEWERS) return;
 
       // Close any existing PC for this consumer so we can renegotiate
@@ -178,6 +186,7 @@ export default function StylistLive() {
       }
 
       const stream = await getStream();
+      console.log(`[LIVE-DEBUG] stylist creating PC for request-stream: socketId=${data.socketId} tracks=${stream.getTracks().length}`);
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcs.set(data.socketId, pc);
 
@@ -205,6 +214,7 @@ export default function StylistLive() {
       try {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        console.log(`[LIVE-DEBUG] stylist sending webrtc-offer for request-stream: socketId=${data.socketId}`);
         socket.emit('live:webrtc-offer', {
           stylistId, offer: pc.localDescription, targetSocketId: data.socketId,
         });
@@ -220,6 +230,7 @@ export default function StylistLive() {
     socket.on('live:webrtc-answer', handleAnswer);
     socket.on('live:webrtc-ice-candidate', handleIceCandidate);
     socket.on('live:request-stream', handleRequestStream);
+    console.log(`[LIVE-DEBUG] stylist WebRTC publisher: handlers registered`);
 
     return () => {
       socket.off('live:user-joined', handleUserJoined);

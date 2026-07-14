@@ -23,6 +23,7 @@ export function useLiveSocket(stylistId?: string) {
     socketRef.current = socket;
 
     socket.on("connect", () => {
+      console.log(`[LIVE-DEBUG] consumer socket connected: id=${socket.id}`);
       // Re-attach all stored listeners so they work after reconnect
       listenersRef.current.forEach((handler, event) => {
         socket.off(event);
@@ -31,7 +32,8 @@ export function useLiveSocket(stylistId?: string) {
       setConnected(true);
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", (reason) => {
+      console.log(`[LIVE-DEBUG] consumer socket disconnected: reason=${reason}`);
       setConnected(false);
       joinedRef.current = false;
     });
@@ -68,6 +70,7 @@ export function useLiveSocket(stylistId?: string) {
     // have time to register via on() before the server sends back events
     queueMicrotask(() => {
       if (socket.connected) {
+        console.log(`[LIVE-DEBUG] consumer emitting join-room: stylistId=${stylistId} socketId=${socket.id}`);
         socket.emit("live:join-room", { stylistId });
         joinedRef.current = true;
       }
@@ -77,6 +80,7 @@ export function useLiveSocket(stylistId?: string) {
   const rejoinRoom = useCallback(() => {
     const socket = socketRef.current;
     if (!socket || !stylistId) return;
+    console.log(`[LIVE-DEBUG] consumer rejoinRoom: stylistId=${stylistId}`);
     joinedRef.current = false;
     queueMicrotask(() => {
       if (socket.connected) {
@@ -122,6 +126,7 @@ export function useLiveSocket(stylistId?: string) {
 
   const requestStream = useCallback(() => {
     if (!stylistId) return;
+    console.log(`[LIVE-DEBUG] consumer requestStream: stylistId=${stylistId}`);
     socketRef.current?.emit("live:request-stream", { stylistId });
   }, [stylistId]);
 

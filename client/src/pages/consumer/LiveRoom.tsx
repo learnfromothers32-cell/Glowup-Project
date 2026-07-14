@@ -113,6 +113,7 @@ export default function LiveRoom() {
     });
 
     on("live:stylist-online", () => {
+      console.log(`[LIVE-DEBUG] consumer received live:stylist-online`);
       // Stylist just went live while we were on this page — re-fetch session
       // and re-join the room to establish WebRTC.
       if (stylistId) {
@@ -123,6 +124,7 @@ export default function LiveRoom() {
               setIsLive(true);
               setViewerCount(data.session.viewerCount || 0);
               setStreamTitle(data.session.title || "");
+              console.log(`[LIVE-DEBUG] consumer stylist-online: session found, calling rejoinRoom`);
               rejoinRoom();
             }
           })
@@ -213,12 +215,15 @@ export default function LiveRoom() {
     };
 
     const handleOffer = async (data: { offer: RTCSessionDescriptionInit; senderSocketId: string }) => {
+      console.log(`[LIVE-DEBUG] consumer received webrtc-offer from=${data.senderSocketId}`);
       if (pcRefLocal.current) pcRefLocal.current.close();
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRefLocal.current = pc;
 
       pc.ontrack = (event) => {
+        console.log(`[LIVE-DEBUG] consumer ontrack: kind=${event.track?.kind} streams=${event.streams?.length}`);
         const stream = event.streams?.[0] ?? new MediaStream([event.track]);
+        console.log(`[LIVE-DEBUG] consumer ontrack: setting remoteStream, tracks=${stream.getTracks().length}`);
         setRemoteStream(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -258,6 +263,7 @@ export default function LiveRoom() {
         await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        console.log(`[LIVE-DEBUG] consumer sending webrtc-answer to=${data.senderSocketId}`);
         emit('live:webrtc-answer', {
           stylistId,
           answer: pc.localDescription,
@@ -278,6 +284,7 @@ export default function LiveRoom() {
 
     on('live:webrtc-offer', handleOffer);
     on('live:webrtc-ice-candidate', handleIceCandidate);
+    console.log(`[LIVE-DEBUG] consumer WebRTC subscriber: handlers registered for live:webrtc-offer and live:webrtc-ice-candidate`);
 
     return () => {
       off('live:webrtc-offer');
@@ -299,6 +306,7 @@ export default function LiveRoom() {
     const scheduleRetry = (delay: number) => {
       const t = setTimeout(() => {
         if (!remoteStream && connected && !streamEnded && isLive) {
+          console.log(`[LIVE-DEBUG] consumer retry: no stream after ${delay}ms, sending request-stream`);
           requestStream();
           scheduleRetry(5000);
         }

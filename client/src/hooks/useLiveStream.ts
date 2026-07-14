@@ -86,7 +86,12 @@ export function useLiveStream() {
     });
 
     s.on("connect", () => {
+      console.log(`[LIVE-DEBUG] stylist socket connected: id=${s.id}`);
       joinedRef.current = false;
+    });
+
+    s.on("disconnect", (reason) => {
+      console.log(`[LIVE-DEBUG] stylist socket disconnected: reason=${reason}`);
     });
 
     return () => {
@@ -106,6 +111,7 @@ export function useLiveStream() {
     if (!socket || !stylistId || !socket.connected || joinedRef.current) return;
     queueMicrotask(() => {
       if (socket.connected) {
+        console.log(`[LIVE-DEBUG] stylist emitting join-room: stylistId=${stylistId} socketId=${socket.id}`);
         socket.emit("live:join-room", { stylistId });
         joinedRef.current = true;
       }

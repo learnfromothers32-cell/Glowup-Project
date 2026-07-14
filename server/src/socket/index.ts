@@ -490,9 +490,14 @@ export const initSocket = async (server: HttpServer): Promise<Server> => {
       const { stylistId } = data;
       const MAX_VIEWERS = 50;
 
+      logger.info(`[LIVE-DEBUG] join-room: socket=${socket.id} user=${userId} role=${userRole} stylistId=${stylistId}`);
+
       currentRoom = `live:${stylistId}`;
       hasLeftRoom = false;
       socket.join(currentRoom);
+
+      const roomMembers = liveNsp.adapter.rooms.get(currentRoom);
+      logger.info(`[LIVE-DEBUG] join-room: room=${currentRoom} members=[${roomMembers ? [...roomMembers].join(',') : 'none'}]`);
 
       // Only check session and increment viewer count if a live session
       // already exists.  Consumers are allowed to join the room *before*
@@ -537,20 +542,27 @@ export const initSocket = async (server: HttpServer): Promise<Server> => {
 
       if (!currentRoom) return;
       const viewerId = userId || `anon_${socket.id.slice(-6)}`;
+      logger.info(`[LIVE-DEBUG] join-room: broadcasting user-joined to room=${currentRoom} viewerId=${viewerId} role=${userRole}`);
       liveNsp.to(currentRoom).emit('live:user-joined', { userId: viewerId, userRole, socketId: socket.id });
 
       // When a stylist joins, send them all existing consumers in the room
       // so they can establish WebRTC with each one.
       if (userRole === 'stylist') {
         const roomMembers = liveNsp.adapter.rooms.get(currentRoom);
+        const memberCount = roomMembers ? roomMembers.size : 0;
+        logger.info(`[LIVE-DEBUG] join-room: stylist joining, local room members=${memberCount}`);
         if (roomMembers) {
           for (const memberId of roomMembers) {
             if (memberId === socket.id) continue;
             const memberSocket = liveNsp.sockets.get(memberId);
-            if (!memberSocket) continue;
+            if (!memberSocket) {
+              logger.info(`[LIVE-DEBUG] join-room: member ${memberId} NOT found in local sockets (likely on another instance)`);
+              continue;
+            }
             const memberUser = (memberSocket as any).user;
             if (memberUser?.role !== 'stylist') {
               const memberUserId = memberUser?.id || `anon_${memberId.slice(-6)}`;
+              logger.info(`[LIVE-DEBUG] join-room: sending user-joined to stylist for member=${memberId} userId=${memberUserId}`);
               socket.emit('live:user-joined', { userId: memberUserId, userRole: memberUser?.role || 'client', socketId: memberId });
             }
           }
@@ -822,6 +834,7 @@ export const initSocket = async (server: HttpServer): Promise<Server> => {
     });
 
     socket.on('live:webrtc-offer', (data: { stylistId: string; offer: any; targetSocketId: string }) => {
+      logger.info(`[LIVE-DEBUG] webrtc-offer: from=${socket.id} to=${data.targetSocketId}`);
       socket.to(data.targetSocketId).emit('live:webrtc-offer', {
         offer: data.offer,
         senderSocketId: socket.id,
@@ -829,6 +842,7 @@ export const initSocket = async (server: HttpServer): Promise<Server> => {
     });
 
     socket.on('live:webrtc-answer', (data: { stylistId: string; answer: any; targetSocketId: string }) => {
+      logger.info(`[LIVE-DEBUG] webrtc-answer: from=${socket.id} to=${data.targetSocketId}`);
       socket.to(data.targetSocketId).emit('live:webrtc-answer', {
         answer: data.answer,
         senderSocketId: socket.id,
@@ -843,6 +857,7 @@ export const initSocket = async (server: HttpServer): Promise<Server> => {
     });
 
     socket.on('live:request-stream', (data: { stylistId: string }) => {
+      logger.info(`[LIVE-DEBUG] request-stream: from=${socket.id} room=${currentRoom}`);
       if (!currentRoom) return;
       liveNsp.to(currentRoom).emit('live:request-stream', {
         userId: userId || `anon_${socket.id.slice(-6)}`,
