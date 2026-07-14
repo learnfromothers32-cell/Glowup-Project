@@ -22,7 +22,7 @@ export interface CreditPackage {
 }
 
 export const getMyCredits = async () => {
-  const { data } = await api.get('/credits');
+  const { data } = await api.get('/credits/my');
   return data.data.credits as CreditsData;
 };
 
