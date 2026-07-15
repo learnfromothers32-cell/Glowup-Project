@@ -10,6 +10,7 @@ import { Conversation } from "../models/Conversation";
 import { Stylist } from "../models/Stylist";
 import logger from "../utils/logger";
 import { toPublicQueue } from "../utils/queue";
+import { initLiveNamespace } from "../live/socket";
 
 let io: Server;
 
@@ -91,6 +92,9 @@ export const initSocket = async (server: HttpServer): Promise<Server> => {
       "Socket.IO running in single-instance mode (REDIS_URL not configured)",
     );
   }
+
+  // ── Initialize Live namespace ──
+  initLiveNamespace(io, appConfig.redisUrl);
 
   // ── Redis-backed moderation state ──
 
