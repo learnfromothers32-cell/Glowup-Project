@@ -15,7 +15,7 @@ export interface CreateGuestRequestInput {
   reason?: string;
 }
 
-class LiveGuestRequestRepository {
+export class LiveGuestRequestRepository {
   async findById(id: string) {
     return LiveGuestRequest.findById(id);
   }

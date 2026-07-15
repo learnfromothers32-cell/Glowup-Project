@@ -98,7 +98,7 @@ export function registerGuestRequestHandlers(
 
       const cancelled = await liveGuestRequestRepository.cancelByViewer(sessionId, userId);
       if (!cancelled) {
-        socket.emit('live:error', { code: LIVE_ERROR_CODES.NOT_FOUND, message: 'No pending request found' });
+        socket.emit('live:error', { code: LIVE_ERROR_CODES.ROOM_NOT_FOUND, message: 'No pending request found' });
         return;
       }
 

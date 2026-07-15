@@ -37,7 +37,7 @@ export interface LiveMetricsSnapshot {
   totalReports: number;
 }
 
-class LiveAnalyticsService {
+export class LiveAnalyticsService {
   /** In-memory reaction counter per session (reset on session end) */
   private reactionCounts: Map<string, Map<string, number>> = new Map();
 
