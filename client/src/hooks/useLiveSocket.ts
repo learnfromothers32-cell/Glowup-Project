@@ -33,11 +33,15 @@ export function useLiveSocket(stylistId?: string) {
     });
 
     socket.on("connect_error", (err) => {
-      console.error(`[LIVE-DEBUG] consumer socket connect_error: ${err.message}`);
+      console.error(
+        `[LIVE-DEBUG] consumer socket connect_error: ${err.message}`,
+      );
     });
 
     socket.on("disconnect", (reason) => {
-      console.log(`[LIVE-DEBUG] consumer socket disconnected: reason=${reason}`);
+      console.log(
+        `[LIVE-DEBUG] consumer socket disconnected: reason=${reason}`,
+      );
       setConnected(false);
       joinedRef.current = false;
     });
@@ -70,20 +74,18 @@ export function useLiveSocket(stylistId?: string) {
     const socket = socketRef.current;
     if (!socket || !socket.connected) return;
 
-    // Delay join to next microtask so that child effects (WebRTC handlers)
-    // have time to register via on() before the server sends back events
     queueMicrotask(() => {
-      if (socket.connected) {
-        console.log(`[LIVE-DEBUG] consumer emitting join-room: stylistId=${stylistId} socketId=${socket.id}`);
-        socket.emit("live:join-room", { stylistId });
-        joinedRef.current = true;
-        // Backup: if the user-joined → offer flow doesn't reach us within 2s,
-        // proactively request a stream from the stylist.
-        setTimeout(() => {
-          if (socket.connected && !joinedRef.current) return;
+      if (!socket.connected) return;
+      console.log(
+        `[LIVE-DEBUG] consumer emitting join-room: stylistId=${stylistId} socketId=${socket.id}`,
+      );
+      socket.emit("live:join-room", { stylistId });
+      joinedRef.current = true;
+      setTimeout(() => {
+        if (socket.connected) {
           socket.emit("live:request-stream", { stylistId });
-        }, 2000);
-      }
+        }
+      }, 1200);
     });
   }, [connected, stylistId]);
 
@@ -100,17 +102,14 @@ export function useLiveSocket(stylistId?: string) {
     });
   }, [stylistId]);
 
-  const on = useCallback(
-    (event: string, handler: (...args: any[]) => void) => {
-      listenersRef.current.set(event, handler);
-      const socket = socketRef.current;
-      if (socket?.connected) {
-        socket.off(event);
-        socket.on(event, handler);
-      }
-    },
-    [],
-  );
+  const on = useCallback((event: string, handler: (...args: any[]) => void) => {
+    listenersRef.current.set(event, handler);
+    const socket = socketRef.current;
+    if (socket?.connected) {
+      socket.off(event);
+      socket.on(event, handler);
+    }
+  }, []);
 
   const off = useCallback((event: string) => {
     listenersRef.current.delete(event);
@@ -124,7 +123,11 @@ export function useLiveSocket(stylistId?: string) {
   const sendMessage = useCallback(
     (message: string, parentId?: string) => {
       if (!stylistId) return;
-      socketRef.current?.emit("live:send-message", { stylistId, message, parentId });
+      socketRef.current?.emit("live:send-message", {
+        stylistId,
+        message,
+        parentId,
+      });
     },
     [stylistId],
   );
@@ -140,5 +143,14 @@ export function useLiveSocket(stylistId?: string) {
     socketRef.current?.emit("live:request-stream", { stylistId });
   }, [stylistId]);
 
-  return { connected, on, off, emit, sendMessage, sendLike, rejoinRoom, requestStream };
+  return {
+    connected,
+    on,
+    off,
+    emit,
+    sendMessage,
+    sendLike,
+    rejoinRoom,
+    requestStream,
+  };
 }

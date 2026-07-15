@@ -30,7 +30,9 @@ export function useLiveStream() {
   const [totalGifts, setTotalGifts] = useState(0);
   const [totalCoins, setTotalCoins] = useState(0);
   const [chatMessages, setChatMessages] = useState<LiveChatMessage[]>([]);
-  const [giftNotifications, setGiftNotifications] = useState<LiveGiftNotification[]>([]);
+  const [giftNotifications, setGiftNotifications] = useState<
+    LiveGiftNotification[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -65,26 +67,32 @@ export function useLiveStream() {
       setTotalLikes((prev) => prev + 1);
     });
 
-    s.on("live:gift-received", (data: {
-      userName: string; giftName: string; giftIcon: string;
-      coinAmount: number; animation: "small" | "medium" | "large";
-    }) => {
-      setTotalGifts((prev) => prev + 1);
-      setTotalCoins((prev) => prev + data.coinAmount);
-      const notif: LiveGiftNotification = {
-        id: `gift-${Date.now()}-${Math.random()}`,
-        userName: data.userName,
-        giftName: data.giftName,
-        giftIcon: data.giftIcon,
-        coinAmount: data.coinAmount,
-        animation: data.animation,
-        createdAt: Date.now(),
-      };
-      setGiftNotifications((prev) => [...prev, notif].slice(-20));
-      setTimeout(() => {
-        setGiftNotifications((prev) => prev.filter((n) => n.id !== notif.id));
-      }, 5000);
-    });
+    s.on(
+      "live:gift-received",
+      (data: {
+        userName: string;
+        giftName: string;
+        giftIcon: string;
+        coinAmount: number;
+        animation: "small" | "medium" | "large";
+      }) => {
+        setTotalGifts((prev) => prev + 1);
+        setTotalCoins((prev) => prev + data.coinAmount);
+        const notif: LiveGiftNotification = {
+          id: `gift-${Date.now()}-${Math.random()}`,
+          userName: data.userName,
+          giftName: data.giftName,
+          giftIcon: data.giftIcon,
+          coinAmount: data.coinAmount,
+          animation: data.animation,
+          createdAt: Date.now(),
+        };
+        setGiftNotifications((prev) => [...prev, notif].slice(-20));
+        setTimeout(() => {
+          setGiftNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+        }, 5000);
+      },
+    );
 
     s.on("connect", () => {
       console.log(`[LIVE-DEBUG] stylist socket connected: id=${s.id}`);
@@ -93,7 +101,9 @@ export function useLiveStream() {
     });
 
     s.on("connect_error", (err) => {
-      console.error(`[LIVE-DEBUG] stylist socket connect_error: ${err.message}`);
+      console.error(
+        `[LIVE-DEBUG] stylist socket connect_error: ${err.message}`,
+      );
     });
 
     s.on("disconnect", (reason) => {
@@ -120,33 +130,42 @@ export function useLiveStream() {
     if (!socket || !stylistId || !connected || joinedRef.current) return;
     queueMicrotask(() => {
       if (socket.connected) {
-        console.log(`[LIVE-DEBUG] stylist emitting join-room: stylistId=${stylistId} socketId=${socket.id}`);
+        console.log(
+          `[LIVE-DEBUG] stylist emitting join-room: stylistId=${stylistId} socketId=${socket.id}`,
+        );
         socket.emit("live:join-room", { stylistId });
         joinedRef.current = true;
       }
     });
-  }, [connected, stylistId]);
+  }, [connected, stylistId, socket]);
 
-  const goLive = useCallback(async (title?: string, category?: string, privacy?: string): Promise<boolean> => {
-    setLoading(true);
-    try {
-      const sess = await startLive(title, category, privacy);
-      setSession(sess);
-      setIsLive(true);
-      setViewerCount(sess.viewerCount || 0);
-      setTotalLikes(sess.totalLikes || 0);
+  const goLive = useCallback(
+    async (
+      title?: string,
+      category?: string,
+      privacy?: string,
+    ): Promise<boolean> => {
+      setLoading(true);
+      try {
+        const sess = await startLive(title, category, privacy);
+        setSession(sess);
+        setIsLive(true);
+        setViewerCount(sess.viewerCount || 0);
+        setTotalLikes(sess.totalLikes || 0);
 
-      if (sess.stylistId) {
-        setStylistId(sess.stylistId);
+        if (sess.stylistId) {
+          setStylistId(sess.stylistId);
+        }
+        setLoading(false);
+        return true;
+      } catch (err) {
+        console.error("Failed to start stream:", err);
+        setLoading(false);
+        return false;
       }
-      setLoading(false);
-      return true;
-    } catch (err) {
-      console.error("Failed to start stream:", err);
-      setLoading(false);
-      return false;
-    }
-  }, []);
+    },
+    [],
+  );
 
   const endLive = useCallback(async () => {
     try {

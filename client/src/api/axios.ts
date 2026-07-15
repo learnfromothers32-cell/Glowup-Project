@@ -1,16 +1,44 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_BASE_URL || '/api');
-export const API_SERVER_URL = API_BASE_URL.replace('/api', '');
+const API_BASE_URL = import.meta.env.DEV
+  ? "/api"
+  : import.meta.env.VITE_API_BASE_URL || "/api";
+export const API_SERVER_URL = API_BASE_URL.replace("/api", "");
+const ACCESS_TOKEN_STORAGE_KEY = "opencode-access-token";
 
 let accessToken: string | null = null;
 let isRefreshing = false;
 let pendingRequests: Array<(token: string) => void> = [];
 
+function readStoredAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredAccessToken(token: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) {
+      window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+    } else {
+      window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage failures and fall back to in-memory auth.
+  }
+}
+
+accessToken = readStoredAccessToken();
+
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
+  writeStoredAccessToken(token);
 };
-export const getAccessToken = () => accessToken;
+export const getAccessToken = () => accessToken ?? readStoredAccessToken();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -35,9 +63,11 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.code === 'ECONNABORTED' && !originalRequest._retryCold) {
+    if (error.code === "ECONNABORTED" && !originalRequest._retryCold) {
       originalRequest._retryCold = true;
-      console.warn(`[axios] timeout on ${originalRequest.url}, retrying after cold-start delay`);
+      console.warn(
+        `[axios] timeout on ${originalRequest.url}, retrying after cold-start delay`,
+      );
       await new Promise((r) => setTimeout(r, 5000));
       return api(originalRequest);
     }
@@ -45,12 +75,18 @@ api.interceptors.response.use(
       originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
       if (originalRequest._retryCount <= 3) {
         const delay = getBackoff(originalRequest._retryCount - 1);
-        console.warn(`[axios] 429 on ${originalRequest.url}, retry ${originalRequest._retryCount}/3 in ${Math.round(delay)}ms`);
+        console.warn(
+          `[axios] 429 on ${originalRequest.url}, retry ${originalRequest._retryCount}/3 in ${Math.round(delay)}ms`,
+        );
         await new Promise((r) => setTimeout(r, delay));
         return api(originalRequest);
       }
     }
-    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh')) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/auth/refresh")
+    ) {
       if (isRefreshing) {
         return new Promise((resolve) => {
           pendingRequests.push((token: string) => {
@@ -64,10 +100,14 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
-          withCredentials: true,
-          timeout: 60000,
-        });
+        const { data } = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          {
+            withCredentials: true,
+            timeout: 60000,
+          },
+        );
         accessToken = data.data.accessToken;
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         pendingRequests.forEach((cb) => cb(accessToken!));
@@ -82,7 +122,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

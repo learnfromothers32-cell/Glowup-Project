@@ -12,13 +12,20 @@ import BookingModal from "../../features/consumer/components/BookingModal";
 import { useAuth } from "../../context/authUtils";
 import AuthModal from "../../features/consumer/components/AuthModal";
 import { X, Loader2 } from "lucide-react";
-import type { GiftItem, FloatingReaction } from "../../features/live/types/live.types";
+import type {
+  GiftItem,
+  FloatingReaction,
+} from "../../features/live/types/live.types";
 import { useFollow } from "../../context/FollowContext";
 import { LiveTour } from "../../features/live/components/LiveTour";
 
 const GIFT_COLORS: Record<string, string> = {
-  rose: "#FF6B8A", heart: "#FF2C55", fire: "#FF8C00",
-  diamond: "#00BFFF", crown: "#FFD700", rocket: "#FF4500",
+  rose: "#FF6B8A",
+  heart: "#FF2C55",
+  fire: "#FF8C00",
+  diamond: "#00BFFF",
+  crown: "#FFD700",
+  rocket: "#FF4500",
 };
 
 export default function LiveRoom() {
@@ -37,12 +44,20 @@ export default function LiveRoom() {
   const [streamTitle, setStreamTitle] = useState("");
   const [isMuted, setIsMuted] = useState(true);
 
-  const [giftAnimations, setGiftAnimations] = useState<Array<{
-    id: string; userName: string; giftName: string;
-    giftIcon: string; animation: "small" | "medium" | "large"; color: string;
-  }>>([]);
+  const [giftAnimations, setGiftAnimations] = useState<
+    Array<{
+      id: string;
+      userName: string;
+      giftName: string;
+      giftIcon: string;
+      animation: "small" | "medium" | "large";
+      color: string;
+    }>
+  >([]);
   const [totalLikes, setTotalLikes] = useState(0);
-  const [remoteReactions, setRemoteReactions] = useState<FloatingReaction[]>([]);
+  const [remoteReactions, setRemoteReactions] = useState<FloatingReaction[]>(
+    [],
+  );
   const [hasLiked, setHasLiked] = useState(false);
   const [likeCooldown, setLikeCooldown] = useState(false);
   const likeCoolRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,13 +72,24 @@ export default function LiveRoom() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const { connected, on, off, emit, sendMessage, sendLike, rejoinRoom, requestStream } = useLiveSocket(stylistId);
+  const {
+    connected,
+    on,
+    off,
+    emit,
+    sendMessage,
+    sendLike,
+    rejoinRoom,
+    requestStream,
+  } = useLiveSocket(stylistId);
 
   // Load stylist data
   useEffect(() => {
     if (!stylistId) return;
     getStylistById(stylistId)
-      .then((s) => { setStylist(s); })
+      .then((s) => {
+        setStylist(s);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [stylistId]);
@@ -87,7 +113,10 @@ export default function LiveRoom() {
           setStreamEnded(false);
         }
       })
-      .catch(() => { setStreamEnded(true); setIsLive(false); })
+      .catch(() => {
+        setStreamEnded(true);
+        setIsLive(false);
+      })
       .finally(() => setSessionLoading(false));
   }, [stylistId]);
 
@@ -124,7 +153,9 @@ export default function LiveRoom() {
               setIsLive(true);
               setViewerCount(data.session.viewerCount || 0);
               setStreamTitle(data.session.title || "");
-              console.log(`[LIVE-DEBUG] consumer stylist-online: session found, rejoining and requesting stream`);
+              console.log(
+                `[LIVE-DEBUG] consumer stylist-online: session found, rejoining and requesting stream`,
+              );
               rejoinRoom();
               // Also request stream directly — the stylist may have missed
               // our user-joined if we joined before them.
@@ -141,9 +172,13 @@ export default function LiveRoom() {
     });
 
     on("live:error", (data: { message: string }) => {
-      // Server rejected the join (e.g. stream not found) — retry after a
-      // short delay in case the stylist is starting up.
       logger.warn("[live] server error:", data.message);
+      if (
+        data.message?.toLowerCase().includes("full") ||
+        data.message?.toLowerCase().includes("not found")
+      ) {
+        setTimeout(() => requestStream(), 1500);
+      }
     });
 
     on("live:like-update", (data: { totalLikes: number }) => {
@@ -152,28 +187,55 @@ export default function LiveRoom() {
       }
     });
 
-    on("live:gift-received", (data: {
-      userId: string; userName: string; giftId: string;
-      giftName: string; giftIcon: string; coinAmount: number; animation: string;
-    }) => {
-      if (data.userId !== user?.id) {
-        const id = `gift-${Date.now()}-${Math.random()}`;
-        setGiftAnimations((prev) => [...prev, {
-          id, userName: data.userName, giftName: data.giftName,
-          giftIcon: data.giftIcon, animation: data.animation as "small" | "medium" | "large",
-          color: GIFT_COLORS[data.giftId] || "#FF2C55",
-        }].slice(-5));
-        setGiftToast(`${data.userName} sent ${data.giftIcon} ${data.giftName}`);
-        setTimeout(() => setGiftToast(null), 3000);
-      }
-    });
+    on(
+      "live:gift-received",
+      (data: {
+        userId: string;
+        userName: string;
+        giftId: string;
+        giftName: string;
+        giftIcon: string;
+        coinAmount: number;
+        animation: string;
+      }) => {
+        if (data.userId !== user?.id) {
+          const id = `gift-${Date.now()}-${Math.random()}`;
+          setGiftAnimations((prev) =>
+            [
+              ...prev,
+              {
+                id,
+                userName: data.userName,
+                giftName: data.giftName,
+                giftIcon: data.giftIcon,
+                animation: data.animation as "small" | "medium" | "large",
+                color: GIFT_COLORS[data.giftId] || "#FF2C55",
+              },
+            ].slice(-5),
+          );
+          setGiftToast(
+            `${data.userName} sent ${data.giftIcon} ${data.giftName}`,
+          );
+          setTimeout(() => setGiftToast(null), 3000);
+        }
+      },
+    );
 
     on("live:reaction-update", (data: { userId: string; reaction: string }) => {
       if (data.userId !== user?.id) {
         const r: FloatingReaction = {
           id: `remote-${Date.now()}-${Math.random()}`,
           type: data.reaction,
-          icon: data.reaction === "heart" ? "❤️" : data.reaction === "fire" ? "🔥" : data.reaction === "like" ? "👍" : data.reaction === "laugh" ? "😂" : "😮",
+          icon:
+            data.reaction === "heart"
+              ? "❤️"
+              : data.reaction === "fire"
+                ? "🔥"
+                : data.reaction === "like"
+                  ? "👍"
+                  : data.reaction === "laugh"
+                    ? "😂"
+                    : "😮",
           x: 15 + Math.random() * 70,
           createdAt: Date.now(),
         };
@@ -203,30 +265,41 @@ export default function LiveRoom() {
     const pcRefLocal = { current: null as RTCPeerConnection | null };
     const ICE_SERVERS = {
       iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
         ...(import.meta.env.VITE_TURN_URL
-          ? [{
-              urls: import.meta.env.VITE_TURN_URL,
-              username: import.meta.env.VITE_TURN_USERNAME || '',
-              credential: import.meta.env.VITE_TURN_CREDENTIAL || '',
-            }]
+          ? [
+              {
+                urls: import.meta.env.VITE_TURN_URL,
+                username: import.meta.env.VITE_TURN_USERNAME || "",
+                credential: import.meta.env.VITE_TURN_CREDENTIAL || "",
+              },
+            ]
           : []),
       ],
     };
 
-    const handleOffer = async (data: { offer: RTCSessionDescriptionInit; senderSocketId: string }) => {
-      console.log(`[LIVE-DEBUG] consumer received webrtc-offer from=${data.senderSocketId}`);
+    const handleOffer = async (data: {
+      offer: RTCSessionDescriptionInit;
+      senderSocketId: string;
+    }) => {
+      console.log(
+        `[LIVE-DEBUG] consumer received webrtc-offer from=${data.senderSocketId}`,
+      );
       if (pcRefLocal.current) pcRefLocal.current.close();
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRefLocal.current = pc;
 
       pc.ontrack = (event) => {
-        console.log(`[LIVE-DEBUG] consumer ontrack: kind=${event.track?.kind} streams=${event.streams?.length}`);
+        console.log(
+          `[LIVE-DEBUG] consumer ontrack: kind=${event.track?.kind} streams=${event.streams?.length}`,
+        );
         const stream = event.streams?.[0] ?? new MediaStream([event.track]);
-        console.log(`[LIVE-DEBUG] consumer ontrack: setting remoteStream, tracks=${stream.getTracks().length}`);
+        console.log(
+          `[LIVE-DEBUG] consumer ontrack: setting remoteStream, tracks=${stream.getTracks().length}`,
+        );
         setRemoteStream(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -237,7 +310,7 @@ export default function LiveRoom() {
 
       pc.onicecandidate = (event) => {
         if (event.candidate) {
-          emit('live:webrtc-ice-candidate', {
+          emit("live:webrtc-ice-candidate", {
             stylistId,
             candidate: event.candidate.toJSON(),
             targetSocketId: data.senderSocketId,
@@ -246,17 +319,20 @@ export default function LiveRoom() {
       };
 
       pc.oniceconnectionstatechange = () => {
-        if (pc.iceConnectionState === 'disconnected') {
-          logger.warn('[WebRTC] Connection lost, attempting recovery...');
+        if (pc.iceConnectionState === "disconnected") {
+          logger.warn("[WebRTC] Connection lost, attempting recovery...");
           setTimeout(() => {
-            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+            if (
+              pc.iceConnectionState === "disconnected" ||
+              pc.iceConnectionState === "failed"
+            ) {
               pc.close();
               pcRefLocal.current = null;
             }
           }, 10000);
         }
-        if (pc.iceConnectionState === 'failed') {
-          logger.error('[WebRTC] Connection failed');
+        if (pc.iceConnectionState === "failed") {
+          logger.error("[WebRTC] Connection failed");
           pc.close();
           pcRefLocal.current = null;
         }
@@ -266,14 +342,16 @@ export default function LiveRoom() {
         await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        console.log(`[LIVE-DEBUG] consumer sending webrtc-answer to=${data.senderSocketId}`);
-        emit('live:webrtc-answer', {
+        console.log(
+          `[LIVE-DEBUG] consumer sending webrtc-answer to=${data.senderSocketId}`,
+        );
+        emit("live:webrtc-answer", {
           stylistId,
           answer: pc.localDescription,
           targetSocketId: data.senderSocketId,
         });
       } catch (err) {
-        logger.error('[WebRTC] handleOffer error:', err);
+        logger.error("[WebRTC] handleOffer error:", err);
         pc.close();
         pcRefLocal.current = null;
       }
@@ -281,17 +359,21 @@ export default function LiveRoom() {
 
     const handleIceCandidate = (data: { candidate: RTCIceCandidateInit }) => {
       if (pcRefLocal.current && data.candidate) {
-        pcRefLocal.current.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(console.error);
+        pcRefLocal.current
+          .addIceCandidate(new RTCIceCandidate(data.candidate))
+          .catch(console.error);
       }
     };
 
-    on('live:webrtc-offer', handleOffer);
-    on('live:webrtc-ice-candidate', handleIceCandidate);
-    console.log(`[LIVE-DEBUG] consumer WebRTC subscriber: handlers registered for live:webrtc-offer and live:webrtc-ice-candidate`);
+    on("live:webrtc-offer", handleOffer);
+    on("live:webrtc-ice-candidate", handleIceCandidate);
+    console.log(
+      `[LIVE-DEBUG] consumer WebRTC subscriber: handlers registered for live:webrtc-offer and live:webrtc-ice-candidate`,
+    );
 
     return () => {
-      off('live:webrtc-offer');
-      off('live:webrtc-ice-candidate');
+      off("live:webrtc-offer");
+      off("live:webrtc-ice-candidate");
       if (pcRefLocal.current) {
         pcRefLocal.current.close();
         pcRefLocal.current = null;
@@ -309,7 +391,9 @@ export default function LiveRoom() {
     const scheduleRetry = (delay: number) => {
       const t = setTimeout(() => {
         if (!remoteStream && connected && !streamEnded && isLive) {
-          console.log(`[LIVE-DEBUG] consumer retry: no stream after ${delay}ms, sending request-stream`);
+          console.log(
+            `[LIVE-DEBUG] consumer retry: no stream after ${delay}ms, sending request-stream`,
+          );
           requestStream();
           scheduleRetry(3000);
         }
@@ -329,7 +413,7 @@ export default function LiveRoom() {
     }
   }, [navigate]);
 
-  const isFollowing = followCtx.isFollowing(stylistId ?? '');
+  const isFollowing = followCtx.isFollowing(stylistId ?? "");
 
   const handleFollow = useCallback(async () => {
     if (!stylistId) return;
@@ -341,29 +425,35 @@ export default function LiveRoom() {
     }
   }, [stylistId, isFollowing, followCtx]);
 
-  const handleSendGift = useCallback((gift: GiftItem) => {
-    if (!stylistId) return;
-    emit('live:send-gift', {
-      stylistId,
-      giftId: gift.id,
-      giftName: gift.name,
-      giftIcon: gift.icon,
-      coinAmount: gift.price,
-      animation: gift.animation,
-    });
-    setGiftToast(`Sent ${gift.icon} ${gift.name}`);
-    setTimeout(() => setGiftToast(null), 2000);
-  }, [stylistId, emit]);
+  const handleSendGift = useCallback(
+    (gift: GiftItem) => {
+      if (!stylistId) return;
+      emit("live:send-gift", {
+        stylistId,
+        giftId: gift.id,
+        giftName: gift.name,
+        giftIcon: gift.icon,
+        coinAmount: gift.price,
+        animation: gift.animation,
+      });
+      setGiftToast(`Sent ${gift.icon} ${gift.name}`);
+      setTimeout(() => setGiftToast(null), 2000);
+    },
+    [stylistId, emit],
+  );
 
   const handleShare = useCallback(() => {
     const url = window.location.href;
     if (navigator.share) {
-      navigator.share({ title: 'Live Stream', url }).catch(() => {});
+      navigator.share({ title: "Live Stream", url }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(url).then(() => {
-        setGiftToast('Link copied!');
-        setTimeout(() => setGiftToast(null), 2000);
-      }).catch(() => {});
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          setGiftToast("Link copied!");
+          setTimeout(() => setGiftToast(null), 2000);
+        })
+        .catch(() => {});
     }
   }, []);
 
@@ -372,16 +462,19 @@ export default function LiveRoom() {
     navigate(`/report?stylistId=${stylistId}&type=live`);
   }, [stylistId, navigate]);
 
-  const handleReaction = useCallback((type: string) => {
-    if (!stylistId || likeCooldown) return;
-    emit('live:reaction', { stylistId, reaction: type });
-    sendLike();
-    setTotalLikes((prev) => prev + 1);
-    setHasLiked(true);
-    setLikeCooldown(true);
-    if (likeCoolRef.current) clearTimeout(likeCoolRef.current);
-    likeCoolRef.current = setTimeout(() => setLikeCooldown(false), 2500);
-  }, [stylistId, emit, sendLike, likeCooldown]);
+  const handleReaction = useCallback(
+    (type: string) => {
+      if (!stylistId || likeCooldown) return;
+      emit("live:reaction", { stylistId, reaction: type });
+      sendLike();
+      setTotalLikes((prev) => prev + 1);
+      setHasLiked(true);
+      setLikeCooldown(true);
+      if (likeCoolRef.current) clearTimeout(likeCoolRef.current);
+      likeCoolRef.current = setTimeout(() => setLikeCooldown(false), 2500);
+    },
+    [stylistId, emit, sendLike, likeCooldown],
+  );
 
   const handleBookClick = () => {
     if (!stylist) return;
@@ -404,7 +497,9 @@ export default function LiveRoom() {
     return (
       <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 bg-black">
         <div className="w-10 h-10 rounded-full border-2 border-white/20 border-t-brand-500 animate-spin" />
-        <span className="text-white/60 text-sm tracking-widest uppercase">Joining live...</span>
+        <span className="text-white/60 text-sm tracking-widest uppercase">
+          Joining live...
+        </span>
       </div>
     );
   }
@@ -416,9 +511,13 @@ export default function LiveRoom() {
           <X size={28} className="text-white/30" />
         </div>
         <div className="text-center">
-          <p className="text-white text-lg font-bold mb-1">{streamEnded ? "Stream Ended" : "Stylist not found"}</p>
+          <p className="text-white text-lg font-bold mb-1">
+            {streamEnded ? "Stream Ended" : "Stylist not found"}
+          </p>
           <p className="text-white/40 text-sm mb-5">
-            {streamEnded ? "The live stream has ended" : "This stylist doesn't exist"}
+            {streamEnded
+              ? "The live stream has ended"
+              : "This stylist doesn't exist"}
           </p>
         </div>
         <button
@@ -448,7 +547,9 @@ export default function LiveRoom() {
         onReport={handleReport}
         giftBalance={giftBalance}
         giftAnimations={giftAnimations}
-        onGiftAnimComplete={(id) => setGiftAnimations((prev) => prev.filter((g) => g.id !== id))}
+        onGiftAnimComplete={(id) =>
+          setGiftAnimations((prev) => prev.filter((g) => g.id !== id))
+        }
         totalLikes={totalLikes}
         remoteReactions={remoteReactions}
         isMuted={isMuted}
@@ -484,9 +585,7 @@ export default function LiveRoom() {
       )}
 
       {/* Tour */}
-      {showTour && (
-        <LiveTour onComplete={() => setShowTour(false)} />
-      )}
+      {showTour && <LiveTour onComplete={() => setShowTour(false)} />}
 
       {/* Toast */}
       <AnimatePresence>
