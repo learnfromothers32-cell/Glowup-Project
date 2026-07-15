@@ -12,6 +12,8 @@ import BeautyTips from "../../features/consumer/components/BeautyTips";
 import { getStylists } from "../../api/stylists";
 import { getMyBookings } from "../../api/bookings";
 import { getQueueStatus } from "../../api/queue";
+import { getSocketUrl } from "../../services/socket";
+import { io } from "socket.io-client";
 import type { Stylist } from "@/domain/stylist/stylist.types";
 import { useRecentlyViewed } from "../../hooks/useRecentlyViewed";
 import { useFavorites } from "../../hooks/useFavorites";
