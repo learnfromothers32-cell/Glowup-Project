@@ -14,6 +14,7 @@ import {
   resumeSession,
   getSessionStatus,
   getFeaturedSessions,
+  joinSession,
 } from '../controllers';
 import {
   createLiveSessionSchema,
@@ -122,6 +123,14 @@ router.post(
   requireRole('stylist'),
   generalLimiter,
   startSession
+);
+
+// POST /api/live/:id/join - Join session as viewer (returns LiveKit token)
+router.post(
+  '/:id/join',
+  protect,
+  generalLimiter,
+  joinSession
 );
 
 // POST /api/live/:id/end - End session

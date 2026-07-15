@@ -10,4 +10,5 @@ export {
   resumeSession,
   getSessionStatus,
   getFeaturedSessions,
+  joinSession,
 } from './LiveSessionController';

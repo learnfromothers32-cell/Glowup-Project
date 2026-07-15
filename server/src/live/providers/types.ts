@@ -49,6 +49,7 @@ export interface HealthCheckResult {
   details: string;
   timestamp: Date;
   sdkVersion?: string;
+  liveKitUrl?: string;
 }
 
 // ── Provider Role (for token generation) ──
@@ -271,6 +272,7 @@ export class MockLiveMediaProvider implements LiveMediaProvider {
       details: 'Mock provider always healthy',
       timestamp: new Date(),
       sdkVersion: undefined,
+      liveKitUrl: undefined,
     };
   }
 }

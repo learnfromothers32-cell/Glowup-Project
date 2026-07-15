@@ -5,6 +5,7 @@ import type {
   DiscoverSessionsResponse,
   CreateLiveSessionParams,
   StartSessionResponse,
+  JoinSessionResponse,
   SessionStatusResponse,
 } from "../domain/live/live.types";
 
@@ -72,4 +73,9 @@ export async function pauseLiveSession(id: string) {
 export async function resumeLiveSession(id: string) {
   const { data } = await api.post(`/live/${id}/resume`);
   return data.data as { session: LiveSession };
+}
+
+export async function joinLiveSession(id: string) {
+  const { data } = await api.post(`/live/${id}/join`);
+  return data.data as JoinSessionResponse;
 }

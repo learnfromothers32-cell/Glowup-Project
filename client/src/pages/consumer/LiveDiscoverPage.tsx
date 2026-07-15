@@ -3,6 +3,7 @@ import { Search, Radio } from "lucide-react";
 import { useLiveSessions, useFeaturedSessions } from "../../domain/live/live.hooks";
 import { DiscoverCard } from "../../features/live/components/DiscoverCard";
 import { DiscoverSkeleton } from "../../features/live/components/LiveSkeleton";
+import { LiveBadge } from "../../features/live/components/LiveBadge";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 

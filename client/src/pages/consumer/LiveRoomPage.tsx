@@ -1,7 +1,7 @@
-import { useEffect, useCallback, useMemo, useState } from "react";
+import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Share2, ShoppingBag, ChevronUp, ChevronDown } from "lucide-react";
-import { useLiveSession, useSessionStatus } from "../../domain/live/live.hooks";
+import { useLiveSession, useSessionStatus, useJoinLiveSession } from "../../domain/live/live.hooks";
 import { useLiveSocket } from "../../features/live/hooks/useLiveSocket";
 import { useLiveMedia } from "../../features/live/hooks/useLiveMedia";
 import { LivePlayer } from "../../features/live/components/LivePlayer";
@@ -257,10 +257,26 @@ export default function LiveRoomPage() {
   // Connect to room
   const { join, disconnect, manualReconnect } = useLiveSocket();
   const { room, connect: connectMedia, disconnect: disconnectMedia, toggleCamera, toggleMic } = useLiveMedia();
+  const joinMutation = useJoinLiveSession();
+  const joinedRef = useRef(false);
 
+  // Join session + connect WebRTC
   useEffect(() => {
-    if (!id || !session) return;
+    if (!id || !session || joinedRef.current) return;
+    joinedRef.current = true;
+
+    // Join socket room
     join(id, isHost ? "host" : "viewer", user?.name || "Guest");
+
+    // Join session via API to get LiveKit token
+    joinMutation.mutate(id, {
+      onSuccess: (result) => {
+        if (result.liveKitUrl) {
+          connectMedia(result.liveKitUrl, result.token).catch(() => {});
+        }
+      },
+    });
+
     return () => {
       disconnectMedia();
       disconnect();
@@ -269,7 +285,7 @@ export default function LiveRoomPage() {
       useGuestRequestStore.getState().reset();
       useReactionStore.getState().reset();
     };
-  }, [id, session, isHost, user, join, disconnect, disconnectMedia, resetCommerce]);
+  }, [id, session]);
 
   const handleEndStream = useCallback(async () => {
     if (!id) return;

@@ -4,6 +4,7 @@ import {
   Wallet, Image, Settings, MessageSquare, BarChart3,
   Clock, User, LogOut, Sparkles, Package, Crown, Percent,
   ShoppingCart, Timer, FileText, Star, Box, LayoutGrid,
+  Radio,
 } from "lucide-react";
 import { useAuth } from "../../../context/authUtils";
 import { cn } from "../../../utils/cn";
@@ -64,7 +65,9 @@ const navSections: NavSection[] = [
   },
   {
     title: "Growth",
-    items: [],
+    items: [
+      { path: "/stylist/go-live", label: "Go Live", icon: Radio },
+    ],
   },
   {
     title: "Account",

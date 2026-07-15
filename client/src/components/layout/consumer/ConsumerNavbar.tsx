@@ -17,6 +17,7 @@ import {
   Bookmark,
   HelpCircle,
   Clock,
+  Radio,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import GlobalSearchModal from "../../../features/consumer/components/GlobalSearchModal";
@@ -51,6 +52,7 @@ function formatRelativeTime(dateStr: string): string {
 
 const navLinks = [
   { to: "/app", label: "Home", icon: Home },
+  { to: "/app/live", label: "Live", icon: Radio },
   { to: "/app/my-bookings", label: "Bookings", icon: Calendar },
   { to: "/app/waitlist", label: "Waitlist", icon: Clock },
   { to: "/app/rewards", label: "Rewards", icon: Trophy },

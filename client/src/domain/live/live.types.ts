@@ -85,6 +85,12 @@ export interface StartSessionResponse {
   token: string;
 }
 
+export interface JoinSessionResponse {
+  session: LiveSession;
+  token: string;
+  liveKitUrl: string | null;
+}
+
 export interface SessionStatusResponse {
   status: LiveSessionStatus;
   viewerCount: number;

@@ -71,7 +71,7 @@ export function initLiveNamespace(io: Server, redisUrl?: string): void {
   liveRateLimiter.connect().catch(() => {});
   chatBroadcaster.connect().catch(() => {});
 
-  const liveNsp = io.of('/live');
+  liveNsp = io.of('/live');
 
   // ── Authentication middleware ──
   liveNsp.use(async (socket: Socket, next) => {

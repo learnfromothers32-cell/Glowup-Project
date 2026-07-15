@@ -272,6 +272,7 @@ export class LiveKitMediaProvider implements LiveMediaProvider {
         details: `LiveKit reachable at ${this.config.url}`,
         timestamp: new Date(),
         sdkVersion: LIVEKIT_SDK_VERSION,
+        liveKitUrl: this.config.url,
       };
     } catch (error) {
       const latencyMs = Date.now() - start;

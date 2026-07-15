@@ -204,3 +204,28 @@ export const getFeaturedSessions = asyncHandler(async (req: Request, res: Respon
 
   return sendSuccess(res, { sessions }, 'Featured sessions retrieved successfully');
 });
+
+/**
+ * POST /api/live/:id/join
+ * Join a live session as a viewer (or host returning). Returns LiveKit token + server URL.
+ */
+export const joinSession = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+
+  const { id } = req.params;
+
+  const result = await sessionService.joinSession(id, userId);
+
+  // Also return the LiveKit server URL for the client to connect to
+  const provider = getMediaProvider();
+  const health = await provider.healthCheck();
+
+  return sendSuccess(res, {
+    session: result.session,
+    token: result.token,
+    liveKitUrl: health.liveKitUrl || null,
+  }, 'Joined session successfully');
+});

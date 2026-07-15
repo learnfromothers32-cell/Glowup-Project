@@ -104,3 +104,9 @@ export function useDeleteLiveSession() {
     },
   });
 }
+
+export function useJoinLiveSession() {
+  return useMutation({
+    mutationFn: (id: string) => liveApi.joinLiveSession(id),
+  });
+}
