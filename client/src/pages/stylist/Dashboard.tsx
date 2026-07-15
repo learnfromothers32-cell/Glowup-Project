@@ -16,7 +16,7 @@ import {
   Calendar, DollarSign, Users, Star, Plus, Image, Settings,
   ChevronRight, BadgeCheck, Loader2, Clock, AlertCircle, RefreshCw,
   BarChart3, Scissors, Package, TrendingUp, CheckCircle2, XCircle,
-  RefreshCcw, CalendarDays, Activity, MessageSquare, Sparkles,
+  RefreshCcw, CalendarDays, Activity, MessageSquare, Sparkles, Radio,
 } from "lucide-react";
 
 interface DashboardBooking {
@@ -273,6 +273,30 @@ export default function StylistDashboard() {
         ))}
       </div>
 
+      {/* Go Live Banner */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-purple-600 p-5 sm:p-6 cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate("/stylist/go-live")}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
+                <Radio size={22} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-h4 font-bold text-white">Go Live</h3>
+                <p className="text-body-sm text-white/80">Start a live beauty session and connect with clients in real-time</p>
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="px-4 py-2 rounded-xl bg-white/20 text-white text-body-sm font-semibold hover:bg-white/30 transition-all">
+                Start Now <ChevronRight size={14} className="inline ml-1" />
+              </span>
+            </div>
+          </div>
+          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/5 rounded-full blur-xl" />
+        </div>
+      </motion.div>
+
       {/* Schedule + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Schedule */}
@@ -342,6 +366,7 @@ export default function StylistDashboard() {
             <div className="p-4 sm:p-5">
               <div className="grid grid-cols-2 gap-2">
                 {[
+                  { label: "Go Live", icon: Radio, to: "/stylist/go-live", color: "bg-rose-500" },
                   { label: "Bookings", icon: Calendar, to: "/stylist/bookings", color: "bg-stylist-500" },
                   { label: "Services", icon: Package, to: "/stylist/services", color: "bg-stylist-600" },
                   { label: "Portfolio", icon: Image, to: "/stylist/portfolio", color: "bg-stylist-500" },
