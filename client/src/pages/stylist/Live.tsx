@@ -93,10 +93,17 @@ export default function StylistLive() {
     const handleUserJoined = async (data: { userId: string; userRole: string; socketId: string }) => {
       console.log(`[LIVE-DEBUG] stylist received user-joined: userId=${data.userId} role=${data.userRole} socketId=${data.socketId}`);
       if (data.userRole === 'stylist') return;
-      if (pcs.has(data.socketId)) return;
       if (pcs.size >= MAX_VIEWERS) return;
 
       setActiveViewers(prev => new Set(prev).add(data.userId));
+
+      // Close any existing PC for this consumer to ensure fresh renegotiation
+      const existing = pcs.get(data.socketId);
+      if (existing) {
+        console.log(`[LIVE-DEBUG] stylist closing stale PC for socketId=${data.socketId}`);
+        existing.close();
+        pcs.delete(data.socketId);
+      }
 
       const stream = await getStream();
       console.log(`[LIVE-DEBUG] stylist creating PC for consumer: socketId=${data.socketId} tracks=${stream.getTracks().length}`);

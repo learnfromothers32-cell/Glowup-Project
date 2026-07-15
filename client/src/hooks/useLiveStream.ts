@@ -92,6 +92,10 @@ export function useLiveStream() {
       setConnected(true);
     });
 
+    s.on("connect_error", (err) => {
+      console.error(`[LIVE-DEBUG] stylist socket connect_error: ${err.message}`);
+    });
+
     s.on("disconnect", (reason) => {
       console.log(`[LIVE-DEBUG] stylist socket disconnected: reason=${reason}`);
       setConnected(false);

@@ -124,8 +124,11 @@ export default function LiveRoom() {
               setIsLive(true);
               setViewerCount(data.session.viewerCount || 0);
               setStreamTitle(data.session.title || "");
-              console.log(`[LIVE-DEBUG] consumer stylist-online: session found, calling rejoinRoom`);
+              console.log(`[LIVE-DEBUG] consumer stylist-online: session found, rejoining and requesting stream`);
               rejoinRoom();
+              // Also request stream directly — the stylist may have missed
+              // our user-joined if we joined before them.
+              setTimeout(() => requestStream(), 500);
             }
           })
           .catch(() => {});
@@ -296,8 +299,8 @@ export default function LiveRoom() {
     };
   }, [stylistId, streamEnded, connected, on, off, emit]);
 
-  // Retry: if no remote stream within 5s of connecting, request one from
-  // the stylist.  Retries every 5s until the stream arrives or the page
+  // Retry: if no remote stream within 2s of connecting, request one from
+  // the stylist.  Retries every 3s until the stream arrives or the page
   // is left.
   useEffect(() => {
     if (!connected || streamEnded || !isLive) return;
@@ -308,13 +311,13 @@ export default function LiveRoom() {
         if (!remoteStream && connected && !streamEnded && isLive) {
           console.log(`[LIVE-DEBUG] consumer retry: no stream after ${delay}ms, sending request-stream`);
           requestStream();
-          scheduleRetry(5000);
+          scheduleRetry(3000);
         }
       }, delay);
       timers.push(t);
     };
 
-    scheduleRetry(5000);
+    scheduleRetry(2000);
     return () => timers.forEach(clearTimeout);
   }, [connected, streamEnded, isLive, remoteStream, requestStream]);
 

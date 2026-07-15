@@ -32,6 +32,10 @@ export function useLiveSocket(stylistId?: string) {
       setConnected(true);
     });
 
+    socket.on("connect_error", (err) => {
+      console.error(`[LIVE-DEBUG] consumer socket connect_error: ${err.message}`);
+    });
+
     socket.on("disconnect", (reason) => {
       console.log(`[LIVE-DEBUG] consumer socket disconnected: reason=${reason}`);
       setConnected(false);
@@ -73,6 +77,12 @@ export function useLiveSocket(stylistId?: string) {
         console.log(`[LIVE-DEBUG] consumer emitting join-room: stylistId=${stylistId} socketId=${socket.id}`);
         socket.emit("live:join-room", { stylistId });
         joinedRef.current = true;
+        // Backup: if the user-joined → offer flow doesn't reach us within 2s,
+        // proactively request a stream from the stylist.
+        setTimeout(() => {
+          if (socket.connected && !joinedRef.current) return;
+          socket.emit("live:request-stream", { stylistId });
+        }, 2000);
       }
     });
   }, [connected, stylistId]);
@@ -94,12 +104,12 @@ export function useLiveSocket(stylistId?: string) {
     (event: string, handler: (...args: any[]) => void) => {
       listenersRef.current.set(event, handler);
       const socket = socketRef.current;
-      if (socket && (connected || socket.connected)) {
+      if (socket?.connected) {
         socket.off(event);
         socket.on(event, handler);
       }
     },
-    [connected],
+    [],
   );
 
   const off = useCallback((event: string) => {
