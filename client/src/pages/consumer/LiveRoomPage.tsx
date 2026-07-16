@@ -326,7 +326,7 @@ export default function LiveRoomPage() {
 
   // Connect to room
   const { join, disconnect, manualReconnect } = useLiveSocket();
-  const { room, connect: connectMedia, disconnect: disconnectMedia, toggleCamera, toggleMic } = useLiveMedia();
+  const { room, connect: connectMedia, disconnect: disconnectMedia, toggleCamera, toggleMic, localTracks } = useLiveMedia();
   const joinMutation = useJoinLiveSession();
   const joinedRef = useRef(false);
 
@@ -515,7 +515,7 @@ export default function LiveRoomPage() {
       <div className="hidden lg:flex flex-1 overflow-hidden">
         {/* Video */}
         <div className="flex-1 relative">
-          <LivePlayer room={room} isHost={isHost} />
+          <LivePlayer room={room} isHost={isHost} localVideoTrack={localTracks.video} localAudioTrack={localTracks.audio} />
         </div>
 
         {/* Sidebar: Commerce + Chat */}
@@ -551,7 +551,7 @@ export default function LiveRoomPage() {
       {/* ── TABLET (sm-lg): Video + collapsible chat ── */}
       <div className="hidden sm:flex lg:hidden flex-1 overflow-hidden relative">
         <div className="flex-1 relative">
-          <LivePlayer room={room} isHost={isHost} />
+          <LivePlayer room={room} isHost={isHost} localVideoTrack={localTracks.video} localAudioTrack={localTracks.audio} />
         </div>
         {/* Floating chat toggle */}
         <button
@@ -578,7 +578,7 @@ export default function LiveRoomPage() {
       <div className="flex sm:hidden flex-1 flex-col overflow-hidden relative">
         {/* Video takes full remaining space */}
         <div className="flex-1 relative">
-          <LivePlayer room={room} isHost={isHost} />
+          <LivePlayer room={room} isHost={isHost} localVideoTrack={localTracks.video} localAudioTrack={localTracks.audio} />
         </div>
 
         {/* Bottom controls bar */}
