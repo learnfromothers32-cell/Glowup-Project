@@ -28,6 +28,13 @@ jest.mock('../repositories/LiveSessionRepository', () => ({
   },
 }));
 
+jest.mock('../repositories/LiveModerationRepository', () => ({
+  liveModerationRepository: {
+    isUserBanned: jest.fn().mockResolvedValue(false),
+    isUserMuted: jest.fn().mockResolvedValue(false),
+  },
+}));
+
 jest.mock('../repositories/LiveChatMessageRepository', () => ({
   liveChatMessageRepository: {
     findByMessageId: jest.fn().mockResolvedValue(null),

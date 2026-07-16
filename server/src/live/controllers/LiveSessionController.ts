@@ -8,6 +8,7 @@ import {
   UpdateLiveSessionInput,
   LiveSessionQueryFilters,
 } from '../types';
+import { getLiveKitUrl } from '../config/livekit.config';
 
 // Initialize service with provider from environment config
 // Provider is selected via LIVE_PROVIDER env var (mock or livekit)
@@ -128,14 +129,10 @@ export const startSession = asyncHandler(async (req: Request, res: Response) => 
 
   const result = await sessionService.startSession(id, userId);
 
-  // Also return the LiveKit server URL for the client to connect to
-  const provider = getMediaProvider();
-  const health = await provider.healthCheck();
-
   return sendSuccess(res, {
     session: result.session,
     token: result.token,
-    liveKitUrl: health.liveKitUrl || null,
+    liveKitUrl: getLiveKitUrl() || null,
   }, 'Session started successfully');
 });
 
@@ -228,13 +225,9 @@ export const joinSession = asyncHandler(async (req: Request, res: Response) => {
 
   const result = await sessionService.joinSession(id, userId);
 
-  // Also return the LiveKit server URL for the client to connect to
-  const provider = getMediaProvider();
-  const health = await provider.healthCheck();
-
   return sendSuccess(res, {
     session: result.session,
     token: result.token,
-    liveKitUrl: health.liveKitUrl || null,
+    liveKitUrl: getLiveKitUrl() || null,
   }, 'Joined session successfully');
 });

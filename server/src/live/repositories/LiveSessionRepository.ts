@@ -78,10 +78,17 @@ export class LiveSessionRepository {
   async incrementViewerCount(id: string): Promise<ILiveSession | null> {
     return LiveSession.findByIdAndUpdate(
       id,
-      {
-        $inc: { viewerCount: 1, totalViews: 1 },
-        $max: { peakViewerCount: 1 },
-      },
+      [
+        {
+          $set: {
+            viewerCount: { $add: ['$viewerCount', 1] },
+            totalViews: { $add: ['$totalViews', 1] },
+            peakViewerCount: {
+              $max: [{ $add: ['$viewerCount', 1] }, '$peakViewerCount'],
+            },
+          },
+        },
+      ],
       { new: true }
     );
   }

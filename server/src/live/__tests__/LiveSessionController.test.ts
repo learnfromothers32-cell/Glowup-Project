@@ -33,6 +33,10 @@ jest.mock('../providers/factory', () => ({
   getMediaProvider: jest.fn().mockReturnValue({}),
 }));
 
+jest.mock('../config/livekit.config', () => ({
+  getLiveKitUrl: jest.fn().mockReturnValue('wss://test.livekit.cloud'),
+}));
+
 jest.mock('../providers/types', () => ({
   MockLiveMediaProvider: jest.fn(),
 }));
@@ -173,6 +177,7 @@ describe('startSession', () => {
     expect(res.json).toHaveBeenCalled();
     const body = res.json.mock.calls[0][0];
     expect(body.data.token).toBe('mock-token');
+    expect(body.data.liveKitUrl).toBe('wss://test.livekit.cloud');
   });
 
   it('should throw when no userId', async () => {

@@ -22,6 +22,12 @@ jest.mock('../repositories/LiveSessionRepository', () => ({
   },
 }));
 
+jest.mock('../repositories/LiveModerationRepository', () => ({
+  liveModerationRepository: {
+    isUserBanned: jest.fn().mockResolvedValue(false),
+  },
+}));
+
 import { liveSessionRepository } from '../repositories/LiveSessionRepository';
 
 function createMockSocket(overrides: Partial<Socket> = {}): Socket {

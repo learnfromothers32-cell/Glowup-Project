@@ -30,6 +30,7 @@ import {
 } from './types';
 import { LiveSessionService } from '../services/LiveSessionService';
 import { liveSessionRepository } from '../repositories/LiveSessionRepository';
+import { liveModerationRepository } from '../repositories/LiveModerationRepository';
 import { ChatBroadcaster } from './broadcast/types';
 import logger from '../../utils/logger';
 
@@ -121,6 +122,16 @@ export function registerLiveHandlers(
         socket.emit('live:error', {
           code: LIVE_ERROR_CODES.ROOM_CLOSED,
           message: 'Session is not live',
+        });
+        return;
+      }
+
+      // Check if user is banned from this session
+      const isBanned = await liveModerationRepository.isUserBanned(sessionId, userId);
+      if (isBanned) {
+        socket.emit('live:error', {
+          code: LIVE_ERROR_CODES.PERMISSION_DENIED,
+          message: 'You are banned from this session',
         });
         return;
       }
@@ -494,6 +505,13 @@ export function registerLiveHandlers(
           let viewerCount = await deps.viewerCount.getCount(sessionId);
           if (entry.role !== 'host') {
             viewerCount = await deps.viewerCount.decrement(sessionId);
+          }
+
+          // Remove participant from MongoDB and decrement DB viewer count
+          try {
+            await deps.sessionService.leaveSession(sessionId, userId!);
+          } catch {
+            // Ignore — participant may already be removed
           }
 
           // Broadcast updates

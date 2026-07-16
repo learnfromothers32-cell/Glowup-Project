@@ -33,6 +33,13 @@ jest.mock('../repositories/LiveSessionRepository', () => ({
   },
 }));
 
+jest.mock('../repositories/LiveModerationRepository', () => ({
+  liveModerationRepository: {
+    isUserMuted: jest.fn().mockResolvedValue(false),
+    isUserBanned: jest.fn().mockResolvedValue(false),
+  },
+}));
+
 jest.mock('../../utils/logger', () => ({
   __esModule: true,
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },

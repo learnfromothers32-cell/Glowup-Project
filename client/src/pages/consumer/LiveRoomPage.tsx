@@ -40,13 +40,17 @@ import {
   pinService, unpinService, updateAvailability, toggleShelf,
   sendReaction,
   onUserMuted, offUserMuted,
+  onUserUnmuted, offUserUnmuted,
   onUserBanned, offUserBanned,
+  onUserUnbanned, offUserUnbanned,
   onMessageDeleted, offMessageDeleted,
   onReportSubmitted, offReportSubmitted,
   onGuestRequestReceived, offGuestRequestReceived,
   onGuestRequestAccepted, offGuestRequestAccepted,
   onGuestRequestRejected, offGuestRequestRejected,
+  onGuestRequestCancelled, offGuestRequestCancelled,
   onGuestRequestStatus, offGuestRequestStatus,
+  onModerationNotification, offModerationNotification,
 } from "../../services/liveSocket";
 
 // ── Shared commerce panel (avoids duplication between desktop & mobile) ──
@@ -238,18 +242,24 @@ export default function LiveRoomPage() {
     if (!isHost || !id) return;
 
     const handleUserMuted = (data: { userId: string }) => useModerationStore.getState().addMutedUser(data.userId);
+    const handleUserUnmuted = (data: { userId: string }) => useModerationStore.getState().removeMutedUser(data.userId);
     const handleUserBanned = (data: { userId: string }) => useModerationStore.getState().addBannedUser(data.userId);
+    const handleUserUnbanned = (data: { userId: string }) => useModerationStore.getState().removeBannedUser(data.userId);
     const handleReportSubmitted = () => useModerationStore.getState().incrementPendingReports();
     const handleMessageDeleted = (data: { messageId: string }) => useChatStore.getState().deleteMessage(data.messageId);
 
     onUserMuted(handleUserMuted);
+    onUserUnmuted(handleUserUnmuted);
     onUserBanned(handleUserBanned);
+    onUserUnbanned(handleUserUnbanned);
     onReportSubmitted(handleReportSubmitted);
     onMessageDeleted(handleMessageDeleted);
 
     return () => {
       offUserMuted(handleUserMuted);
+      offUserUnmuted(handleUserUnmuted);
       offUserBanned(handleUserBanned);
+      offUserUnbanned(handleUserUnbanned);
       offReportSubmitted(handleReportSubmitted);
       offMessageDeleted(handleMessageDeleted);
     };
@@ -272,15 +282,18 @@ export default function LiveRoomPage() {
     };
     const handleRequestAccepted = (data: { requestId: string }) => useGuestRequestStore.getState().removePendingRequest(data.requestId);
     const handleRequestRejected = (data: { requestId: string }) => useGuestRequestStore.getState().removePendingRequest(data.requestId);
+    const handleRequestCancelled = (data: { requestId: string }) => useGuestRequestStore.getState().removePendingRequest(data.requestId);
 
     onGuestRequestReceived(handleRequestReceived);
     onGuestRequestAccepted(handleRequestAccepted);
     onGuestRequestRejected(handleRequestRejected);
+    onGuestRequestCancelled(handleRequestCancelled);
 
     return () => {
       offGuestRequestReceived(handleRequestReceived);
       offGuestRequestAccepted(handleRequestAccepted);
       offGuestRequestRejected(handleRequestRejected);
+      offGuestRequestCancelled(handleRequestCancelled);
     };
   }, [isHost, id]);
 
@@ -291,6 +304,20 @@ export default function LiveRoomPage() {
     onGuestRequestStatus(handleStatus);
     return () => offGuestRequestStatus(handleStatus);
   }, [isHost, id]);
+
+  // Moderation notification listener (viewer-side: muted/banned notifications)
+  useEffect(() => {
+    if (isHost || !id) return;
+    const handleNotification = (data: { sessionId: string; type: string; message: string }) => {
+      if (data.type === 'muted') {
+        useModerationStore.getState().addMutedUser(user?.id || '');
+      } else if (data.type === 'banned') {
+        useModerationStore.getState().addBannedUser(user?.id || '');
+      }
+    };
+    onModerationNotification(handleNotification);
+    return () => offModerationNotification(handleNotification);
+  }, [isHost, id, user?.id]);
 
   // Reaction handler
   const handleSendReaction = useCallback((type: any) => {

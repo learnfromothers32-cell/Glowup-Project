@@ -17,6 +17,7 @@ import {
   useCreateLiveSession,
   useStartLiveSession,
   useEndLiveSession,
+  useJoinLiveSession,
 } from "../../domain/live/live.hooks";
 import { LiveBadge } from "../../features/live/components/LiveBadge";
 import { Button } from "../../components/ui/Button";
@@ -42,6 +43,7 @@ export default function GoLivePage() {
   const createMutation = useCreateLiveSession();
   const startMutation = useStartLiveSession();
   const endMutation = useEndLiveSession();
+  const joinMutation = useJoinLiveSession();
 
   const activeSession = data?.sessions?.find(
     (s) => s.status === "live" || s.status === "paused",
@@ -129,7 +131,18 @@ export default function GoLivePage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => navigate(`/app/live/${activeSession._id}`)}
+                  loading={joinMutation.isPending}
+                  onClick={async () => {
+                    try {
+                      const result = await joinMutation.mutateAsync(activeSession._id);
+                      navigate(`/app/live/${activeSession._id}`, {
+                        state: { token: result.token, liveKitUrl: result.liveKitUrl, isHost: true },
+                      });
+                    } catch {
+                      // Fallback: navigate without token (will use viewer join flow)
+                      navigate(`/app/live/${activeSession._id}`);
+                    }
+                  }}
                 >
                   <Video size={14} />
                   Go to Stream

@@ -64,3 +64,13 @@ export function getLiveKitConfig(): LiveKitConfig {
     provider,
   };
 }
+
+/**
+ * Get the LiveKit WebSocket URL for client connections.
+ * Returns the configured URL when using livekit provider, empty string for mock.
+ * This avoids an unnecessary network health check just to read a static config value.
+ */
+export function getLiveKitUrl(): string {
+  const config = getLiveKitConfig();
+  return config.url;
+}

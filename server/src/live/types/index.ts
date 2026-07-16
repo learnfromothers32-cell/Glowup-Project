@@ -90,16 +90,6 @@ export const SESSION_STATUS_TRANSITIONS: Record<LiveSessionStatus, LiveSessionSt
   ended: [],
 };
 
-// ── Provider Interfaces ──
-export interface LiveMediaProvider {
-  createRoom(roomName: string, maxParticipants: number): Promise<{ roomName: string }>;
-  deleteRoom(roomName: string): Promise<void>;
-  generateHostToken(roomName: string, userId: string, ttlSeconds?: number): Promise<string>;
-  generateViewerToken(roomName: string, userId: string, ttlSeconds?: number): Promise<string>;
-  startRecording(roomName: string): Promise<{ egressId: string }>;
-  stopRecording(egressId: string): Promise<void>;
-}
-
 // ── Service Result Types ──
 export interface ServiceResult<T> {
   success: boolean;

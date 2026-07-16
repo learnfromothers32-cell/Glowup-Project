@@ -13,9 +13,13 @@ import {
 import { useMediaStore } from "@/domain/live/stores/mediaStore";
 import { useConnectionStore } from "@/domain/live/stores/connectionStore";
 
+const MAX_RECONNECT_ATTEMPTS = 5;
+
 export function useLiveMedia() {
   const roomRef = useRef<LiveKitRoom | null>(null);
   const connectingRef = useRef(false);
+  const reconnectAttemptsRef = useRef(0);
+  const connectArgsRef = useRef<{ url: string; token: string } | null>(null);
   const [room, setRoom] = useState<LiveKitRoom | null>(null);
   const [localTracks, setLocalTracks] = useState<{
     video?: LocalVideoTrack;
@@ -32,6 +36,7 @@ export function useLiveMedia() {
     async (url: string, token: string) => {
       if (connectingRef.current || roomRef.current) return roomRef.current;
       connectingRef.current = true;
+      connectArgsRef.current = { url, token };
 
       try {
         const room = new Room({
@@ -43,6 +48,7 @@ export function useLiveMedia() {
 
         room.on(RoomEvent.Connected, () => {
           setStatus("connected");
+          reconnectAttemptsRef.current = 0;
         });
 
         room.on(RoomEvent.Disconnected, () => {
@@ -51,9 +57,15 @@ export function useLiveMedia() {
 
         room.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
           if (state === ConnectionState.Connecting) setStatus("connecting");
-          else if (state === ConnectionState.Connected) setStatus("connected");
-          else if (state === ConnectionState.Reconnecting) setStatus("reconnecting");
-          else if (state === ConnectionState.Disconnected) setStatus("disconnected");
+          else if (state === ConnectionState.Connected) {
+            setStatus("connected");
+            reconnectAttemptsRef.current = 0;
+          } else if (state === ConnectionState.Reconnecting) setStatus("reconnecting");
+          else if (state === ConnectionState.Disconnected) {
+            setStatus("disconnected");
+            // Attempt fallback reconnection if SDK internal reconnect failed
+            attemptReconnect();
+          }
         });
 
         room.on(RoomEvent.TrackSubscribed, () => {});
@@ -83,6 +95,34 @@ export function useLiveMedia() {
     },
     [cameraEnabled, micEnabled, setStatus],
   );
+
+  const attemptReconnect = useCallback(() => {
+    const args = connectArgsRef.current;
+    if (!args) return;
+    if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+      setStatus("disconnected");
+      return;
+    }
+
+    reconnectAttemptsRef.current += 1;
+    setStatus("reconnecting");
+
+    // Destroy old room and create a fresh one
+    const oldRoom = roomRef.current;
+    if (oldRoom) {
+      oldRoom.removeAllListeners();
+      oldRoom.disconnect().catch(() => {});
+      roomRef.current = null;
+      setRoom(null);
+    }
+    setLocalTracks({});
+    connectingRef.current = false;
+
+    const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
+    setTimeout(() => {
+      connect(args.url, args.token).catch(() => {});
+    }, delay);
+  }, [connect, setStatus]);
 
   const disconnect = useCallback(async () => {
     const r = roomRef.current;

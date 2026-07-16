@@ -175,6 +175,24 @@
   animation: scroll 20s linear infinite;
 }
 
+@keyframes float-up {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-120px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-240px) scale(0.8);
+  }
+}
+.animate-float-up {
+  animation: float-up 3s ease-out forwards;
+}
+
 :root {
   --color-surface: #ffffff;
   --color-bg: #f8f9fa;

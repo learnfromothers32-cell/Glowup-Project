@@ -13,6 +13,7 @@ import { createRateLimitMiddleware } from './middleware/rateLimit';
 import { LiveRateLimiter } from './rateLimit';
 import { LiveChatService } from '../services/LiveChatService';
 import { liveSessionRepository } from '../repositories/LiveSessionRepository';
+import { liveModerationRepository } from '../repositories/LiveModerationRepository';
 import {
   chatSendSchema,
   chatHistorySchema,
@@ -64,9 +65,19 @@ export function createChatEventConfigs(
           return;
         }
 
-        // Check session exists for host detection
+        // Check if user is muted (hosts cannot be muted)
         const session = await liveSessionRepository.findById(payload.sessionId);
         const isHost = session?.hostUserId?.toString() === userId;
+        if (!isHost) {
+          const isMuted = await liveModerationRepository.isUserMuted(payload.sessionId, userId);
+          if (isMuted) {
+            socket.emit('live:chat:error' as any, {
+              code: LIVE_ERROR_CODES.PERMISSION_DENIED,
+              message: 'You are muted and cannot send messages',
+            });
+            return;
+          }
+        }
 
         // Check if user is in room
         const roomName = `live:${payload.sessionId}`;
