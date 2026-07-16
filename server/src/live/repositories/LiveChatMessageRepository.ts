@@ -147,13 +147,16 @@ export class LiveChatMessageRepository {
   }
 
   async getNextSequenceNumber(sessionId: string): Promise<number> {
+    // Atomically increment the counter on a session-scoped document.
+    // Find the session's message counter or create it, then return the new value.
     const result = await LiveChatMessage.findOneAndUpdate(
       { sessionId: new Types.ObjectId(sessionId) },
       { $inc: { sequenceNumber: 1 } },
       { new: true, upsert: false }
     ).select('sequenceNumber');
 
-    return (result?.sequenceNumber || 0) + 1;
+    // result.sequenceNumber is already the new value after $inc
+    return result?.sequenceNumber ?? 1;
   }
 
   async countMessages(sessionId: string): Promise<number> {

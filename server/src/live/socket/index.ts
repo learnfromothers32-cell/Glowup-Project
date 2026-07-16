@@ -39,6 +39,7 @@ let sessionService: LiveSessionService | null = null;
 let chatService: LiveChatService | null = null;
 let chatBroadcaster: ChatBroadcaster | null = null;
 let liveNsp: ReturnType<Server['of']> | null = null;
+let mediaProviderInstance: ReturnType<typeof getMediaProvider> | null = null;
 
 // Track active broadcast subscriptions per session
 const broadcastSubscriptions = new Map<string, number>(); // sessionId → subscriber count
@@ -59,7 +60,8 @@ export function initLiveNamespace(io: Server, redisUrl?: string): void {
   livePresence = new LivePresence(redisUrl);
   liveViewerCount = new LiveViewerCount(redisUrl);
   liveRateLimiter = new LiveRateLimiter(redisUrl);
-  sessionService = new LiveSessionService(getMediaProvider());
+  mediaProviderInstance = getMediaProvider();
+  sessionService = new LiveSessionService(mediaProviderInstance);
 
   // Create chat broadcaster and service
   chatBroadcaster = new RedisChatBroadcaster(redisUrl);
@@ -120,7 +122,7 @@ export function initLiveNamespace(io: Server, redisUrl?: string): void {
     registerSocketEvents(socket, chatEvents);
 
     // Register moderation, reaction, and guest request handlers
-    registerModerationHandlers(socket, { rateLimiter: liveRateLimiter! });
+    registerModerationHandlers(socket, { rateLimiter: liveRateLimiter!, mediaProvider: mediaProviderInstance! });
     registerReactionHandlers(socket, { rateLimiter: liveRateLimiter! });
     registerGuestRequestHandlers(socket, { rateLimiter: liveRateLimiter! });
 

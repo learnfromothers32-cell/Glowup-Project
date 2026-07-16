@@ -12,6 +12,7 @@ import { liveParticipantRepository } from '../repositories/LiveParticipantReposi
 import { liveChatMessageRepository } from '../repositories/LiveChatMessageRepository';
 import { liveSessionRepository } from '../repositories/LiveSessionRepository';
 import { liveAnalyticsService } from '../services/LiveAnalyticsService';
+import { LiveMediaProvider } from '../providers/types';
 import {
   muteUserSchema,
   unmuteUserSchema,
@@ -26,6 +27,7 @@ import logger from '../../utils/logger';
 
 export interface ModerationHandlerDeps {
   rateLimiter: any;
+  mediaProvider?: LiveMediaProvider;
 }
 
 export function registerModerationHandlers(
@@ -70,6 +72,19 @@ export function registerModerationHandlers(
 
       // Mute the participant
       await liveParticipantRepository.setMuted(sessionId, targetUserId, true);
+
+      // Revoke publish permissions on LiveKit (viewer can still subscribe)
+      if (deps.mediaProvider && session.roomName) {
+        try {
+          await deps.mediaProvider.updateParticipantPermissions(session.roomName, targetUserId, {
+            canPublish: false,
+            canSubscribe: true,
+            canPublishData: false,
+          });
+        } catch {
+          // LiveKit may not be configured; don't fail the mute
+        }
+      }
 
       // Create audit log
       await liveModerationRepository.create({
@@ -132,6 +147,19 @@ export function registerModerationHandlers(
 
       await liveParticipantRepository.setMuted(sessionId, targetUserId, false);
 
+      // Restore publish permissions on LiveKit
+      if (deps.mediaProvider && session.roomName) {
+        try {
+          await deps.mediaProvider.updateParticipantPermissions(session.roomName, targetUserId, {
+            canPublish: true,
+            canSubscribe: true,
+            canPublishData: true,
+          });
+        } catch {
+          // LiveKit may not be configured; don't fail the unmute
+        }
+      }
+
       await liveModerationRepository.create({
         sessionId,
         action: 'unmute',
@@ -184,6 +212,15 @@ export function registerModerationHandlers(
 
       // Ban the participant
       await liveParticipantRepository.setBanned(sessionId, targetUserId, true);
+
+      // Disconnect from LiveKit room
+      if (deps.mediaProvider && session.roomName) {
+        try {
+          await deps.mediaProvider.disconnectParticipant(session.roomName, targetUserId);
+        } catch {
+          // LiveKit may not be configured; participant may have already left
+        }
+      }
 
       // Create audit log
       await liveModerationRepository.create({

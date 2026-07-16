@@ -211,7 +211,8 @@ describe('LiveChatMessageRepository', () => {
       (LiveChatMessage.findOneAndUpdate as jest.Mock).mockReturnValue({ select: mockSelect });
 
       const result = await repo.getNextSequenceNumber(SESSION_ID);
-      expect(result).toBe(6);
+      // $inc already returns the new value; no double-add
+      expect(result).toBe(5);
     });
   });
 
