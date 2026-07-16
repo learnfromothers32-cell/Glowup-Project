@@ -44,6 +44,12 @@ export function useLiveSocket() {
   const joinInfoRef = useRef<{ sessionId: string; role: string; displayName?: string } | null>(null);
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
 
+  // Store handler refs for proper cleanup (fixes memory leak)
+  const socketConnectRef = useRef<(() => void) | null>(null);
+  const socketDisconnectRef = useRef<((reason: string) => void) | null>(null);
+  const reconnectAttemptRef = useRef<((attempt: number) => void) | null>(null);
+  const reconnectFailedRef = useRef<(() => void) | null>(null);
+
   const handleJoined = useCallback(
     (data: { sessionId: string; presence: PresenceEntry[]; viewerCount: number }) => {
       setSessionId(data.sessionId);
@@ -146,6 +152,26 @@ export function useLiveSocket() {
     }, delay);
   }, [setStatus, setError]);
 
+  const cleanupSocketListeners = useCallback(() => {
+    const socket = getLiveSocket();
+    if (socketConnectRef.current) {
+      socket.off("connect", socketConnectRef.current);
+      socketConnectRef.current = null;
+    }
+    if (socketDisconnectRef.current) {
+      socket.off("disconnect", socketDisconnectRef.current);
+      socketDisconnectRef.current = null;
+    }
+    if (reconnectAttemptRef.current) {
+      socket.io.off("reconnect_attempt", reconnectAttemptRef.current);
+      reconnectAttemptRef.current = null;
+    }
+    if (reconnectFailedRef.current) {
+      socket.io.off("reconnect_failed", reconnectFailedRef.current);
+      reconnectFailedRef.current = null;
+    }
+  }, []);
+
   const connect = useCallback(() => {
     setStatus("connecting");
     connectLive();
@@ -162,14 +188,17 @@ export function useLiveSocket() {
 
     const socket = getLiveSocket();
 
-    socket.on("connect", () => {
+    // Clean up any previous anonymous listeners first
+    cleanupSocketListeners();
+
+    const onSocketConnect = () => {
       const joinInfo = joinInfoRef.current;
       if (joinInfo && useConnectionStore.getState().status !== "connected") {
         joinRoom(joinInfo.sessionId, joinInfo.role, joinInfo.displayName);
       }
-    });
+    };
 
-    socket.on("disconnect", (reason: string) => {
+    const onSocketDisconnect = (reason: string) => {
       if (reason === "io server disconnect") {
         setStatus("failed");
         setError("Disconnected by server");
@@ -178,19 +207,30 @@ export function useLiveSocket() {
       if (joinInfoRef.current) {
         attemptReconnect();
       }
-    });
+    };
 
-    socket.io.on("reconnect_attempt", (attempt: number) => {
+    const onReconnectAttempt = (attempt: number) => {
       setReconnectAttempt(attempt);
       if (useConnectionStore.getState().status !== "reconnecting") {
         setStatus("reconnecting");
       }
-    });
+    };
 
-    socket.io.on("reconnect_failed", () => {
+    const onReconnectFailed = () => {
       setStatus("failed");
       setError("Connection lost. Please check your network and try again.");
-    });
+    };
+
+    socket.on("connect", onSocketConnect);
+    socket.on("disconnect", onSocketDisconnect);
+    socket.io.on("reconnect_attempt", onReconnectAttempt);
+    socket.io.on("reconnect_failed", onReconnectFailed);
+
+    // Store refs for cleanup
+    socketConnectRef.current = onSocketConnect;
+    socketDisconnectRef.current = onSocketDisconnect;
+    reconnectAttemptRef.current = onReconnectAttempt;
+    reconnectFailedRef.current = onReconnectFailed;
   }, [
     setStatus,
     setError,
@@ -203,6 +243,7 @@ export function useLiveSocket() {
     handleError,
     startHeartbeat,
     attemptReconnect,
+    cleanupSocketListeners,
   ]);
 
   const disconnect = useCallback(() => {
@@ -215,6 +256,9 @@ export function useLiveSocket() {
     offHostOnline(handleHostOnline);
     offHostOffline(handleHostOffline);
     offLiveError(handleError);
+
+    // Clean up anonymous socket listeners
+    cleanupSocketListeners();
 
     const sessionId = useConnectionStore.getState().sessionId;
     if (sessionId) {
@@ -241,6 +285,7 @@ export function useLiveSocket() {
     handleHostOffline,
     handleError,
     stopHeartbeat,
+    cleanupSocketListeners,
   ]);
 
   const join = useCallback(
@@ -262,8 +307,9 @@ export function useLiveSocket() {
   useEffect(() => {
     return () => {
       stopHeartbeat();
+      cleanupSocketListeners();
     };
-  }, [stopHeartbeat]);
+  }, [stopHeartbeat, cleanupSocketListeners]);
 
   return { connect, disconnect, join, manualReconnect, reconnectAttempt };
 }

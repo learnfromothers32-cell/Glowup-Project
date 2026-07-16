@@ -84,6 +84,7 @@ export interface CreateLiveSessionParams {
 export interface StartSessionResponse {
   session: LiveSession;
   token: string;
+  liveKitUrl: string | null;
 }
 
 export interface JoinSessionResponse {

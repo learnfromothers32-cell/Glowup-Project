@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Share2, ShoppingBag, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Share2, ShoppingBag, ChevronUp, ChevronDown, MessageCircle, X } from "lucide-react";
 import { useLiveSession, useSessionStatus, useJoinLiveSession } from "../../domain/live/live.hooks";
 import { useLiveSocket } from "../../features/live/hooks/useLiveSocket";
 import { useLiveMedia } from "../../features/live/hooks/useLiveMedia";
@@ -21,49 +21,106 @@ import { SafetyNotification } from "../../features/live/components/SafetyNotific
 import { HostSafetyDashboard } from "../../features/live/components/HostSafetyDashboard";
 import { ViewerGuestRequestButton } from "../../features/live/components/GuestRequestPanel";
 import { useConnectionStore } from "../../domain/live/stores/connectionStore";
-import { useHostStore } from "../../domain/live/stores/hostStore";
-import { useMediaStore } from "../../domain/live/stores/mediaStore";
 import { useViewerStore } from "../../domain/live/stores/viewerStore";
 import { useCommerceStore } from "../../domain/live/stores/commerceStore";
 import { useModerationStore } from "../../domain/live/stores/moderationStore";
 import { useGuestRequestStore } from "../../domain/live/stores/guestRequestStore";
 import { useReactionStore } from "../../domain/live/stores/reactionStore";
+import { useChatStore } from "../../domain/live/stores/chatStore";
 import { useAuth } from "../../context/authUtils";
 import { Button } from "../../components/ui/Button";
-import { getStylistServices } from "../../api/stylists";
-import { getStylistById } from "../../api/stylists";
+import { getStylistServices, getStylistById } from "../../api/stylists";
+import { endLiveSession } from "../../api/live";
 import { addFavorite, removeFavorite } from "../../api/favorites";
 import {
-  onServicePinned,
-  offServicePinned,
-  onServiceUnpinned,
-  offServiceUnpinned,
-  onAvailabilityUpdated,
-  offAvailabilityUpdated,
-  onShelfUpdated,
-  offShelfUpdated,
-  pinService,
-  unpinService,
-  updateAvailability,
-  toggleShelf,
+  onServicePinned, offServicePinned,
+  onServiceUnpinned, offServiceUnpinned,
+  onAvailabilityUpdated, offAvailabilityUpdated,
+  onShelfUpdated, offShelfUpdated,
+  pinService, unpinService, updateAvailability, toggleShelf,
   sendReaction,
-  onUserMuted,
-  offUserMuted,
-  onUserBanned,
-  offUserBanned,
-  onMessageDeleted,
-  offMessageDeleted,
-  onReportSubmitted,
-  offReportSubmitted,
-  onGuestRequestReceived,
-  offGuestRequestReceived,
-  onGuestRequestAccepted,
-  offGuestRequestAccepted,
-  onGuestRequestRejected,
-  offGuestRequestRejected,
-  onGuestRequestStatus,
-  offGuestRequestStatus,
+  onUserMuted, offUserMuted,
+  onUserBanned, offUserBanned,
+  onMessageDeleted, offMessageDeleted,
+  onReportSubmitted, offReportSubmitted,
+  onGuestRequestReceived, offGuestRequestReceived,
+  onGuestRequestAccepted, offGuestRequestAccepted,
+  onGuestRequestRejected, offGuestRequestRejected,
+  onGuestRequestStatus, offGuestRequestStatus,
 } from "../../services/liveSocket";
+
+// ── Shared commerce panel (avoids duplication between desktop & mobile) ──
+function CommercePanelContent({
+  stylistProfile,
+  availability,
+  services,
+  pinnedService,
+  shelfVisible,
+  stylistId,
+  isHost,
+  sessionId,
+  onBookFromPanel,
+  onBookService,
+  onFollow,
+  onPinService,
+  onUnpinService,
+  onToggleShelf,
+  onUpdateAvailability,
+}: {
+  stylistProfile: any;
+  availability: string;
+  services: any[];
+  pinnedService: any;
+  shelfVisible: boolean;
+  stylistId: string | null;
+  isHost: boolean;
+  sessionId: string;
+  onBookFromPanel: () => void;
+  onBookService: (s: any) => void;
+  onFollow: () => void;
+  onPinService: (id: string) => void;
+  onUnpinService: () => void;
+  onToggleShelf: (v: boolean) => void;
+  onUpdateAvailability: (a: string) => void;
+}) {
+  return (
+    <div className="p-3 space-y-3">
+      {stylistProfile && (
+        <StylistInfoPanel
+          profile={stylistProfile}
+          availability={availability}
+          onBook={onBookFromPanel}
+          onFollow={onFollow}
+        />
+      )}
+      {services.length > 0 && (
+        <ServiceShowcase
+          services={services}
+          pinnedServiceId={pinnedService?.serviceId}
+          onBookService={onBookService}
+        />
+      )}
+      {stylistId && <QueueWidget stylistId={stylistId} />}
+      {shelfVisible && <ProductShelf />}
+      {isHost && (
+        <>
+          <HostSafetyDashboard sessionId={sessionId} />
+          <HostCommerceControls
+            services={services}
+            pinnedServiceId={pinnedService?.serviceId ?? null}
+            shelfVisible={shelfVisible}
+            availability={availability}
+            onPinService={onPinService}
+            onUnpinService={onUnpinService}
+            onToggleShelf={onToggleShelf}
+            onUpdateAvailability={onUpdateAvailability}
+          />
+        </>
+      )}
+      {!isHost && <ViewerGuestRequestButton sessionId={sessionId} className="w-full" />}
+    </div>
+  );
+}
 
 export default function LiveRoomPage() {
   const { id } = useParams<{ id: string }>();
@@ -95,6 +152,8 @@ export default function LiveRoomPage() {
   const [showBooking, setShowBooking] = useState(false);
   const [preSelectedServiceId, setPreSelectedServiceId] = useState<string | undefined>();
   const [showMobileCommerce, setShowMobileCommerce] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   const isHost = useMemo(() => {
     if (!session || !user) return false;
@@ -156,18 +215,10 @@ export default function LiveRoomPage() {
 
   // Commerce socket listeners
   useEffect(() => {
-    const handleServicePinned = (data: any) => {
-      setPinnedService(data.service);
-    };
-    const handleServiceUnpinned = () => {
-      setPinnedService(null);
-    };
-    const handleAvailability = (data: any) => {
-      setAvailability(data.availability);
-    };
-    const handleShelf = (data: any) => {
-      setShelfVisible(data.visible);
-    };
+    const handleServicePinned = (data: any) => setPinnedService(data.service);
+    const handleServiceUnpinned = () => setPinnedService(null);
+    const handleAvailability = (data: any) => setAvailability(data.availability);
+    const handleShelf = (data: any) => setShelfVisible(data.visible);
 
     onServicePinned(handleServicePinned);
     onServiceUnpinned(handleServiceUnpinned);
@@ -186,24 +237,21 @@ export default function LiveRoomPage() {
   useEffect(() => {
     if (!isHost || !id) return;
 
-    const handleUserMuted = (data: { userId: string }) => {
-      useModerationStore.getState().addMutedUser(data.userId);
-    };
-    const handleUserBanned = (data: { userId: string }) => {
-      useModerationStore.getState().addBannedUser(data.userId);
-    };
-    const handleReportSubmitted = () => {
-      useModerationStore.getState().incrementPendingReports();
-    };
+    const handleUserMuted = (data: { userId: string }) => useModerationStore.getState().addMutedUser(data.userId);
+    const handleUserBanned = (data: { userId: string }) => useModerationStore.getState().addBannedUser(data.userId);
+    const handleReportSubmitted = () => useModerationStore.getState().incrementPendingReports();
+    const handleMessageDeleted = (data: { messageId: string }) => useChatStore.getState().deleteMessage(data.messageId);
 
     onUserMuted(handleUserMuted);
     onUserBanned(handleUserBanned);
     onReportSubmitted(handleReportSubmitted);
+    onMessageDeleted(handleMessageDeleted);
 
     return () => {
       offUserMuted(handleUserMuted);
       offUserBanned(handleUserBanned);
       offReportSubmitted(handleReportSubmitted);
+      offMessageDeleted(handleMessageDeleted);
     };
   }, [isHost, id]);
 
@@ -222,12 +270,8 @@ export default function LiveRoomPage() {
         createdAt: new Date().toISOString(),
       });
     };
-    const handleRequestAccepted = (data: { requestId: string }) => {
-      useGuestRequestStore.getState().removePendingRequest(data.requestId);
-    };
-    const handleRequestRejected = (data: { requestId: string }) => {
-      useGuestRequestStore.getState().removePendingRequest(data.requestId);
-    };
+    const handleRequestAccepted = (data: { requestId: string }) => useGuestRequestStore.getState().removePendingRequest(data.requestId);
+    const handleRequestRejected = (data: { requestId: string }) => useGuestRequestStore.getState().removePendingRequest(data.requestId);
 
     onGuestRequestReceived(handleRequestReceived);
     onGuestRequestAccepted(handleRequestAccepted);
@@ -243,11 +287,7 @@ export default function LiveRoomPage() {
   // Guest request status listener (viewer-side)
   useEffect(() => {
     if (isHost || !id) return;
-
-    const handleStatus = (data: { status: string }) => {
-      useGuestRequestStore.getState().setMyRequestStatus(data.status as any);
-    };
-
+    const handleStatus = (data: { status: string }) => useGuestRequestStore.getState().setMyRequestStatus(data.status as any);
     onGuestRequestStatus(handleStatus);
     return () => offGuestRequestStatus(handleStatus);
   }, [isHost, id]);
@@ -273,14 +313,14 @@ export default function LiveRoomPage() {
 
     // If host token was passed via navigation state, use it directly
     if (hostState?.token && hostState?.liveKitUrl) {
-      connectMedia(hostState.liveKitUrl, hostState.token).catch(() => {});
+      connectMedia(hostState.liveKitUrl, hostState.token).catch((err) => {
+        console.error("Failed to connect host media:", err);
+        setConnectError("Failed to connect to live stream. Please try again.");
+      });
       return () => {
         disconnectMedia();
         disconnect();
-        resetCommerce();
-        useModerationStore.getState().reset();
-        useGuestRequestStore.getState().reset();
-        useReactionStore.getState().reset();
+        resetAllStores();
       };
     }
 
@@ -288,30 +328,45 @@ export default function LiveRoomPage() {
     joinMutation.mutate(id, {
       onSuccess: (result) => {
         if (result.liveKitUrl) {
-          connectMedia(result.liveKitUrl, result.token).catch(() => {});
+          connectMedia(result.liveKitUrl, result.token).catch((err) => {
+            console.error("Failed to connect viewer media:", err);
+            setConnectError("Failed to connect to live stream. Please try again.");
+          });
+        } else {
+          setConnectError("Live streaming is not configured on this server. The host needs to set up LiveKit.");
         }
+      },
+      onError: (error) => {
+        console.error("Failed to join session:", error);
+        setConnectError("Could not join this session. It may have ended or you may not have access.");
       },
     });
 
     return () => {
       disconnectMedia();
       disconnect();
-      resetCommerce();
-      useModerationStore.getState().reset();
-      useGuestRequestStore.getState().reset();
-      useReactionStore.getState().reset();
+      resetAllStores();
     };
   }, [id, session]);
+
+  function resetAllStores() {
+    resetCommerce();
+    useModerationStore.getState().reset();
+    useGuestRequestStore.getState().reset();
+    useReactionStore.getState().reset();
+    useChatStore.getState().reset();
+  }
 
   const handleEndStream = useCallback(async () => {
     if (!id) return;
     try {
-      const { endLiveSession } = await import("../../api/live");
       await endLiveSession(id);
       disconnectMedia();
       disconnect();
       navigate("/app/live");
-    } catch {}
+    } catch (err) {
+      console.error("Failed to end stream:", err);
+    }
   }, [id, disconnectMedia, disconnect, navigate]);
 
   const handleLeave = useCallback(() => {
@@ -328,10 +383,6 @@ export default function LiveRoomPage() {
   const handleBookFromPanel = useCallback(() => {
     setPreSelectedServiceId(undefined);
     setShowBooking(true);
-  }, []);
-
-  const handleJoinQueue = useCallback(() => {
-    // Queue joining is handled by QueueWidget internally
   }, []);
 
   const handleFollow = useCallback(async () => {
@@ -383,12 +434,14 @@ export default function LiveRoomPage() {
       {/* Global overlays */}
       <ReactionOverlay sessionId={id!} />
       <SafetyNotification />
+
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-900">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-2 bg-gray-900 z-10 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             onClick={handleLeave}
-            className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all"
+            className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all shrink-0"
+            aria-label="Leave stream"
           >
             <ArrowLeft size={18} />
           </button>
@@ -399,14 +452,14 @@ export default function LiveRoomPage() {
             category={session.category}
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {session.status === "live" && (
             <>
               <LiveBadge size="sm" />
               <ViewerCount count={statusData?.viewerCount ?? viewerCount} />
             </>
           )}
-          <button className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all">
+          <button className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all" aria-label="Share stream">
             <Share2 size={16} />
           </button>
         </div>
@@ -414,160 +467,185 @@ export default function LiveRoomPage() {
 
       <ConnectionBanner className="mx-4 mt-2" onRetry={manualReconnect} />
 
-      {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* Connection error overlay */}
+      {connectError && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80">
+          <div className="text-center px-6 max-w-md">
+            <div className="w-16 h-16 rounded-full bg-red-500/20 mx-auto mb-4 flex items-center justify-center">
+              <span className="text-2xl">📡</span>
+            </div>
+            <p className="text-white font-medium mb-2">Connection Error</p>
+            <p className="text-white/60 text-sm mb-4">{connectError}</p>
+            <div className="flex gap-3 justify-center">
+              <Button variant="secondary" onClick={handleLeave}>Go Back</Button>
+              <Button onClick={() => { setConnectError(null); joinedRef.current = false; window.location.reload(); }}>Retry</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DESKTOP (lg+): Side-by-side video + sidebar ── */}
+      <div className="hidden lg:flex flex-1 overflow-hidden">
         {/* Video */}
         <div className="flex-1 relative">
           <LivePlayer room={room} isHost={isHost} />
         </div>
 
-        {/* Desktop sidebar: Chat + Commerce */}
-        <div className="w-[320px] hidden lg:flex flex-col border-l border-gray-800">
-          {/* Commerce panel */}
-          <div className="max-h-[40%] overflow-y-auto p-3 space-y-3 border-b border-gray-800">
-            {stylistProfile && (
-              <StylistInfoPanel
-                profile={stylistProfile}
-                availability={availability}
-                onBook={handleBookFromPanel}
-                onJoinQueue={handleJoinQueue}
-                onFollow={handleFollow}
-              />
-            )}
-            {services.length > 0 && (
-              <ServiceShowcase
-                services={services}
-                pinnedServiceId={pinnedService?.serviceId}
-                onBookService={handleBookService}
-              />
-            )}
-            {stylistId && (
-              <QueueWidget stylistId={stylistId} />
-            )}
-            {shelfVisible && <ProductShelf />}
-            {isHost && (
-              <>
-                <HostSafetyDashboard sessionId={id!} />
-                <HostCommerceControls
-                  services={services}
-                  pinnedServiceId={pinnedService?.serviceId ?? null}
-                  shelfVisible={shelfVisible}
-                  availability={availability}
-                  onPinService={handlePinService}
-                  onUnpinService={handleUnpinService}
-                  onToggleShelf={handleToggleShelf}
-                  onUpdateAvailability={handleUpdateAvailability}
-                />
-              </>
-            )}
-            {!isHost && (
-              <ViewerGuestRequestButton sessionId={id!} className="w-full" />
-            )}
+        {/* Sidebar: Commerce + Chat */}
+        <div className="w-[320px] flex flex-col border-l border-gray-800">
+          <div className="max-h-[40%] overflow-y-auto border-b border-gray-800">
+            <CommercePanelContent
+              stylistProfile={stylistProfile}
+              availability={availability}
+              services={services}
+              pinnedService={pinnedService}
+              shelfVisible={shelfVisible}
+              stylistId={stylistId}
+              isHost={isHost}
+              sessionId={id!}
+              onBookFromPanel={handleBookFromPanel}
+              onBookService={handleBookService}
+              onFollow={handleFollow}
+              onPinService={handlePinService}
+              onUnpinService={handleUnpinService}
+              onToggleShelf={handleToggleShelf}
+              onUpdateAvailability={handleUpdateAvailability}
+            />
           </div>
-
-          {/* Chat */}
           <div className="flex-1 min-h-0">
             <ChatPanel className="h-full" />
           </div>
-
-          {/* Reaction bar (desktop) */}
           <div className="px-3 py-2 border-t border-gray-800">
             <ReactionBar onSend={handleSendReaction} disabled={session.status !== "live"} />
           </div>
         </div>
+      </div>
 
-        {/* Mobile/Tablet: Chat only, commerce in bottom drawer */}
-        <div className="flex-1 sm:flex lg:hidden flex-col">
-          <div className="flex-1 min-h-0">
-            <ChatPanel className="h-full" />
+      {/* ── TABLET (sm-lg): Video + collapsible chat ── */}
+      <div className="hidden sm:flex lg:hidden flex-1 overflow-hidden relative">
+        <div className="flex-1 relative">
+          <LivePlayer room={room} isHost={isHost} />
+        </div>
+        {/* Floating chat toggle */}
+        <button
+          onClick={() => setShowMobileChat(!showMobileChat)}
+          className="absolute bottom-4 right-4 z-10 p-3 rounded-full bg-brand-500 text-white shadow-lg"
+          aria-label="Toggle chat"
+        >
+          {showMobileChat ? <X size={20} /> : <MessageCircle size={20} />}
+        </button>
+        {/* Sliding chat panel */}
+        {showMobileChat && (
+          <div className="absolute right-0 top-0 bottom-0 w-[300px] bg-gray-900 border-l border-gray-800 flex flex-col z-10">
+            <div className="flex-1 min-h-0">
+              <ChatPanel className="h-full" />
+            </div>
+            <div className="px-3 py-2 border-t border-gray-800">
+              <ReactionBar onSend={handleSendReaction} disabled={session.status !== "live"} />
+            </div>
           </div>
-          {/* Reaction bar (mobile) */}
-          <div className="px-3 py-2 border-t border-gray-800 sm:hidden">
+        )}
+      </div>
+
+      {/* ── MOBILE (<sm): Full video + bottom sheets for chat & commerce ── */}
+      <div className="flex sm:hidden flex-1 flex-col overflow-hidden relative">
+        {/* Video takes full remaining space */}
+        <div className="flex-1 relative">
+          <LivePlayer room={room} isHost={isHost} />
+        </div>
+
+        {/* Bottom controls bar */}
+        <div className="shrink-0 bg-gray-900 border-t border-gray-800">
+          {/* Quick actions row */}
+          <div className="flex items-center justify-between px-3 py-2">
+            <div className="flex items-center gap-2">
+              {/* Chat toggle */}
+              <button
+                onClick={() => { setShowMobileChat(!showMobileChat); setShowMobileCommerce(false); }}
+                className={`p-2 rounded-lg transition-all ${showMobileChat ? "bg-brand-500 text-white" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                aria-label="Toggle chat"
+              >
+                <MessageCircle size={18} />
+              </button>
+              {/* Commerce toggle */}
+              <button
+                onClick={() => { setShowMobileCommerce(!showMobileCommerce); setShowMobileChat(false); }}
+                className={`p-2 rounded-lg transition-all ${showMobileCommerce ? "bg-brand-500 text-white" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                aria-label="Toggle services"
+              >
+                <ShoppingBag size={18} />
+              </button>
+              {pinnedService && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-medium">
+                  {pinnedService.name}
+                </span>
+              )}
+            </div>
             <ReactionBar onSend={handleSendReaction} disabled={session.status !== "live"} />
           </div>
-        </div>
-      </div>
 
-      {/* Mobile commerce bottom bar */}
-      <div className="sm:hidden bg-gray-900 border-t border-gray-800">
-        <button
-          onClick={() => setShowMobileCommerce(!showMobileCommerce)}
-          className="w-full flex items-center justify-between px-4 py-2.5"
-        >
-          <div className="flex items-center gap-2">
-            <ShoppingBag size={14} className="text-brand-400" />
-            <span className="text-xs font-semibold text-white">Services & Info</span>
-            {pinnedService && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-500/20 text-brand-300 font-medium">
-                {pinnedService.name}
-              </span>
-            )}
-          </div>
-          {showMobileCommerce ? (
-            <ChevronDown size={14} className="text-white/40" />
+          {/* Host/Viewer controls */}
+          {isHost ? (
+            <HostControls
+              onToggleCamera={toggleCamera}
+              onToggleMic={toggleMic}
+              onEndStream={handleEndStream}
+              isStreaming={session.status === "live"}
+            />
           ) : (
-            <ChevronUp size={14} className="text-white/40" />
+            <ViewerControls onLeave={handleLeave} />
           )}
-        </button>
+        </div>
 
-        {showMobileCommerce && (
-          <div className="max-h-[50vh] overflow-y-auto p-3 space-y-3 border-t border-gray-800">
-            {stylistProfile && (
-              <StylistInfoPanel
-                profile={stylistProfile}
-                availability={availability}
-                onBook={handleBookFromPanel}
-                onJoinQueue={handleJoinQueue}
-                onFollow={handleFollow}
-              />
-            )}
-            {services.length > 0 && (
-              <ServiceShowcase
-                services={services}
-                pinnedServiceId={pinnedService?.serviceId}
-                onBookService={handleBookService}
-              />
-            )}
-            {stylistId && (
-              <QueueWidget stylistId={stylistId} />
-            )}
-            {shelfVisible && <ProductShelf />}
-            {isHost && (
-              <>
-                <HostSafetyDashboard sessionId={id!} />
-                <HostCommerceControls
-                  services={services}
-                  pinnedServiceId={pinnedService?.serviceId ?? null}
-                  shelfVisible={shelfVisible}
-                  availability={availability}
-                  onPinService={handlePinService}
-                  onUnpinService={handleUnpinService}
-                  onToggleShelf={handleToggleShelf}
-                  onUpdateAvailability={handleUpdateAvailability}
-                />
-              </>
-            )}
-            {!isHost && (
-              <ViewerGuestRequestButton sessionId={id!} className="w-full" />
-            )}
+        {/* Mobile chat bottom sheet */}
+        {showMobileChat && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 h-[60vh] bg-gray-900 rounded-t-xl border-t border-gray-800 flex flex-col">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800">
+              <span className="text-xs font-semibold text-white">Chat</span>
+              <button onClick={() => setShowMobileChat(false)} className="p-1 text-white/40 hover:text-white" aria-label="Close chat">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ChatPanel className="h-full" />
+            </div>
           </div>
         )}
 
-        {/* Controls */}
-        {isHost ? (
-          <HostControls
-            onToggleCamera={toggleCamera}
-            onToggleMic={toggleMic}
-            onEndStream={handleEndStream}
-            isStreaming={session.status === "live"}
-          />
-        ) : (
-          <ViewerControls onLeave={handleLeave} />
+        {/* Mobile commerce bottom sheet */}
+        {showMobileCommerce && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 h-[60vh] bg-gray-900 rounded-t-xl border-t border-gray-800 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-800 shrink-0">
+              <span className="text-xs font-semibold text-white">Services & Info</span>
+              <button onClick={() => setShowMobileCommerce(false)} className="p-1 text-white/40 hover:text-white" aria-label="Close services">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <CommercePanelContent
+                stylistProfile={stylistProfile}
+                availability={availability}
+                services={services}
+                pinnedService={pinnedService}
+                shelfVisible={shelfVisible}
+                stylistId={stylistId}
+                isHost={isHost}
+                sessionId={id!}
+                onBookFromPanel={handleBookFromPanel}
+                onBookService={handleBookService}
+                onFollow={handleFollow}
+                onPinService={handlePinService}
+                onUnpinService={handleUnpinService}
+                onToggleShelf={handleToggleShelf}
+                onUpdateAvailability={handleUpdateAvailability}
+              />
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Desktop controls bar */}
-      <div className="hidden sm:flex items-center bg-gray-900 px-4">
+      {/* ── DESKTOP controls bar ── */}
+      <div className="hidden lg:flex items-center bg-gray-900 px-4 shrink-0">
         <div className="flex-1">
           {isHost ? (
             <HostControls

@@ -128,7 +128,15 @@ export const startSession = asyncHandler(async (req: Request, res: Response) => 
 
   const result = await sessionService.startSession(id, userId);
 
-  return sendSuccess(res, result, 'Session started successfully');
+  // Also return the LiveKit server URL for the client to connect to
+  const provider = getMediaProvider();
+  const health = await provider.healthCheck();
+
+  return sendSuccess(res, {
+    session: result.session,
+    token: result.token,
+    liveKitUrl: health.liveKitUrl || null,
+  }, 'Session started successfully');
 });
 
 /**
