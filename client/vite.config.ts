@@ -82,7 +82,9 @@ export default defineConfig({
               ],
             },
             workbox: {
-              globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+              globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
+              navigateFallback: '/index.html',
+              navigateFallbackAllowlist: [/^\/(?!api|socket\.io).*/],
               runtimeCaching: [
                 {
                   urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
