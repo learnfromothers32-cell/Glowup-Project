@@ -17,6 +17,11 @@ export default function ConsumerLayout() {
 
   const segments = location.pathname.replace(/^\/|\/$/g, '').split('/');
   const isServicePage = segments[0] === 'app' && segments.length === 2 && !CONSUMER_SINGLE_SEGMENT_ROUTES.has(segments[1]);
+  const isLiveRoom = segments[0] === 'app' && segments[1] === 'live' && segments.length === 3;
+
+  if (isLiveRoom) {
+    return <Outlet />;
+  }
 
   return (
     <div className="min-h-screen bg-warm-50 dark:bg-surface-dark flex flex-col">

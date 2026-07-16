@@ -9,6 +9,7 @@ import {
   LiveSessionQueryFilters,
 } from '../types';
 import { getLiveKitUrl } from '../config/livekit.config';
+import { Stylist } from '../../models/Stylist';
 
 // Initialize service with provider from environment config
 // Provider is selected via LIVE_PROVIDER env var (mock or livekit)
@@ -25,9 +26,12 @@ export const createSession = asyncHandler(async (req: Request, res: Response) =>
     throw new Error('Unauthorized');
   }
 
-  // TODO: Get stylistId from user's stylist profile
-  // For now, use userId as stylistId (will be replaced when Stylist model integration is done)
-  const stylistId = userId;
+  // Look up the Stylist document for this user
+  const stylist = await Stylist.findOne({ userId });
+  if (!stylist) {
+    throw new Error('Stylist profile not found');
+  }
+  const stylistId = stylist._id.toString();
 
   const input: CreateLiveSessionInput = {
     title: req.body.title,

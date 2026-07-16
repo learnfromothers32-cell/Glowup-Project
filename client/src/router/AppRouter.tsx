@@ -257,6 +257,7 @@ function AppRoutes() {
         <Route path="waitlist" element={<StylistWaitlist />} />
         <Route path="queue" element={<StylistQueue />} />
         <Route path="go-live" element={<GoLivePage />} />
+        <Route path="live/:id" element={<LiveRoomPage />} />
         <Route path="reviews" element={<StylistReviews />} />
         <Route path="consultation-forms" element={<StylistConsultationForms />} />
         <Route path="articles" element={<StylistArticles />} />

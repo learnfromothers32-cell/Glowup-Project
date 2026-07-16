@@ -23,11 +23,13 @@ import { LiveBadge } from "../../features/live/components/LiveBadge";
 import { Button } from "../../components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import { useAuth } from "../../context/authUtils";
+import { useToast } from "../../components/ui/Toast";
 import { cn } from "../../utils/cn";
 
 export default function GoLivePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -65,26 +67,35 @@ export default function GoLivePage() {
       setDescription("");
       setCategory("");
       return result;
-    } catch {}
-  }, [title, description, category, createMutation]);
+    } catch (error) {
+      toast("error", "Failed to create session", error instanceof Error ? error.message : "Please try again");
+    }
+  }, [title, description, category, createMutation, toast]);
 
   const handleStartLive = useCallback(
     async (sessionId: string) => {
       try {
         const result = await startMutation.mutateAsync(sessionId);
-        navigate(`/app/live/${sessionId}`, {
+        navigate(`/stylist/live/${sessionId}`, {
           state: { token: result.token, liveKitUrl: result.liveKitUrl, isHost: true },
         });
-      } catch {}
+      } catch (error) {
+        toast("error", "Failed to start live session", error instanceof Error ? error.message : "Please try again");
+      }
     },
-    [startMutation, navigate],
+    [startMutation, navigate, toast],
   );
 
   const handleEndLive = useCallback(
     async (sessionId: string) => {
-      await endMutation.mutateAsync(sessionId);
+      try {
+        await endMutation.mutateAsync(sessionId);
+        navigate("/stylist/go-live");
+      } catch (error) {
+        toast("error", "Failed to end live session", error instanceof Error ? error.message : "Please try again");
+      }
     },
-    [endMutation],
+    [endMutation, navigate, toast],
   );
 
   const isSubmitting = createMutation.isPending || startMutation.isPending;

@@ -37,6 +37,12 @@ jest.mock('../config/livekit.config', () => ({
   getLiveKitUrl: jest.fn().mockReturnValue('wss://test.livekit.cloud'),
 }));
 
+jest.mock('../../models/Stylist', () => ({
+  Stylist: {
+    findOne: jest.fn().mockResolvedValue({ _id: 'stylistDoc123', userId: '507f191e810c19729de860ee' }),
+  },
+}));
+
 jest.mock('../providers/types', () => ({
   MockLiveMediaProvider: jest.fn(),
 }));
