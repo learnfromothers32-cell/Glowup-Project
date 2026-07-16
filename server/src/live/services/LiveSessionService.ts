@@ -139,6 +139,16 @@ export class LiveSessionService {
       throw new ApiError(403, 'Not authorized');
     }
 
+    // If session is already live, just return a fresh host token (reconnect case)
+    if (session.status === 'live') {
+      const tokenResult = await this.mediaProvider.generateHostToken(
+        session.roomName,
+        userId
+      );
+      logger.info('Host reconnecting to live session', { sessionId: id, userId });
+      return { session, token: tokenResult.token };
+    }
+
     // Validate state transition
     if (!this.canTransition(session.status, 'live')) {
       throw new ApiError(409, `Cannot start session in ${session.status} status`);

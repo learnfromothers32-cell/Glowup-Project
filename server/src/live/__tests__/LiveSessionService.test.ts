@@ -139,16 +139,18 @@ describe('LiveSessionService', () => {
       await expect(service.startSession('session123', 'user123')).rejects.toThrow(ApiError);
     });
 
-    it('should throw 409 if session already live', async () => {
+    it('should return fresh token if session already live (reconnect)', async () => {
       const mockSession = {
         _id: 'session123',
         hostUserId: 'user123',
         status: 'live',
+        roomName: 'live_stylist123_1234567890',
       };
 
       (liveSessionRepository.findById as jest.Mock).mockResolvedValue(mockSession);
 
-      await expect(service.startSession('session123', 'user123')).rejects.toThrow(ApiError);
+      const result = await service.startSession('session123', 'user123');
+      expect(result.token).toContain('mock_host_token');
     });
   });
 
