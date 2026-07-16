@@ -72,7 +72,7 @@ export function StylistInfoPanel({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-sm font-bold text-gray-400" aria-hidden="true">
-              {profile.name[0]}
+              {profile.name?.[0]}
             </div>
           )}
         </div>

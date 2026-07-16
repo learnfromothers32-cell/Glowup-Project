@@ -97,7 +97,7 @@ export function StreamInfo({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-sm font-bold text-gray-500">
-            {stylistName[0]}
+            {stylistName?.[0]}
           </div>
         )}
       </div>

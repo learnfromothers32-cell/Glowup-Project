@@ -239,7 +239,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[9px] font-bold text-gray-400">
-              {message.senderName[0] || "?"}
+              {message.senderName?.[0] || "?"}
             </div>
           )}
         </div>

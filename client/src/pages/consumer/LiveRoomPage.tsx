@@ -71,7 +71,7 @@ export default function LiveRoomPage() {
   const location = useLocation();
   const { user } = useAuth();
 
-  const hostState = (location.state as { token?: string; liveKitUrl?: string; isHost?: boolean }) | null;
+  const hostState = (location.state as { token?: string; liveKitUrl?: string; isHost?: boolean }) ?? null;
 
   const { data, isLoading } = useLiveSession(id!);
   const { data: statusData } = useSessionStatus(id!, !!id);
