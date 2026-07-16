@@ -251,6 +251,7 @@ describe('LiveSessionService', () => {
         _id: 'session123',
         status: 'live',
         viewerCount: 10,
+        hostUserId: { toString: () => 'owner123' },
         settings: { maxViewers: 10000, followersOnly: false },
         roomName: 'live_stylist123_1234567890',
       };
@@ -274,6 +275,7 @@ describe('LiveSessionService', () => {
       const mockSession = {
         _id: 'session123',
         status: 'live',
+        hostUserId: { toString: () => 'owner123' },
         settings: { maxViewers: 10000, followersOnly: false },
       };
 
@@ -288,6 +290,7 @@ describe('LiveSessionService', () => {
         _id: 'session123',
         status: 'live',
         viewerCount: 10000,
+        hostUserId: { toString: () => 'owner123' },
         settings: { maxViewers: 10000, followersOnly: false },
       };
 

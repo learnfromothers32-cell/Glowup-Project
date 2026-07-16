@@ -40,8 +40,8 @@ export function LivePlayer({ room, isHost, className }: LivePlayerProps) {
     room.on(RoomEvent.TrackSubscribed, handleSubscribed);
     room.on(RoomEvent.TrackUnsubscribed, handleUnsubscribed);
 
-    room.participants.forEach((p) => {
-      p.tracks.forEach((pub) => {
+    room.participants?.forEach((p) => {
+      p.tracks?.forEach((pub) => {
         if (pub.track) {
           if (pub.source === Track.Source.Camera && !isHost) {
             pub.track.attach(videoRef.current!);
@@ -127,7 +127,7 @@ function LocalPreview({ participant }: { participant: Participant }) {
       }
     };
 
-    participant.tracks.forEach((pub) => {
+    participant.tracks?.forEach((pub) => {
       if (pub.track) handleSubscribed(pub);
     });
 
@@ -135,7 +135,7 @@ function LocalPreview({ participant }: { participant: Participant }) {
 
     return () => {
       participant.off("trackPublished", handleSubscribed);
-      participant.tracks.forEach((pub) => {
+      participant.tracks?.forEach((pub) => {
         if (pub.track) pub.track.detach();
       });
     };

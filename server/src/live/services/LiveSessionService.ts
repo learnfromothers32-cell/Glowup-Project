@@ -330,7 +330,20 @@ export class LiveSessionService {
       // For now, allow all users
     }
 
-    // Check max viewers
+    // Determine if this user is the host
+    const isHost = session.hostUserId.toString() === userId;
+
+    // Host gets full publish permissions; viewers get subscribe-only
+    if (isHost) {
+      const tokenResult = await this.mediaProvider.generateHostToken(
+        session.roomName,
+        userId
+      );
+      logger.info('Host joined own session', { sessionId, userId });
+      return { session, token: tokenResult.token };
+    }
+
+    // Check max viewers (only for non-hosts)
     if (session.viewerCount >= session.settings.maxViewers) {
       throw new ApiError(400, 'Room is full');
     }
