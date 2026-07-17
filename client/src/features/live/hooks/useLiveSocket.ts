@@ -251,6 +251,7 @@ export function useLiveSocket() {
   ]);
 
   const disconnect = useCallback(() => {
+    console.trace("[LIVE-SOCKET] disconnect() CALLED");
     socketConnectingRef.current = false;
     stopHeartbeat();
 

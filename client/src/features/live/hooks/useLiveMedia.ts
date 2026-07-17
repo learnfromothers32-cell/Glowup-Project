@@ -35,9 +35,14 @@ export function useLiveMedia() {
 
   const connect = useCallback(
     async (url: string, token: string, publishLocal = true) => {
-      if (connectingRef.current) return roomRef.current;
+      console.trace("[LIVE-MEDIA] connect() CALLED, publishLocal=", publishLocal, "roomRef.exists=", !!roomRef.current, "connecting=", connectingRef.current);
+      if (connectingRef.current) {
+        console.trace("[LIVE-MEDIA] connect() BLOCKED by connectingRef");
+        return roomRef.current;
+      }
 
       if (roomRef.current) {
+        console.trace("[LIVE-MEDIA] connect() DISCONNECTING EXISTING ROOM before reconnect");
         intentionalDisconnectRef.current = true;
         localTracksRef.current.video?.stop();
         localTracksRef.current.audio?.stop();
@@ -65,6 +70,7 @@ export function useLiveMedia() {
         });
 
         r.on(RoomEvent.Disconnected, () => {
+          console.trace("[LIVE-MEDIA] RoomEvent.Disconnected fired, intentionalDisconnect=", intentionalDisconnectRef.current);
           if (!intentionalDisconnectRef.current) {
             setMediaStatus("disconnected");
           }
@@ -116,6 +122,7 @@ export function useLiveMedia() {
   const disconnect = useCallback(async () => {
     const r = roomRef.current;
     if (r) {
+      console.trace("[LIVE-MEDIA] disconnect() CALLED");
       intentionalDisconnectRef.current = true;
       localTracksRef.current.video?.stop();
       localTracksRef.current.audio?.stop();
@@ -182,6 +189,7 @@ export function useLiveMedia() {
     return () => {
       const r = roomRef.current;
       if (r) {
+        console.trace("[LIVE-MEDIA] cleanup useEffect DISCONNECTING on unmount");
         intentionalDisconnectRef.current = true;
         localTracksRef.current.video?.stop();
         localTracksRef.current.audio?.stop();
