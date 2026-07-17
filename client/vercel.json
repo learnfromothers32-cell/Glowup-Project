@@ -4,7 +4,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://glowup-backend-1-u7lt.onrender.com/api/$1" },
-    { "source": "/live", "destination": "https://glowup-backend-1-u7lt.onrender.com/live" },
     { "source": "/queue", "destination": "https://glowup-backend-1-u7lt.onrender.com/queue" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

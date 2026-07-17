@@ -69,7 +69,7 @@ export default function About() {
               </span>
             </h1>
             <p className="text-lg text-neutral-400 max-w-2xl leading-relaxed">
-              GlowUp connects people with top beauty professionals through live sessions, AI-powered matching, 
+              GlowUp connects people with top beauty professionals through AI-powered matching, 
               and seamless booking. Founded in Accra, Ghana — built for Africa, designed for the world.
             </p>
           </FadeIn>

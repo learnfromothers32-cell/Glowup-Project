@@ -14,13 +14,6 @@ export default function StylistLayout() {
 
   const closeSidebar = () => setSidebarOpen(false);
 
-  const segments = location.pathname.replace(/^\/|\/$/g, '').split('/');
-  const isLiveRoom = segments[0] === 'stylist' && segments[1] === 'live' && segments.length === 3;
-
-  if (isLiveRoom) {
-    return <Outlet />;
-  }
-
   return (
     <div className="min-h-screen bg-surface-secondary dark:bg-surface-dark flex overflow-x-hidden">
       {/* ── Desktop Sidebar (always visible on lg screens) ── */}

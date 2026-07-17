@@ -35,7 +35,7 @@ export default function Hero() {
             </h1>
 
             <p className="mt-5 max-w-lg text-lg text-text-secondary dark:text-text-dark-secondary leading-relaxed">
-              Discover verified stylists, watch live beauty sessions, get AI-powered matches, and earn rewards — the premium platform for modern beauty.
+              Discover verified stylists, get AI-powered matches, and earn rewards — the premium platform for modern beauty.
             </p>
 
             {/* Buttons: mobile stacked, desktop row */}

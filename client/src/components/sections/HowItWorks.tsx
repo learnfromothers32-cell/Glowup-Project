@@ -14,7 +14,7 @@ const STEPS = [
     num: "02",
     icon: Scissors,
     title: "Book & Experience",
-    desc: "Choose a time, book instantly, and watch your stylist's live session while you wait.",
+    desc: "Choose a time, book instantly, and get real-time updates while you wait.",
     color: "text-gold-600",
     bg: "bg-gradient-to-br from-gold-50 to-gold-100/50 dark:from-gold-900/20 dark:to-gold-800/15",
     border: "border-gold-200 dark:border-gold-800/50",

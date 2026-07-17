@@ -427,7 +427,7 @@ export default function ConsumerFooter() {
                 }}
               >
                 Book top stylists, discover your next look, and watch
-                transformations live — all in one place.
+                transformations in real time — all in one place.
               </p>
             </div>
 

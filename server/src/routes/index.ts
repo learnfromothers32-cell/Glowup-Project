@@ -26,7 +26,6 @@ import areaRoutes from './area.routes';
 import hairstyleRoutes from './hairstyle.routes';
 import creditRoutes from './credit.routes';
 import articleRoutes from './article.routes';
-import liveRoutes from '../live/routes';
 const router = Router();
 
 router.get('/hello', hello);
@@ -58,6 +57,4 @@ router.use('/areas', areaRoutes);
 router.use('/hairstyles', hairstyleRoutes);
 router.use('/credits', creditRoutes);
 router.use('/articles', articleRoutes);
-router.use('/live', liveRoutes);
-
 export default router;

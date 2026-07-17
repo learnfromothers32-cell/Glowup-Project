@@ -11,7 +11,7 @@ const CATEGORIES = ["All", "Product", "Engineering", "Design", "Community", "Tut
 const POSTS = [
   {
     title: "The Future of Beauty Booking in Africa",
-    excerpt: "How GlowUp is reshaping the beauty industry with live sessions and AI-powered matching. A look at what's next for beauty tech on the continent.",
+    excerpt: "How GlowUp is reshaping the beauty industry with AI-powered matching. A look at what's next for beauty tech on the continent.",
     date: "Dec 15, 2025",
     readTime: "5 min read",
     author: "Kelvin Asante",

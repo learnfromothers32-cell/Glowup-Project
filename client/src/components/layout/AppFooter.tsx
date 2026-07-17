@@ -13,7 +13,6 @@ const FEATURE_LINKS = [
   { label: "Queue Management", to: "/#queue" },
   { label: "Smart Booking", to: "/#booking" },
   { label: "Stylist Portfolio", to: "/#portfolio" },
-  { label: "Live Streaming", to: "/#live" },
   { label: "Trending Feed", to: "/#trending" },
 ];
 

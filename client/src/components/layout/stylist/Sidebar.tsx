@@ -4,7 +4,6 @@ import {
   Wallet, Image, Settings, MessageSquare, BarChart3,
   Clock, User, LogOut, Sparkles, Package, Crown, Percent,
   ShoppingCart, Timer, FileText, Star, Box, LayoutGrid,
-  Radio,
 } from "lucide-react";
 import { useAuth } from "../../../context/authUtils";
 import { cn } from "../../../utils/cn";
@@ -61,12 +60,6 @@ const navSections: NavSection[] = [
     items: [
       { path: "/stylist/marketing", label: "Promos & Gifts", icon: Percent },
       { path: "/stylist/articles", label: "Articles", icon: FileText },
-    ],
-  },
-  {
-    title: "Growth",
-    items: [
-      { path: "/stylist/go-live", label: "Go Live", icon: Radio },
     ],
   },
   {

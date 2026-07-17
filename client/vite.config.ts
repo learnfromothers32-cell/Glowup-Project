@@ -49,7 +49,7 @@ export default defineConfig({
             manifest: {
               name: 'GlowUp — AI-Powered Beauty Platform',
               short_name: 'GlowUp',
-              description: 'Discover verified stylists, watch live beauty sessions, get AI-powered matches, and earn rewards.',
+              description: 'Discover verified stylists, get AI-powered matches, and earn rewards.',
               theme_color: '#f43f5e',
               background_color: '#ffffff',
               display: 'standalone',

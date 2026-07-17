@@ -7,7 +7,6 @@ const NAV_LINKS = [
   { label: "How It Works", id: "how", primary: true },
   { label: "Portfolio", id: "portfolio", primary: true },
   { label: "Queue", id: "queue", primary: true },
-  { label: "Live", id: "live", primary: true },
 ];
 
 const MORE_LINKS = [

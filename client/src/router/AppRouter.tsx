@@ -79,21 +79,12 @@ const StylistConsultationForms = lazy(() => import("../pages/stylist/Consultatio
 const StylistQueue = lazy(() => import("../pages/stylist/QueueManagement"));
 const StylistArticles = lazy(() => import("../pages/stylist/Articles"));
 
-const LiveDiscoverPage = lazy(() => import("../pages/consumer/LiveDiscoverPage"));
-const LiveRoomPage = lazy(() => import("../pages/consumer/LiveRoomPage"));
-const GoLivePage = lazy(() => import("../pages/stylist/GoLivePage"));
-
-const PUBLIC_LIVE_PATHS = ["blog/beauty"];
-
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   allowedRole?: "client" | "stylist";
 }> = ({ children, allowedRole }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const currentPath = window.location.pathname.replace("/app/", "");
-  if (PUBLIC_LIVE_PATHS.some(p => currentPath.startsWith(p))) {
-    return <>{children}</>;
-  }
   if (isLoading) {
     return <div className="flex min-h-screen items-center justify-center bg-[#FAF8F4]"><div className="text-center text-[#7A7168]">Loading…</div></div>;
   }
@@ -187,8 +178,6 @@ function AppRoutes() {
         } />
         <Route path="rewards" element={<Rewards />} />
         <Route path="queue" element={<QueueScreen />} />
-        <Route path="live" element={<LiveDiscoverPage />} />
-        <Route path="live/:id" element={<LiveRoomPage />} />
         <Route path="messages" element={<ConsumerMessages />} />
         <Route path="notifications" element={<ConsumerNotifications />} />
         <Route path="payment-history" element={<PaymentHistory />} />
@@ -256,8 +245,6 @@ function AppRoutes() {
         <Route path="pos" element={<StylistPOS />} />
         <Route path="waitlist" element={<StylistWaitlist />} />
         <Route path="queue" element={<StylistQueue />} />
-        <Route path="go-live" element={<GoLivePage />} />
-        <Route path="live/:id" element={<LiveRoomPage />} />
         <Route path="reviews" element={<StylistReviews />} />
         <Route path="consultation-forms" element={<StylistConsultationForms />} />
         <Route path="articles" element={<StylistArticles />} />
