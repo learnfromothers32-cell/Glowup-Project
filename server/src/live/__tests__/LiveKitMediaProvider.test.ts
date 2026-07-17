@@ -182,7 +182,7 @@ describe('LiveKitMediaProvider', () => {
       expect(AccessToken).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(String),
-        expect.objectContaining({ identity: 'guest_guest123' })
+        expect.objectContaining({ identity: 'guest_guest123:viewer' })
       );
     });
   });
