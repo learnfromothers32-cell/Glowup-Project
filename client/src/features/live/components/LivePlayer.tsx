@@ -67,8 +67,15 @@ export function LivePlayer({ room, isHost, localVideoTrack, localAudioTrack, cla
       }
     };
 
+    const handleParticipantConnected = (participant: Participant) => {
+      participant.trackPublications?.forEach((pub) => {
+        if (pub.track) attachRemoteTrack(pub);
+      });
+    };
+
     room.on(RoomEvent.TrackSubscribed, handleSubscribed);
     room.on(RoomEvent.TrackUnsubscribed, handleUnsubscribed);
+    room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);
 
     room.participants?.forEach((p) => {
       p.trackPublications?.forEach((pub) => {
@@ -79,6 +86,7 @@ export function LivePlayer({ room, isHost, localVideoTrack, localAudioTrack, cla
     return () => {
       room.off(RoomEvent.TrackSubscribed, handleSubscribed);
       room.off(RoomEvent.TrackUnsubscribed, handleUnsubscribed);
+      room.off(RoomEvent.ParticipantConnected, handleParticipantConnected);
     };
   }, [room, isHost]);
 

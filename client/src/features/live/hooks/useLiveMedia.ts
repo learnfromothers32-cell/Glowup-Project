@@ -30,7 +30,7 @@ export function useLiveMedia() {
   const setStatus = useConnectionStore((s) => s.setStatus);
 
   const connect = useCallback(
-    async (url: string, token: string) => {
+    async (url: string, token: string, publishLocal = true) => {
       if (connectingRef.current || roomRef.current) return roomRef.current;
       connectingRef.current = true;
       intentionalDisconnectRef.current = false;
@@ -63,20 +63,22 @@ export function useLiveMedia() {
 
         await r.connect(url, token);
 
-        try {
-          if (cameraEnabled) {
-            const videoTrack = await createLocalVideoTrack();
-            await r.localParticipant.publishTrack(videoTrack);
-            setLocalTracks((prev) => ({ ...prev, video: videoTrack }));
-          }
+        if (publishLocal) {
+          try {
+            if (cameraEnabled) {
+              const videoTrack = await createLocalVideoTrack();
+              await r.localParticipant.publishTrack(videoTrack);
+              setLocalTracks((prev) => ({ ...prev, video: videoTrack }));
+            }
 
-          if (micEnabled) {
-            const audioTrack = await createLocalAudioTrack();
-            await r.localParticipant.publishTrack(audioTrack);
-            setLocalTracks((prev) => ({ ...prev, audio: audioTrack }));
+            if (micEnabled) {
+              const audioTrack = await createLocalAudioTrack();
+              await r.localParticipant.publishTrack(audioTrack);
+              setLocalTracks((prev) => ({ ...prev, audio: audioTrack }));
+            }
+          } catch (trackErr) {
+            console.warn("Failed to publish local tracks (room still connected):", trackErr);
           }
-        } catch (trackErr) {
-          console.warn("Failed to publish local tracks (room still connected):", trackErr);
         }
 
         roomRef.current = r;

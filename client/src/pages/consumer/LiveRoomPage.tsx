@@ -351,7 +351,7 @@ export default function LiveRoomPage() {
     joinMutation.mutate(id, {
       onSuccess: (result) => {
         if (result.liveKitUrl) {
-          connectMedia(result.liveKitUrl, result.token).catch((err) => {
+          connectMedia(result.liveKitUrl, result.token, false).catch((err) => {
             console.error("Failed to connect viewer media:", err);
             setConnectError("Failed to connect to live stream. Please try again.");
           });
