@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { ShoppingBag, ExternalLink, Package, Loader2 } from "lucide-react";
 import { cn } from "@/utils/cn";
-import { Button } from "@/components/ui/Button";
 import { getStylistProducts } from "@/api/products";
 
 interface Product {

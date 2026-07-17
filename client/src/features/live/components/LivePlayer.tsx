@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { RoomEvent, Track, type Room as LiveKitRoom, type TrackPublication, type Participant } from "livekit-client";
 import type { LocalVideoTrack, LocalAudioTrack } from "livekit-client";
 import { cn } from "@/utils/cn";
-import { Users, Wifi, WifiOff, AlertTriangle, Radio } from "lucide-react";
+import { Users, Wifi, WifiOff, Radio } from "lucide-react";
 
 type ConnectionQuality = "excellent" | "good" | "poor" | "disconnected";
 
@@ -36,27 +36,25 @@ export function LivePlayer({
   // Host: attach local camera directly via MediaStream
   useEffect(() => {
     if (!isHost || !localVideoTrack || !videoRef.current) return;
+    const el = videoRef.current;
     const stream = new MediaStream([localVideoTrack.mediaStreamTrack]);
-    videoRef.current.srcObject = stream;
-    videoRef.current.play().catch(() => {});
+    el.srcObject = stream;
+    el.play().catch(() => {});
 
     return () => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      el.srcObject = null;
     };
   }, [isHost, localVideoTrack]);
 
   // Host: attach local mic directly via MediaStream
   useEffect(() => {
     if (!isHost || !localAudioTrack || !audioRef.current) return;
+    const el = audioRef.current;
     const stream = new MediaStream([localAudioTrack.mediaStreamTrack]);
-    audioRef.current.srcObject = stream;
+    el.srcObject = stream;
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.srcObject = null;
-      }
+      el.srcObject = null;
     };
   }, [isHost, localAudioTrack]);
 

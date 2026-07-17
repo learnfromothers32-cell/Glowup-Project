@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Play,
-  CalendarCheck,
   Heart,
   Share2,
   Users,

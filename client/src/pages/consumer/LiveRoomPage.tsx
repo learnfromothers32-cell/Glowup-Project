@@ -8,12 +8,9 @@ import {
   X,
   Heart,
   Calendar,
-  ChevronUp,
-  ChevronDown,
   Star,
   BadgeCheck,
   Users,
-  Clock,
   Zap,
 } from "lucide-react";
 import { useLiveSession, useSessionStatus, useJoinLiveSession } from "../../domain/live/live.hooks";
@@ -39,6 +36,8 @@ import { useViewerStore } from "../../domain/live/stores/viewerStore";
 import { useCommerceStore } from "../../domain/live/stores/commerceStore";
 import { useModerationStore } from "../../domain/live/stores/moderationStore";
 import { useGuestRequestStore } from "../../domain/live/stores/guestRequestStore";
+import { useChatStore } from "../../domain/live/stores/chatStore";
+import { useReactionStore } from "../../domain/live/stores/reactionStore";
 import { useAuth } from "../../context/authUtils";
 import { Button } from "../../components/ui/Button";
 import { getStylistServices, getStylistById } from "../../api/stylists";
@@ -77,7 +76,7 @@ export default function LiveRoomPage() {
   const { data: statusData } = useSessionStatus(id!, !!id);
 
   const session = data?.session;
-  const status = useConnectionStore((s) => s.status);
+  const _status = useConnectionStore((s) => s.status);
   const viewerCount = useViewerStore((s) => s.viewerCount);
 
   const pinnedService = useCommerceStore((s) => s.pinnedService);
@@ -183,8 +182,6 @@ export default function LiveRoomPage() {
     const handleUserUnbanned = (data: { userId: string }) => useModerationStore.getState().removeBannedUser(data.userId);
     const handleReportSubmitted = () => useModerationStore.getState().incrementPendingReports();
     const handleMessageDeleted = (data: { messageId: string }) => {
-      // import from chatStore
-      const { useChatStore } = require("../../domain/live/stores/chatStore");
       useChatStore.getState().deleteMessage(data.messageId);
     };
 
@@ -297,11 +294,7 @@ export default function LiveRoomPage() {
     resetCommerce();
     useModerationStore.getState().reset();
     useGuestRequestStore.getState().reset();
-    // Reset chat store
-    const { useChatStore } = require("../../domain/live/stores/chatStore");
     useChatStore.getState().reset();
-    // Reset reaction store
-    const { useReactionStore } = require("../../domain/live/stores/reactionStore");
     useReactionStore.getState().reset();
   }
 

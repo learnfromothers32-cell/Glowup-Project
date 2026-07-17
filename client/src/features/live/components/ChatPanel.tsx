@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { MessageSquare, ShoppingBag, CalendarCheck, Heart, Flame, Sparkles, Reply, X } from "lucide-react";
+import { MessageSquare, ShoppingBag, CalendarCheck, Reply, X } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useLiveChat } from "../hooks/useLiveChat";
 import type { ChatMessage } from "@/domain/live/live.types";

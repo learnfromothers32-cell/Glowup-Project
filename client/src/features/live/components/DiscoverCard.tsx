@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Eye, Clock, Star, BadgeCheck, Zap } from "lucide-react";
+import { Clock, BadgeCheck, Zap } from "lucide-react";
 import { LiveBadge, ViewerCount } from "./LiveBadge";
 import { cn } from "@/utils/cn";
 import type { LiveSession } from "@/domain/live/live.types";
@@ -9,12 +9,6 @@ interface DiscoverCardProps {
   session: LiveSession;
   variant?: "featured" | "grid" | "compact";
   className?: string;
-}
-
-function formatViewerCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
 }
 
 function formatDuration(startedAt?: string): string {

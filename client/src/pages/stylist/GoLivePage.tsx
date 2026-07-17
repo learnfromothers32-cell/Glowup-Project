@@ -16,8 +16,6 @@ import {
   ShoppingBag,
   Calendar,
   ChevronRight,
-  Settings,
-  Sparkles,
 } from "lucide-react";
 import {
   useLiveSessions,

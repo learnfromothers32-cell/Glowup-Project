@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Search, Radio, TrendingUp, Clock, Flame, ArrowRight, Sparkles } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Search, Radio, TrendingUp, Clock, Flame, Sparkles } from "lucide-react";
 import { useLiveSessions, useFeaturedSessions } from "../../domain/live/live.hooks";
 import { DiscoverCard } from "../../features/live/components/DiscoverCard";
 import { DiscoverSkeleton } from "../../features/live/components/LiveSkeleton";
