@@ -2,6 +2,7 @@ import { AccessToken } from 'livekit-server-sdk';
 import { appConfig } from '../config/app';
 import { LiveSession, ILiveSession } from '../models/LiveSession';
 import { Stylist } from '../models/Stylist';
+import { ApiError } from '../utils/apiError';
 import logger from '../utils/logger';
 
 const STALE_SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 hours
@@ -37,18 +38,18 @@ export async function createSession(
   thumbnail?: string
 ): Promise<{ session: ILiveSession; token: string }> {
   const stylist = await Stylist.findOne({ userId: stylistUserId });
-  if (!stylist) throw new Error('Stylist profile not found');
+  if (!stylist) throw new ApiError(404, 'Stylist profile not found');
 
   const activeSession = await LiveSession.findOne({
     stylistId: stylist._id,
     status: { $in: ['pending', 'live'] },
   });
-  if (activeSession) throw new Error('You already have an active live session');
+  if (activeSession) throw new ApiError(409, 'You already have an active live session');
 
   const { apiKey, apiSecret, wsUrl } = appConfig.livekit;
   if (!apiKey || !apiSecret || !wsUrl) {
     logger.error('LiveKit credentials not configured', { hasKey: !!apiKey, hasSecret: !!apiSecret, hasUrl: !!wsUrl });
-    throw new Error('Live streaming is not configured on the server');
+    throw new ApiError(503, 'Live streaming is not configured on the server');
   }
 
   const roomId = generateRoomId();
@@ -79,17 +80,17 @@ export async function createSession(
   } catch (err) {
     logger.error('Failed to generate LiveKit token', { error: err });
     await LiveSession.findByIdAndDelete(session._id);
-    throw new Error('Failed to create live session token');
+    throw new ApiError(500, 'Failed to create live session token');
   }
 }
 
 export async function startSession(sessionId: string, stylistUserId: string): Promise<ILiveSession> {
   const session = await LiveSession.findById(sessionId);
-  if (!session) throw new Error('Session not found');
+  if (!session) throw new ApiError(404, 'Session not found');
 
   const stylist = await Stylist.findOne({ userId: stylistUserId });
   if (!stylist || !session.stylistId.equals(stylist._id)) {
-    throw new Error('Not authorized');
+    throw new ApiError(403, 'Not authorized');
   }
 
   // Clean up any other pending sessions for this stylist
@@ -107,11 +108,11 @@ export async function startSession(sessionId: string, stylistUserId: string): Pr
 
 export async function endSession(sessionId: string, stylistUserId: string): Promise<ILiveSession> {
   const session = await LiveSession.findById(sessionId);
-  if (!session) throw new Error('Session not found');
+  if (!session) throw new ApiError(404, 'Session not found');
 
   const stylist = await Stylist.findOne({ userId: stylistUserId });
   if (!stylist || !session.stylistId.equals(stylist._id)) {
-    throw new Error('Not authorized');
+    throw new ApiError(403, 'Not authorized');
   }
 
   session.status = 'ended';
@@ -142,12 +143,12 @@ export async function getSessionById(sessionId: string) {
 export async function joinSession(sessionId: string, userId: string): Promise<{ token: string; session: ILiveSession }> {
   const session = await LiveSession.findById(sessionId);
   if (!session || session.status !== 'live') {
-    throw new Error('Session not found or no longer live');
+    throw new ApiError(404, 'Session not found or no longer live');
   }
 
   const { apiKey, apiSecret } = appConfig.livekit;
   if (!apiKey || !apiSecret) {
-    throw new Error('Live streaming is not configured on the server');
+    throw new ApiError(503, 'Live streaming is not configured on the server');
   }
 
   const lk = new AccessToken(apiKey, apiSecret, {
