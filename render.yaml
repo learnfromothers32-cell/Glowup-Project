@@ -29,6 +29,12 @@ services:
         sync: false
       - key: PAYSTACK_SECRET_KEY
         sync: false
+      - key: LIVEKIT_API_KEY
+        sync: false
+      - key: LIVEKIT_API_SECRET
+        sync: false
+      - key: LIVEKIT_WS_URL
+        sync: false
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false
       - key: HF_TOKEN

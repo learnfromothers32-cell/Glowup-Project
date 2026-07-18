@@ -376,6 +376,36 @@ export const initSocket = async (server: HttpServer): Promise<Server> => {
     });
   });
 
+  // ── Live namespace (discovery + viewer count) ──
+  const liveNsp = io.of("/live");
+
+  liveNsp.use(async (socket, next) => {
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    if (token) {
+      try {
+        const payload = verifyAccessToken(token as string);
+        (socket as any).user = payload;
+      } catch {
+        // optional auth — continue without user
+      }
+    }
+    next();
+  });
+
+  liveNsp.on("connection", (socket: Socket) => {
+    socket.on("live:subscribe", () => {
+      socket.join("live:feed");
+    });
+
+    socket.on("live:unsubscribe", () => {
+      socket.leave("live:feed");
+    });
+
+    socket.on("disconnect", () => {
+      socket.removeAllListeners();
+    });
+  });
+
   return io;
 };
 

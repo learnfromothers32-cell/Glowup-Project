@@ -23,6 +23,7 @@ import { haversineDistance } from "../../utils/distance";
 import { Clock, Sparkles, MapPin, ArrowRight, Zap, Hourglass, MoveRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card } from "../../components/ui/Card";
+import LiveNowRail from "../../components/live/LiveNowRail";
 
 import { Skeleton } from "../../components/ui/Skeleton";
 import { Button } from "../../components/ui/Button";
@@ -258,6 +259,8 @@ export default function Home() {
       />
 
       <FilterBar onFilterChange={setFilters} initialFilters={filters} resultCount={filteredStylists.length} />
+
+      <LiveNowRail />
 
       <div>
         <h2 className="text-h4 font-display text-text-primary mb-3">Nearby stylists</h2>

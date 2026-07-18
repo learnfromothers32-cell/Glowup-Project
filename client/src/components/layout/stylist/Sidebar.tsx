@@ -3,7 +3,7 @@ import {
   LayoutDashboard, CalendarDays, BookOpen, Users, Scissors,
   Wallet, Image, Settings, MessageSquare, BarChart3,
   Clock, User, LogOut, Sparkles, Package, Crown, Percent,
-  ShoppingCart, Timer, FileText, Star, Box, LayoutGrid,
+  ShoppingCart, Timer, FileText, Star, Box, LayoutGrid, Radio,
 } from "lucide-react";
 import { useAuth } from "../../../context/authUtils";
 import { cn } from "../../../utils/cn";
@@ -28,6 +28,7 @@ const navSections: NavSection[] = [
       { path: "/stylist/bookings", label: "Bookings", icon: BookOpen, badge: "12" },
       { path: "/stylist/waitlist", label: "Waitlist", icon: Timer },
       { path: "/stylist/queue", label: "Queue", icon: Users },
+      { path: "/stylist/live", label: "Go Live", icon: Radio },
     ],
   },
   {

@@ -78,6 +78,8 @@ const StylistReviews = lazy(() => import("../pages/stylist/Reviews"));
 const StylistConsultationForms = lazy(() => import("../pages/stylist/ConsultationForms"));
 const StylistQueue = lazy(() => import("../pages/stylist/QueueManagement"));
 const StylistArticles = lazy(() => import("../pages/stylist/Articles"));
+const StylistLiveStudio = lazy(() => import("../pages/stylist/LiveStudio"));
+const ConsumerLiveStream = lazy(() => import("../pages/consumer/LiveStream"));
 
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -192,6 +194,7 @@ function AppRoutes() {
         <Route path="search" element={<SearchResultsPage />} />
         <Route path="blog/beauty" element={<BeautyTipsPage />} />
         <Route path="blog/beauty/:slug" element={<BeautyArticle />} />
+        <Route path="live/:sessionId" element={<ConsumerLiveStream />} />
         <Route path=":service" element={<ServicePage />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>
@@ -248,6 +251,7 @@ function AppRoutes() {
         <Route path="reviews" element={<StylistReviews />} />
         <Route path="consultation-forms" element={<StylistConsultationForms />} />
         <Route path="articles" element={<StylistArticles />} />
+        <Route path="live" element={<StylistLiveStudio />} />
         <Route path="*" element={<Navigate to="/stylist/dashboard" replace />} />
       </Route>
 

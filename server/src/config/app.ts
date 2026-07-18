@@ -22,6 +22,11 @@ export const appConfig = {
   hfModel: process.env.HF_MODEL || 'black-forest-labs/FLUX.1-schnell',
   sentryDsn: process.env.SENTRY_DSN || '',
   maxUploadSizeMB: Number(process.env.MAX_UPLOAD_SIZE_MB) || 100,
+  livekit: {
+    apiKey: process.env.LIVEKIT_API_KEY || '',
+    apiSecret: process.env.LIVEKIT_API_SECRET || '',
+    wsUrl: process.env.LIVEKIT_WS_URL || '',
+  },
 };
 
 export const isProduction = appConfig.env === 'production';
