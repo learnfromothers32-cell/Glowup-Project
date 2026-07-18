@@ -30,7 +30,7 @@ export default function LiveStream() {
   const [error, setError] = useState<string | null>(null);
 
   const handleStreamEnded = useCallback(() => {
-    toast({ title: 'Stream has ended', type: 'info' });
+    toast('info', 'Stream has ended');
     navigate('/app');
   }, [toast, navigate]);
 
@@ -115,10 +115,7 @@ export default function LiveStream() {
       setJoined(true);
       setViewerCount(s.viewerCount || 1);
     } catch (err: any) {
-      toast({
-        title: err?.response?.data?.message || 'Could not join stream',
-        type: 'error',
-      });
+      toast('error', err?.response?.data?.message || 'Could not join stream');
     } finally {
       setJoining(false);
     }

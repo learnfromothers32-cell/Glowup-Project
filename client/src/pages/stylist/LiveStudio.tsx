@@ -116,7 +116,7 @@ export default function LiveStudio() {
 
   const handleGoLive = async () => {
     if (!title.trim() || !category) {
-      toast({ title: 'Please fill in title and category', type: 'error' });
+      toast('error', 'Please fill in title and category');
       return;
     }
     setIsStarting(true);
@@ -133,10 +133,10 @@ export default function LiveStudio() {
       await connect(token);
       await liveApi.startLiveSession(session._id);
       setStep('live');
-      toast({ title: 'You are now live!', type: 'success' });
+      toast('success', 'You are now live!');
     } catch (err: any) {
       console.error('Failed to go live:', err);
-      toast({ title: err?.response?.data?.message || 'Failed to go live', type: 'error' });
+      toast('error', err?.response?.data?.message || 'Failed to go live');
     } finally {
       setIsStarting(false);
     }
@@ -149,13 +149,9 @@ export default function LiveStudio() {
       await liveApi.endLiveSession(sessionId);
       disconnect();
       setStep('setup');
-      toast({
-        title: 'Stream ended',
-        description: `Peak viewers: ${viewerCount} | Duration: ${formatTime(elapsed)}`,
-        type: 'info',
-      });
+      toast('info', 'Stream ended', `Peak viewers: ${viewerCount} | Duration: ${formatTime(elapsed)}`);
     } catch {
-      toast({ title: 'Failed to end stream', type: 'error' });
+      toast('error', 'Failed to end stream');
     } finally {
       setIsEnding(false);
     }

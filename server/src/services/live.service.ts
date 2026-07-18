@@ -45,6 +45,12 @@ export async function createSession(
   });
   if (activeSession) throw new Error('You already have an active live session');
 
+  const { apiKey, apiSecret, wsUrl } = appConfig.livekit;
+  if (!apiKey || !apiSecret || !wsUrl) {
+    logger.error('LiveKit credentials not configured', { hasKey: !!apiKey, hasSecret: !!apiSecret, hasUrl: !!wsUrl });
+    throw new Error('Live streaming is not configured on the server');
+  }
+
   const roomId = generateRoomId();
 
   const session = await LiveSession.create({
@@ -56,20 +62,25 @@ export async function createSession(
     roomId,
   });
 
-  const at = new AccessToken(appConfig.livekit.apiKey, appConfig.livekit.apiSecret, {
-    identity: `stylist_${stylistUserId}`,
-  });
-  at.addGrant({
-    roomJoin: true,
-    roomCreate: true,
-    canPublish: true,
-    canSubscribe: true,
-    canPublishData: true,
-    room: roomId,
-  });
-  const token = await at.toJwt();
-
-  return { session, token };
+  try {
+    const at = new AccessToken(apiKey, apiSecret, {
+      identity: `stylist_${stylistUserId}`,
+    });
+    at.addGrant({
+      roomJoin: true,
+      roomCreate: true,
+      canPublish: true,
+      canSubscribe: true,
+      canPublishData: true,
+      room: roomId,
+    });
+    const token = await at.toJwt();
+    return { session, token };
+  } catch (err) {
+    logger.error('Failed to generate LiveKit token', { error: err });
+    await LiveSession.findByIdAndDelete(session._id);
+    throw new Error('Failed to create live session token');
+  }
 }
 
 export async function startSession(sessionId: string, stylistUserId: string): Promise<ILiveSession> {
@@ -134,7 +145,12 @@ export async function joinSession(sessionId: string, userId: string): Promise<{ 
     throw new Error('Session not found or no longer live');
   }
 
-  const lk = new AccessToken(appConfig.livekit.apiKey, appConfig.livekit.apiSecret, {
+  const { apiKey, apiSecret } = appConfig.livekit;
+  if (!apiKey || !apiSecret) {
+    throw new Error('Live streaming is not configured on the server');
+  }
+
+  const lk = new AccessToken(apiKey, apiSecret, {
     identity: `viewer_${userId}`,
   });
   lk.addGrant({
