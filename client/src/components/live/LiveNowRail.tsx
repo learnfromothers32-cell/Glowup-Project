@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye } from 'lucide-react';
 import { getActiveLiveSessions, type LiveSession } from '../../api/live';
 import LiveBadge from './LiveBadge';
 import { motion } from 'framer-motion';
@@ -86,19 +85,7 @@ export default function LiveNowRail() {
             </div>
           </motion.div>
 
-          <div className="flex flex-col items-center gap-0.5 max-w-[80px]">
-            <p className="text-[11px] font-semibold text-text-primary truncate leading-tight group-hover:text-red-500 transition-colors">
-              {session.stylistId?.name}
-            </p>
-            <div className="flex items-center gap-1">
-              <Eye size={9} className="text-red-400" />
-              <span className="text-[9px] text-text-muted font-medium tabular-nums">
-                {session.viewerCount > 999
-                  ? `${(session.viewerCount / 1000).toFixed(1)}k`
-                  : session.viewerCount}
-              </span>
-            </div>
-          </div>
+
         </Link>
       ))}
     </div>
