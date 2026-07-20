@@ -11,6 +11,18 @@ import * as liveApi from '../../api/live';
 import { Track, RoomEvent } from 'livekit-client';
 
 
+function LiveBadge() {
+  return (
+    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold uppercase tracking-wide">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+      </span>
+      Live
+    </span>
+  );
+}
+
 const CATEGORIES = [
   'Braids', 'Nails', 'Barber', 'Colorist', 'Stylist',
   'Makeup', 'Locs', 'Twists', 'Natural Hair', 'Extensions',
