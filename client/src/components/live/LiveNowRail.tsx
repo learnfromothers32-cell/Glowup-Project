@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Eye, TrendingUp } from 'lucide-react';
+import { Eye, TrendingUp } from 'lucide-react';
 import { getActiveLiveSessions, type LiveSession } from '../../api/live';
 import LiveBadge from './LiveBadge';
 import { motion } from 'framer-motion';
@@ -50,27 +50,8 @@ export default function LiveNowRail() {
   if (loading || sessions.length === 0) return null;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="relative flex items-center gap-1.5">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
-            </span>
-            <h2 className="text-base font-bold text-text-primary tracking-tight">Live Now</h2>
-          </div>
-          <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full">
-            {sessions.length}
-          </span>
-        </div>
-        <span className="text-xs font-medium text-text-muted">
-          Tap to watch
-        </span>
-      </div>
-
-      <div className="flex gap-2.5 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2 snap-x snap-mandatory">
-        {sessions.map((session, i) => (
+    <div className="flex gap-2.5 overflow-x-auto scrollbar-none -mx-1 px-1 pb-2 snap-x snap-mandatory">
+      {sessions.map((session, i) => (
           <Link
             key={session._id}
             to={`/app/live/${session._id}`}
@@ -166,7 +147,6 @@ export default function LiveNowRail() {
             </motion.div>
           </Link>
         ))}
-      </div>
     </div>
   );
 }
