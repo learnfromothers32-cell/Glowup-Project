@@ -30,3 +30,12 @@ export const readLimiter = rateLimit({
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later' }
 });
+
+export const likeLimiter = rateLimit({
+  windowMs: 10 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req.ip || 'unknown',
+  message: { success: false, message: 'Too many likes, slow down' }
+});

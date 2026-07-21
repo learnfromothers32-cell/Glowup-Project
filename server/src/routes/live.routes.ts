@@ -11,7 +11,7 @@ import {
   likeLiveSession,
 } from '../controllers/live.controller';
 import { protect, softAuth, requireRole } from '../middleware/auth.middleware';
-import { generalLimiter } from '../middleware/rateLimiter';
+import { generalLimiter, likeLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -31,6 +31,6 @@ router.post('/:id/end', protect, requireRole('stylist'), endLiveSession);
 
 router.post('/:id/join', protect, joinLiveSession);
 
-router.post('/:id/like', protect, likeLiveSession);
+router.post('/:id/like', protect, likeLimiter, likeLiveSession);
 
 export default router;

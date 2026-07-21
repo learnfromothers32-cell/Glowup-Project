@@ -406,8 +406,9 @@ export default function LiveStudio() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                   onClick={() => setShowCommentSheet(false)}
-                  className="absolute inset-0 z-40 bg-black/40"
+                  className="absolute inset-0 z-40 bg-black/50 backdrop-blur-[2px]"
                 />
 
                 {/* Sheet */}
@@ -415,31 +416,33 @@ export default function LiveStudio() {
                   initial={{ y: '100%' }}
                   animate={{ y: 0 }}
                   exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  transition={{ type: 'spring', damping: 35, stiffness: 350, mass: 0.8 }}
                   drag="y"
                   dragConstraints={{ top: 0, bottom: 0 }}
-                  dragElastic={0.2}
+                  dragElastic={0.15}
                   onDragEnd={handleDragEnd}
-                  className="absolute bottom-0 inset-x-0 z-50 bg-gray-950/95 backdrop-blur-xl rounded-t-2xl border-t border-white/10 flex flex-col"
+                  className="absolute bottom-0 inset-x-0 z-50 bg-gray-950/98 backdrop-blur-2xl rounded-t-[20px] border-t border-white/[0.08] flex flex-col overflow-hidden"
                   style={{ height: 'min(65vh, 480px)' }}
+                  role="dialog"
+                  aria-label="Live comments"
                 >
                   {/* Drag handle */}
-                  <div className="flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing">
-                    <div className="w-10 h-1 rounded-full bg-white/20" />
+                  <div className="flex justify-center pt-2.5 pb-1.5 cursor-grab active:cursor-grabbing">
+                    <div className="w-9 h-[3px] rounded-full bg-white/20" />
                   </div>
 
                   {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-white">Comments</h3>
-                      <span className="text-[11px] text-white/40 font-medium">{comments.length}</span>
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="text-[13px] font-bold text-white tracking-tight">Comments</h3>
+                      <span className="text-[11px] text-white/30 font-semibold tabular-nums bg-white/[0.06] rounded-full px-2 py-0.5">{comments.length}</span>
                     </div>
                     <button
                       onClick={() => setShowCommentSheet(false)}
-                      className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors active:scale-90"
+                      className="w-8 h-8 rounded-full bg-white/[0.08] flex items-center justify-center hover:bg-white/[0.15] transition-colors active:scale-90"
                       aria-label="Close comments"
                     >
-                      <X size={14} className="text-white/60" />
+                      <X size={14} className="text-white/50" />
                     </button>
                   </div>
 
@@ -449,16 +452,16 @@ export default function LiveStudio() {
                   </div>
 
                   {/* Broadcaster input */}
-                  <div className="px-3 py-2.5 border-t border-white/5">
-                    <div className="flex items-center gap-2">
+                  <div className="px-3 py-3 border-t border-white/[0.06]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}>
+                    <div className="flex items-center gap-2.5">
                       {user?.avatar ? (
-                        <img src={user.avatar} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
+                        <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
                       ) : (
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
                           {user?.name?.[0]?.toUpperCase() || '?'}
                         </div>
                       )}
-                      <div className="flex-1 flex items-center bg-white/10 rounded-full px-3 py-2 border border-white/5">
+                      <div className="flex-1 flex items-center bg-white/[0.08] rounded-full px-4 py-2.5 border border-white/[0.06] focus-within:border-white/[0.12] focus-within:bg-white/[0.1] transition-all">
                         <input
                           ref={commentInputRef}
                           type="text"
@@ -472,18 +475,32 @@ export default function LiveStudio() {
                           }}
                           placeholder="Say something to viewers..."
                           aria-label="Type a comment"
-                          className="flex-1 bg-transparent text-white text-xs placeholder:text-white/30 focus:outline-none"
+                          className="flex-1 bg-transparent text-white text-[13px] placeholder:text-white/25 focus:outline-none"
                         />
-                        {commentText.trim() && (
+                        {commentText.trim() ? (
                           <motion.button
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ duration: 0.15 }}
                             onClick={handleSendComment}
-                            className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center shrink-0 ml-1.5 hover:bg-red-600 transition-colors active:scale-90"
+                            className="w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0 ml-2 hover:bg-red-400 transition-colors active:scale-90 shadow-lg shadow-red-500/30"
                             aria-label="Send comment"
                           >
-                            <Send size={10} className="text-white ml-0.5" />
+                            <Send size={11} className="text-white ml-0.5" />
                           </motion.button>
+                        ) : (
+                          <button
+                            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 ml-2 text-white/30 hover:text-white/50 transition-colors"
+                            aria-label="Add emoji"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                              <line x1="9" y1="9" x2="9.01" y2="9" />
+                              <line x1="15" y1="9" x2="15.01" y2="9" />
+                            </svg>
+                          </button>
                         )}
                       </div>
                     </div>

@@ -16,6 +16,7 @@ export interface LiveSession {
   viewerCount: number;
   peakViewerCount: number;
   likeCount: number;
+  likedUserIds?: string[];
   startedAt?: string;
   endedAt?: string;
   duration: number;

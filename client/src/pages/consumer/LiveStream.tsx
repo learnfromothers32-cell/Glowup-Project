@@ -30,7 +30,6 @@ export default function LiveStream() {
   const commentInputRef = useRef<HTMLInputElement>(null);
   const commentContainerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef(0);
-  const likeCooldownRef = useRef(false);
   const tapHeartIdRef = useRef(0);
 
   const [session, setSession] = useState<LiveSession | null>(null);
@@ -46,6 +45,7 @@ export default function LiveStream() {
   const [commentFailed, setCommentFailed] = useState(false);
   const [tapHearts, setTapHearts] = useState<TapHeart[]>([]);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const likeInFlightRef = useRef(false);
 
   // Keyboard-aware padding for mobile
   useEffect(() => {
@@ -112,6 +112,9 @@ export default function LiveStream() {
         if (mounted) {
           setSession(s);
           setLikeCount(s.likeCount || 0);
+          if (user && s.likedUserIds?.includes(user.id)) {
+            setUserLiked(true);
+          }
         }
       })
       .catch(() => {
@@ -121,7 +124,7 @@ export default function LiveStream() {
         if (mounted) setLoading(false);
       });
     return () => { mounted = false; };
-  }, [sessionId, setLikeCount]);
+  }, [sessionId, setLikeCount, user]);
 
   useEffect(() => {
     if (!room || !videoContainerRef.current || !joined) return;
@@ -165,6 +168,11 @@ export default function LiveStream() {
       const { token, wsUrl, session: s } = await liveApi.joinLiveSession(sessionId);
       setSession(s);
       setLikeCount(s.likeCount || 0);
+      if (s.likedUserIds?.includes(user.id)) {
+        setUserLiked(true);
+      } else {
+        setUserLiked(false);
+      }
       await connect(wsUrl, token);
       setJoined(true);
       setViewerCount(s.viewerCount || 1);
@@ -176,19 +184,31 @@ export default function LiveStream() {
   };
 
   const performLike = useCallback(async () => {
-    if (!sessionId || !user || userLiked || likeCooldownRef.current) return;
-    likeCooldownRef.current = true;
-    setTimeout(() => { likeCooldownRef.current = false; }, 300);
+    if (!sessionId || !user || likeInFlightRef.current) return;
+    likeInFlightRef.current = true;
+
+    const prevLiked = userLiked;
+    const prevCount = likeCount;
+
+    // Optimistic update
+    setUserLiked(!prevLiked);
+    setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
+    broadcastLikeUpdate(prevLiked ? prevCount - 1 : prevCount + 1);
 
     try {
-      const { likeCount: newCount } = await liveApi.likeLiveSession(sessionId);
+      const { likeCount: newCount, liked } = await liveApi.likeLiveSession(sessionId);
       setLikeCount(newCount);
-      setUserLiked(true);
+      setUserLiked(liked);
       broadcastLikeUpdate(newCount);
     } catch {
-      likeCooldownRef.current = false;
+      // Rollback on failure
+      setUserLiked(prevLiked);
+      setLikeCount(prevCount);
+      broadcastLikeUpdate(prevCount);
+    } finally {
+      likeInFlightRef.current = false;
     }
-  }, [sessionId, user, userLiked, setLikeCount, broadcastLikeUpdate]);
+  }, [sessionId, user, userLiked, likeCount, setLikeCount, broadcastLikeUpdate]);
 
   const spawnTapHeart = useCallback((clientX: number, clientY: number) => {
     const id = ++tapHeartIdRef.current;
@@ -239,6 +259,11 @@ export default function LiveStream() {
       .then(({ session: s }) => {
         setSession(s);
         setLikeCount(s.likeCount || 0);
+        if (user && s.likedUserIds?.includes(user.id)) {
+          setUserLiked(true);
+        } else {
+          setUserLiked(false);
+        }
       })
       .catch(() => setError('Stream not found'))
       .finally(() => setLoading(false));
@@ -504,7 +529,7 @@ export default function LiveStream() {
           </Link>
 
           {/* Like */}
-          <button onClick={() => performLike()} disabled={userLiked} className="flex flex-col items-center gap-0.5 group" aria-label={userLiked ? 'Already liked' : 'Like stream'}>
+          <button onClick={() => performLike()} className="flex flex-col items-center gap-0.5 group" aria-label={userLiked ? 'Unlike stream' : 'Like stream'}>
             <motion.div
               animate={userLiked ? { scale: [1, 1.4, 1] } : {}}
               transition={{ duration: 0.3 }}
@@ -561,26 +586,26 @@ export default function LiveStream() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="absolute bottom-0 inset-x-0 z-20 p-2.5 sm:p-3 pb-3 sm:pb-4"
-          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 8 : undefined }}
+          transition={{ delay: 0.4, duration: 0.3 }}
+          className="absolute bottom-0 inset-x-0 z-20 p-3 sm:p-3.5 pb-3.5 sm:pb-4"
+          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 12 : undefined }}
         >
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2">
             {/* User avatar */}
             {user?.avatar ? (
-              <img src={user.avatar} alt="" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shrink-0 ring-1 ring-white/20" />
+              <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-white/15" />
             ) : (
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shrink-0">
                 {user?.name?.[0]?.toUpperCase() || '?'}
               </div>
             )}
 
-            <div className={`flex-1 flex items-center rounded-full px-3 sm:px-4 py-2 sm:py-2.5 border transition-colors ${
+            <div className={`flex-1 flex items-center rounded-full pl-4 pr-1.5 py-2 border transition-all duration-200 ${
               commentFailed
-                ? 'bg-red-500/20 border-red-500/40'
+                ? 'bg-red-500/15 border-red-500/30'
                 : isOverLimit
-                  ? 'bg-white/10 border-red-400/40'
-                  : 'bg-white/10 border-white/10'
+                  ? 'bg-white/[0.08] border-red-400/30'
+                  : 'bg-white/[0.08] border-white/[0.08] focus-within:border-white/[0.15] focus-within:bg-white/[0.12]'
             }`}>
               <input
                 ref={commentInputRef}
@@ -603,29 +628,43 @@ export default function LiveStream() {
                 disabled={!canType && cooldownRemaining > 0}
                 maxLength={MAX_COMMENT_LENGTH + 20}
                 aria-label="Type a comment"
-                className="flex-1 bg-transparent text-white text-xs sm:text-sm placeholder:text-white/30 focus:outline-none disabled:opacity-50"
+                className="flex-1 bg-transparent text-white text-[13px] placeholder:text-white/25 focus:outline-none disabled:opacity-40"
               />
 
               {/* Character count */}
               {charCount > 0 && (
-                <span className={`text-[9px] sm:text-[10px] tabular-nums mr-1.5 sm:mr-2 shrink-0 ${
-                  isOverLimit ? 'text-red-400' : charCount > MAX_COMMENT_LENGTH * 0.8 ? 'text-yellow-400' : 'text-white/30'
+                <span className={`text-[10px] tabular-nums mr-2 shrink-0 font-medium ${
+                  isOverLimit ? 'text-red-400' : charCount > MAX_COMMENT_LENGTH * 0.8 ? 'text-amber-400' : 'text-white/20'
                 }`}>
                   {charCount}/{MAX_COMMENT_LENGTH}
                 </span>
               )}
 
               {/* Send button */}
-              {commentText.trim() && !isOverLimit && (
+              {commentText.trim() && !isOverLimit ? (
                 <motion.button
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
                   onClick={handleSendComment}
                   aria-label="Send comment"
-                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors active:scale-90"
+                  className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center shrink-0 hover:bg-red-400 transition-colors active:scale-90 shadow-lg shadow-red-500/30"
                 >
-                  <Send size={11} className="text-white ml-0.5" />
+                  <Send size={12} className="text-white ml-0.5" />
                 </motion.button>
+              ) : (
+                <button
+                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white/25 hover:text-white/40 transition-colors"
+                  aria-label="Add emoji"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                    <line x1="9" y1="9" x2="9.01" y2="9" />
+                    <line x1="15" y1="9" x2="15.01" y2="9" />
+                  </svg>
+                </button>
               )}
             </div>
           </div>
