@@ -158,6 +158,15 @@
     @apply text-balance;
   }
 
+  /* ─── Scrollbar hide ─── */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* ─── Dividers ─── */
   .divider {
     @apply h-px w-full bg-gray-100 dark:bg-gray-700/50;

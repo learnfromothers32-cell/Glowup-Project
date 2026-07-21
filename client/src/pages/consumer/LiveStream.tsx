@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Heart, Send, Eye, Calendar, Loader2, WifiOff,
-  Share2, MessageCircle, X,
+  Heart, Send, Eye, Calendar, Loader2, WifiOff, Wifi,
+  Share2, MessageCircle, X, RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../context/authUtils';
 import { useLiveSession } from '../../hooks/useLiveSession';
@@ -15,6 +15,12 @@ import FloatingHeart from '../../components/live/FloatingHeart';
 import * as liveApi from '../../api/live';
 import type { LiveSession } from '../../api/live';
 
+interface TapHeart {
+  id: number;
+  x: number;
+  y: number;
+}
+
 export default function LiveStream() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
@@ -25,6 +31,7 @@ export default function LiveStream() {
   const commentContainerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef(0);
   const likeCooldownRef = useRef(false);
+  const tapHeartIdRef = useRef(0);
 
   const [session, setSession] = useState<LiveSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +44,25 @@ export default function LiveStream() {
   const [showShareToast, setShowShareToast] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const [commentFailed, setCommentFailed] = useState(false);
+  const [tapHearts, setTapHearts] = useState<TapHeart[]>([]);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Keyboard-aware padding for mobile
+  useEffect(() => {
+    const vp = window.visualViewport;
+    if (!vp) return;
+    const onResize = () => {
+      const height = window.innerHeight;
+      const diff = height - vp.height - vp.offsetTop;
+      setKeyboardHeight(Math.max(0, diff));
+    };
+    vp.addEventListener('resize', onResize);
+    vp.addEventListener('scroll', onResize);
+    return () => {
+      vp.removeEventListener('resize', onResize);
+      vp.removeEventListener('scroll', onResize);
+    };
+  }, []);
 
   const handleStreamEnded = useCallback(() => {
     toast('info', 'Stream has ended');
@@ -164,13 +190,27 @@ export default function LiveStream() {
     }
   }, [sessionId, user, userLiked, setLikeCount, broadcastLikeUpdate]);
 
-  const handleDoubleTap = (e: React.TouchEvent | React.MouseEvent) => {
+  const spawnTapHeart = useCallback((clientX: number, clientY: number) => {
+    const id = ++tapHeartIdRef.current;
+    const rect = videoContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const xPct = ((clientX - rect.left) / rect.width) * 100;
+    const yPx = clientY - rect.top;
+    setTapHearts((prev) => [...prev.slice(-8), { id, x: xPct, y: yPx }]);
+    setTimeout(() => setTapHearts((prev) => prev.filter((h) => h.id !== id)), 1400);
+  }, []);
+
+  const handleDoubleTap = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     const now = Date.now();
+    const clientX = 'touches' in e ? e.changedTouches[0]?.clientX ?? 0 : e.clientX;
+    const clientY = 'touches' in e ? e.changedTouches[0]?.clientY ?? 0 : e.clientY;
+
     if (now - lastTapRef.current < 300) {
       performLike();
+      spawnTapHeart(clientX, clientY);
     }
     lastTapRef.current = now;
-  };
+  }, [performLike, spawnTapHeart]);
 
   const handleSendComment = () => {
     if (!commentText.trim() || !user) return;
@@ -191,6 +231,19 @@ export default function LiveStream() {
     navigate(-1);
   };
 
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    liveApi
+      .getLiveSession(sessionId || '')
+      .then(({ session: s }) => {
+        setSession(s);
+        setLikeCount(s.likeCount || 0);
+      })
+      .catch(() => setError('Stream not found'))
+      .finally(() => setLoading(false));
+  };
+
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
@@ -202,19 +255,61 @@ export default function LiveStream() {
     }
   };
 
+  // ── Loading skeleton ──
   if (loading) {
     return (
-      <div className="h-dvh bg-black flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-white" />
+      <div className="h-dvh w-full bg-black relative overflow-hidden select-none" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="absolute inset-0 bg-gray-900 animate-pulse" />
+        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-10 pointer-events-none" />
+        <div className="absolute top-5 left-4 z-20 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse" />
+          <div className="h-9 w-32 rounded-full bg-white/10 animate-pulse" />
+        </div>
+        <div className="absolute top-5 right-4 z-20">
+          <div className="h-8 w-20 rounded-full bg-white/10 animate-pulse" />
+        </div>
+        <div className="absolute bottom-0 inset-x-0 h-72 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-3 bottom-36 z-20 flex flex-col items-center gap-4">
+          {[44, 44, 44, 44].map((s, i) => (
+            <div key={i} className="rounded-full bg-white/10 animate-pulse" style={{ width: s, height: s }} />
+          ))}
+        </div>
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center">
+          <Loader2 size={28} className="animate-spin text-white/60" />
+          <p className="text-xs text-white/40 mt-3 font-medium">Loading stream...</p>
+        </div>
       </div>
     );
   }
 
+  // ── Error state ──
   if (error || !session) {
     return (
-      <div className="h-dvh bg-black flex flex-col items-center justify-center gap-4 text-white">
-        <p className="text-lg font-medium">{error || 'Stream not found'}</p>
-        <button onClick={() => navigate(-1)} className="text-sm text-white/60 hover:text-white">Go back</button>
+      <div className="h-dvh w-full bg-black flex flex-col items-center justify-center gap-5 text-white px-6" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
+          <WifiOff size={28} className="text-white/40" />
+        </div>
+        <div className="text-center">
+          <p className="text-lg font-semibold">{error || 'Stream not found'}</p>
+          <p className="text-sm text-white/40 mt-1">This stream may have ended or doesn't exist.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRetry}
+            className="px-5 py-2.5 rounded-full bg-white/10 text-white text-sm font-medium flex items-center gap-2 hover:bg-white/20 transition-all active:scale-95"
+            aria-label="Retry loading stream"
+          >
+            <RefreshCw size={14} />
+            Retry
+          </button>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-5 py-2.5 rounded-full bg-white/5 text-white/60 text-sm font-medium hover:bg-white/10 hover:text-white transition-all active:scale-95"
+            aria-label="Go back"
+          >
+            Go back
+          </button>
+        </div>
       </div>
     );
   }
@@ -224,7 +319,7 @@ export default function LiveStream() {
   const canType = cooldownRemaining <= 0;
 
   return (
-    <div className="h-dvh w-full bg-black relative overflow-hidden select-none">
+    <div className="h-dvh w-full bg-black relative overflow-hidden select-none" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* ── Video ── */}
       <div
         ref={videoContainerRef}
@@ -232,6 +327,23 @@ export default function LiveStream() {
         onClick={handleDoubleTap}
         onTouchEnd={handleDoubleTap}
       />
+
+      {/* ── Double-tap floating hearts (at tap position) ── */}
+      <AnimatePresence>
+        {tapHearts.map((h) => (
+          <motion.div
+            key={h.id}
+            initial={{ opacity: 1, scale: 0.3 }}
+            animate={{ opacity: [1, 1, 0], scale: 1.2, y: -160 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
+            className="absolute pointer-events-none z-50"
+            style={{ left: `${h.x}%`, top: h.y }}
+          >
+            <span className="text-3xl drop-shadow-lg">❤️</span>
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
       {/* ── Pre-join overlay ── */}
       {!joined && (
@@ -268,7 +380,8 @@ export default function LiveStream() {
             <button
               onClick={handleJoin}
               disabled={joining}
-              className="px-10 py-3.5 rounded-full bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-shadow active:scale-95"
+              aria-label={joining ? 'Joining stream' : 'Join live stream'}
+              className="px-10 py-3.5 rounded-full bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all active:scale-95"
             >
               {joining ? (
                 <><Loader2 size={16} className="animate-spin" /> Joining...</>
@@ -283,7 +396,7 @@ export default function LiveStream() {
               )}
             </button>
 
-            <button onClick={handleBack} className="text-sm text-white/40 hover:text-white/70 transition-colors">Go back</button>
+            <button onClick={handleBack} className="text-sm text-white/40 hover:text-white/70 transition-colors active:scale-95" aria-label="Go back">Go back</button>
           </motion.div>
         </div>
       )}
@@ -294,7 +407,7 @@ export default function LiveStream() {
       {/* ── Top-left: Back + Stylist info ── */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between p-3 sm:p-4 pt-4 sm:pt-5">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <button onClick={handleBack} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all shrink-0">
+          <button onClick={handleBack} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90 shrink-0" aria-label="Close stream">
             <X size={18} />
           </button>
 
@@ -337,16 +450,26 @@ export default function LiveStream() {
       </div>
 
       {/* ── Connection status ── */}
-      {joined && connectionState !== 'connected' && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30">
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 bg-yellow-500/90 text-black text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
-            <WifiOff size={12} />
-            Reconnecting...
+      <AnimatePresence>
+        {joined && connectionState !== 'connected' && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className="absolute top-20 left-1/2 -translate-x-1/2 z-30"
+          >
+            <div className="flex items-center gap-2 bg-yellow-500/90 text-black text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+              {connectionState === 'reconnecting' ? (
+                <><WifiOff size={12} /> Reconnecting...</>
+              ) : (
+                <><Wifi size={12} /> Connecting...</>
+              )}
+            </div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
-      {/* ── Floating hearts ── */}
+      {/* ── Floating hearts (reaction broadcast) ── */}
       <AnimatePresence>
         {hearts.map((h) => (
           <FloatingHeart key={h.id} id={h.id} x={h.x} />
@@ -365,7 +488,7 @@ export default function LiveStream() {
           className="absolute right-2 sm:right-3 bottom-24 sm:bottom-36 z-20 flex flex-col items-center gap-3 sm:gap-4"
         >
           {/* Stylist profile */}
-          <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-0.5">
+          <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-0.5" aria-label={`View ${session.stylistId?.name}'s profile`}>
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 p-[2px] shadow-lg">
               <div className="w-full h-full rounded-full bg-gray-900 p-[1.5px] overflow-hidden">
                 {session.stylistId?.image ? (
@@ -381,11 +504,11 @@ export default function LiveStream() {
           </Link>
 
           {/* Like */}
-          <button onClick={() => performLike()} disabled={userLiked} className="flex flex-col items-center gap-0.5 group">
+          <button onClick={() => performLike()} disabled={userLiked} className="flex flex-col items-center gap-0.5 group" aria-label={userLiked ? 'Already liked' : 'Like stream'}>
             <motion.div
               animate={userLiked ? { scale: [1, 1.4, 1] } : {}}
               transition={{ duration: 0.3 }}
-              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all ${
+              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all active:scale-90 ${
                 userLiked ? 'bg-red-500/20' : 'bg-black/30 group-hover:bg-black/50'
               }`}
             >
@@ -395,24 +518,26 @@ export default function LiveStream() {
           </button>
 
           {/* Comment toggle */}
-          <button onClick={() => setShowComments((v) => !v)} className="flex flex-col items-center gap-0.5 group">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all">
+          <button onClick={() => setShowComments((v) => !v)} className="flex flex-col items-center gap-0.5 group" aria-label={showComments ? 'Hide comments' : 'Show comments'}>
+            <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all active:scale-90 ${
+              showComments ? 'bg-white/20' : 'bg-black/30 group-hover:bg-black/50'
+            }`}>
               <MessageCircle size={18} className={showComments ? 'text-white fill-white/20' : 'text-white'} />
             </div>
             <span className="text-[9px] sm:text-[10px] text-white font-semibold">{comments.length}</span>
           </button>
 
           {/* Share */}
-          <button onClick={handleShare} className="flex flex-col items-center gap-0.5 group">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all">
+          <button onClick={handleShare} className="flex flex-col items-center gap-0.5 group" aria-label="Share stream">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all active:scale-90">
               <Share2 size={18} className="text-white" />
             </div>
             <span className="text-[9px] sm:text-[10px] text-white font-semibold">Share</span>
           </button>
 
           {/* Book */}
-          <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-0.5 group">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all">
+          <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-0.5 group" aria-label="Book appointment">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all active:scale-90">
               <Calendar size={16} className="text-white" />
             </div>
             <span className="text-[9px] sm:text-[10px] text-white font-semibold">Book</span>
@@ -420,7 +545,7 @@ export default function LiveStream() {
         </motion.div>
       )}
 
-      {/* ── Comment feed + input ── */}
+      {/* ── Comment feed (hidden when comments toggled off) ── */}
       {joined && showComments && (
         <div
           ref={commentContainerRef}
@@ -431,13 +556,14 @@ export default function LiveStream() {
         </div>
       )}
 
-      {/* ── Comment input bar ── */}
-      {joined && (
+      {/* ── Comment input bar (hidden when comments toggled off) ── */}
+      {joined && showComments && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className="absolute bottom-0 inset-x-0 z-20 p-2.5 sm:p-3 pb-3 sm:pb-4"
+          style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 8 : undefined }}
         >
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* User avatar */}
@@ -476,10 +602,11 @@ export default function LiveStream() {
                 }
                 disabled={!canType && cooldownRemaining > 0}
                 maxLength={MAX_COMMENT_LENGTH + 20}
+                aria-label="Type a comment"
                 className="flex-1 bg-transparent text-white text-xs sm:text-sm placeholder:text-white/30 focus:outline-none disabled:opacity-50"
               />
 
-              {/* Character count — only show when typing */}
+              {/* Character count */}
               {charCount > 0 && (
                 <span className={`text-[9px] sm:text-[10px] tabular-nums mr-1.5 sm:mr-2 shrink-0 ${
                   isOverLimit ? 'text-red-400' : charCount > MAX_COMMENT_LENGTH * 0.8 ? 'text-yellow-400' : 'text-white/30'
@@ -494,6 +621,7 @@ export default function LiveStream() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   onClick={handleSendComment}
+                  aria-label="Send comment"
                   className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors active:scale-90"
                 >
                   <Send size={11} className="text-white ml-0.5" />

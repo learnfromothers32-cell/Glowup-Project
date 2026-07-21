@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Radio,
   Loader2, X, Eye, Clock, Heart, MessageCircle, Send,
@@ -163,14 +163,14 @@ export default function LiveStudio() {
     setCommentText('');
   };
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: any, info: { offset: { y: number } }) => {
     if (info.offset.y > 100) {
       setShowCommentSheet(false);
     }
   };
 
   return (
-    <div className="h-dvh w-full bg-black relative overflow-hidden select-none">
+    <div className="h-dvh w-full bg-black relative overflow-hidden select-none" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* ── Video (full-screen background) ── */}
       <div ref={videoContainerRef} className="absolute inset-0 bg-gray-900" />
 
@@ -191,7 +191,8 @@ export default function LiveStudio() {
           <div className="relative flex items-center justify-between p-4 pt-5 z-10">
             <button
               onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all"
+              aria-label="Go back"
+              className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
             >
               <X size={20} />
             </button>
@@ -239,7 +240,7 @@ export default function LiveStudio() {
                     <button
                       key={c}
                       onClick={() => setCategory(c)}
-                      className={`text-[11px] py-2 px-2 rounded-xl font-semibold transition-all ${
+                      className={`text-[11px] py-2 px-2 rounded-xl font-semibold transition-all active:scale-95 ${
                         category === c
                           ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-500/20'
                           : 'bg-white/8 text-white/50 hover:bg-white/12 hover:text-white/70'
@@ -255,6 +256,7 @@ export default function LiveStudio() {
                 onClick={handleGoLive}
                 disabled={isStarting || !title.trim() || !category}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all active:scale-[0.98]"
+              aria-label={isStarting ? 'Starting stream...' : 'Go live'}
               >
                 {isStarting ? (
                   <><Loader2 size={16} className="animate-spin" /> Starting...</>
@@ -276,13 +278,15 @@ export default function LiveStudio() {
             <div className="flex items-center justify-center gap-4 sm:gap-6">
               <button
                 onClick={handleToggleCam}
-                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${camEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${camEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
+                aria-label={camEnabled ? 'Turn camera off' : 'Turn camera on'}
               >
                 {camEnabled ? <Video size={18} /> : <VideoOff size={18} />}
               </button>
               <button
                 onClick={handleToggleMic}
-                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${micEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${micEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
+                aria-label={micEnabled ? 'Turn microphone off' : 'Turn microphone on'}
               >
                 {micEnabled ? <Mic size={18} /> : <MicOff size={18} />}
               </button>
@@ -302,7 +306,8 @@ export default function LiveStudio() {
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={handleEndStream}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
+                aria-label="End stream"
               >
                 <X size={18} />
               </button>
@@ -345,9 +350,10 @@ export default function LiveStudio() {
               {/* Comment toggle */}
               <button
                 onClick={() => setShowCommentSheet((v) => !v)}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md relative ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md relative active:scale-90 ${
                   showCommentSheet ? 'bg-white/25 text-white' : 'bg-white/15 text-white hover:bg-white/25'
                 }`}
+                aria-label={showCommentSheet ? 'Hide comments' : 'Show comments'}
               >
                 <MessageCircle size={20} />
                 {comments.length > 0 && (
@@ -360,9 +366,10 @@ export default function LiveStudio() {
               {/* Camera toggle */}
               <button
                 onClick={handleToggleCam}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md active:scale-90 ${
                   camEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
                 }`}
+                aria-label={camEnabled ? 'Turn camera off' : 'Turn camera on'}
               >
                 {camEnabled ? <Video size={20} /> : <VideoOff size={20} />}
               </button>
@@ -370,9 +377,10 @@ export default function LiveStudio() {
               {/* Mic toggle */}
               <button
                 onClick={handleToggleMic}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md active:scale-90 ${
                   micEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
                 }`}
+                aria-label={micEnabled ? 'Turn microphone off' : 'Turn microphone on'}
               >
                 {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
@@ -382,6 +390,7 @@ export default function LiveStudio() {
                 onClick={handleEndStream}
                 disabled={isEnding}
                 className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-600 text-white hover:bg-red-700 flex items-center justify-center shadow-xl shadow-red-600/40 transition-all active:scale-95"
+                aria-label="End stream"
               >
                 {isEnding ? <Loader2 size={22} className="animate-spin" /> : <PhoneOff size={22} />}
               </button>
@@ -427,7 +436,8 @@ export default function LiveStudio() {
                     </div>
                     <button
                       onClick={() => setShowCommentSheet(false)}
-                      className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                      className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors active:scale-90"
+                      aria-label="Close comments"
                     >
                       <X size={14} className="text-white/60" />
                     </button>
@@ -461,6 +471,7 @@ export default function LiveStudio() {
                             }
                           }}
                           placeholder="Say something to viewers..."
+                          aria-label="Type a comment"
                           className="flex-1 bg-transparent text-white text-xs placeholder:text-white/30 focus:outline-none"
                         />
                         {commentText.trim() && (
@@ -469,6 +480,7 @@ export default function LiveStudio() {
                             animate={{ scale: 1 }}
                             onClick={handleSendComment}
                             className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center shrink-0 ml-1.5 hover:bg-red-600 transition-colors active:scale-90"
+                            aria-label="Send comment"
                           >
                             <Send size={10} className="text-white ml-0.5" />
                           </motion.button>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { ChevronDown, MessageCircle } from 'lucide-react';
 import type { Comment } from '../../hooks/useLiveSession';
 
 interface LiveCommentFeedProps {
@@ -15,6 +15,7 @@ export default function LiveCommentFeed({ comments, isBroadcaster = false }: Liv
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newCommentCount, setNewCommentCount] = useState(0);
   const prevCommentCountRef = useRef(comments.length);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const diff = comments.length - prevCommentCountRef.current;
@@ -57,8 +58,9 @@ export default function LiveCommentFeed({ comments, isBroadcaster = false }: Liv
         className="flex-1 flex flex-col gap-1 overflow-y-auto scrollbar-none px-3 py-2"
       >
         {isBroadcaster && visible.length === 0 && (
-          <div className="flex-1 flex items-end pb-2">
-            <p className="text-xs text-white/30 italic">Comments from viewers will appear here</p>
+          <div className="flex-1 flex flex-col items-center justify-center gap-1 pb-2">
+            <MessageCircle size={20} className="text-white/15" />
+            <p className="text-xs text-white/25 text-center">Comments from viewers{'\n'}will appear here</p>
           </div>
         )}
 
@@ -68,10 +70,10 @@ export default function LiveCommentFeed({ comments, isBroadcaster = false }: Liv
               return (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: prefersReducedMotion ? 0.05 : 0.2 }}
                   className="flex justify-center py-0.5"
                 >
                   <span className="text-[11px] text-white/40 bg-white/5 backdrop-blur-sm rounded-full px-3 py-0.5">
@@ -96,6 +98,7 @@ export default function LiveCommentFeed({ comments, isBroadcaster = false }: Liv
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             onClick={scrollToBottom}
+            aria-label={`Scroll to ${newCommentCount} new comments`}
             className="absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/15 backdrop-blur-md rounded-full px-3 py-1 text-xs text-white font-medium hover:bg-white/25 transition-colors"
           >
             <ChevronDown size={14} />
@@ -109,6 +112,7 @@ export default function LiveCommentFeed({ comments, isBroadcaster = false }: Liv
 
 function CommentBubble({ comment }: { comment: Comment }) {
   const [expanded, setExpanded] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
   const needsTruncation = comment.text.length > TRUNCATE_LENGTH;
   const displayText = needsTruncation && !expanded
     ? comment.text.slice(0, TRUNCATE_LENGTH) + '...'
@@ -116,10 +120,10 @@ function CommentBubble({ comment }: { comment: Comment }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -12, y: 4 }}
+      initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: -12, y: 4 }}
       animate={{ opacity: 1, x: 0, y: 0 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      transition={{ duration: prefersReducedMotion ? 0.05 : 0.2, ease: 'easeOut' }}
       className="flex items-start gap-2 max-w-[80%]"
     >
       {comment.userAvatar ? (
@@ -143,6 +147,7 @@ function CommentBubble({ comment }: { comment: Comment }) {
         {needsTruncation && (
           <button
             onClick={() => setExpanded((v) => !v)}
+            aria-label={expanded ? 'Show less' : 'See more of this comment'}
             className="text-[10px] text-white/40 hover:text-white/60 mt-0.5 transition-colors"
           >
             {expanded ? 'Show less' : 'See more'}
