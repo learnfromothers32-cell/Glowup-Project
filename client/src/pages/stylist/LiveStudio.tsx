@@ -3,25 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Radio,
-  Loader2, ChevronLeft, Sparkles, Eye,
+  Loader2, X, Sparkles, Eye, Clock, Users,
 } from 'lucide-react';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { useToast } from '../../components/ui/Toast';
 import * as liveApi from '../../api/live';
 import { Track, RoomEvent } from 'livekit-client';
-
-
-function LiveBadge() {
-  return (
-    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold uppercase tracking-wide">
-      <span className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-      </span>
-      Live
-    </span>
-  );
-}
 
 const CATEGORIES = [
   'Braids', 'Nails', 'Barber', 'Colorist', 'Stylist',
@@ -53,7 +40,6 @@ export default function LiveStudio() {
     toggleMicrophone,
   } = useLiveSession({ sessionId: sessionId || '', isBroadcaster: true });
 
-  // Attach video track to DOM
   useEffect(() => {
     if (!room || !videoContainerRef.current) return;
 
@@ -80,7 +66,6 @@ export default function LiveStudio() {
     };
   }, [room]);
 
-  // Viewer count + comment listeners
   useEffect(() => {
     if (!room) return;
 
@@ -89,7 +74,7 @@ export default function LiveStudio() {
         const data = JSON.parse(new TextDecoder().decode(payload));
         if (data.type === 'reaction') {
           const id = Date.now() + Math.random();
-          setHearts((prev) => [...prev.slice(-15), { id, x: 20 + Math.random() * 60 }]);
+          setHearts((prev) => [...prev.slice(-15), { id, x: 75 + Math.random() * 18 }]);
           setTimeout(() => setHearts((prev) => prev.filter((h) => h.id !== id)), 2000);
         }
       } catch (e) {
@@ -113,7 +98,6 @@ export default function LiveStudio() {
     };
   }, [room]);
 
-  // Timer
   useEffect(() => {
     if (step !== 'live') return;
     const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
@@ -132,15 +116,11 @@ export default function LiveStudio() {
       return;
     }
     setIsStarting(true);
-    let sessionCreated = false;
-    let sessionId = '';
     try {
       const { session, token, wsUrl } = await liveApi.createLiveSession({
         title: title.trim(),
         category,
       });
-      sessionId = session._id;
-      sessionCreated = true;
       setSessionId(session._id);
       await connect(wsUrl, token);
       await liveApi.startLiveSession(session._id);
@@ -161,6 +141,8 @@ export default function LiveStudio() {
       await liveApi.endLiveSession(sessionId);
       disconnect();
       setStep('setup');
+      setElapsed(0);
+      setViewerCount(0);
       toast('info', 'Stream ended', `Peak viewers: ${viewerCount} | Duration: ${formatTime(elapsed)}`);
     } catch {
       toast('error', 'Failed to end stream');
@@ -180,87 +162,94 @@ export default function LiveStudio() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-sm z-20">
-        <button
-          onClick={() => (step === 'live' ? handleEndStream() : navigate(-1))}
-          className="text-white/70 hover:text-white"
-        >
-          <ChevronLeft size={24} />
-        </button>
-        <div className="flex items-center gap-2">
-          {step === 'live' && (
-            <>
-              <LiveBadge />
-              <span className="text-white/60 text-xs font-mono">{formatTime(elapsed)}</span>
-              <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-0.5">
-                <Eye size={12} className="text-white/60" />
-                <span className="text-white text-xs font-medium">{viewerCount}</span>
-              </div>
-            </>
-          )}
-        </div>
-        <div className="w-10" />
-      </div>
+    <div className="h-dvh w-full bg-black relative overflow-hidden select-none">
+      {/* ── Video (full-screen background) ── */}
+      <div ref={videoContainerRef} className="absolute inset-0 bg-gray-900" />
 
-      {/* Video Preview */}
-      <div className="flex-1 relative">
-        <div ref={videoContainerRef} className="w-full h-full bg-gray-900" />
+      {/* ── Floating hearts ── */}
+      <AnimatePresence>
+        {hearts.map((h) => (
+          <motion.div
+            key={h.id}
+            initial={{ opacity: 1, y: 0, scale: 0.4, rotate: 0 }}
+            animate={{
+              opacity: [1, 1, 0],
+              y: -280,
+              scale: 0.8 + Math.random() * 0.6,
+              rotate: -15 + Math.random() * 30,
+              x: [0, 10, -8, 12, -5],
+            }}
+            transition={{ duration: 1.8 + Math.random() * 0.8, ease: 'easeOut' }}
+            className="absolute bottom-36 pointer-events-none z-50"
+            style={{ left: `${h.x}%` }}
+          >
+            <span className="text-2xl drop-shadow-lg">❤️</span>
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
-        {/* Floating hearts */}
-        <AnimatePresence>
-          {hearts.map((h) => (
-            <motion.div
-              key={h.id}
-              initial={{ opacity: 1, y: 0, scale: 0.5 }}
-              animate={{ opacity: 0, y: -200, scale: 1.2 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 2 }}
-              className="absolute bottom-32 pointer-events-none z-50"
-              style={{ left: `${h.x}%` }}
+      {/* ── SETUP SCREEN ── */}
+      {step === 'setup' && (
+        <div className="absolute inset-0 z-30 flex flex-col">
+          {/* Top gradient */}
+          <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+
+          {/* Top bar */}
+          <div className="relative flex items-center justify-between p-4 pt-5 z-10">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all"
             >
-              <span className="text-3xl">❤️</span>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              <X size={20} />
+            </button>
+            <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5">
+              <Video size={14} className="text-white/70" />
+              <span className="text-xs font-medium text-white/80">Camera Preview</span>
+            </div>
+            <div className="w-10" />
+          </div>
 
-        {/* Setup overlay */}
-        {step === 'setup' && (
-          <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-6 z-10">
+          {/* Centered setup card */}
+          <div className="flex-1 flex items-center justify-center p-6">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-gray-900 rounded-3xl p-6 w-full max-w-sm space-y-4"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              className="w-full max-w-sm bg-black/50 backdrop-blur-xl rounded-3xl p-6 space-y-5 border border-white/10"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={20} className="text-purple-400" />
-                <h2 className="text-lg font-bold text-white">Go Live</h2>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-lg shadow-red-500/20">
+                  <Radio size={18} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Go Live</h2>
+                  <p className="text-xs text-white/50">Set up your stream</p>
+                </div>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-white/60 mb-1 block">Stream Title</label>
+                <label className="text-xs font-semibold text-white/60 mb-1.5 block uppercase tracking-wider">Stream Title</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Braiding tutorial, Fresh fade watch"
+                  placeholder="What are you streaming today?"
                   maxLength={100}
-                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-red-500/60 focus:bg-white/15 transition-all"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-white/60 mb-1 block">Category</label>
+                <label className="text-xs font-semibold text-white/60 mb-2 block uppercase tracking-wider">Category</label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {CATEGORIES.map((c) => (
                     <button
                       key={c}
                       onClick={() => setCategory(c)}
-                      className={`text-xs py-1.5 px-2 rounded-lg font-medium transition-all ${
+                      className={`text-[11px] py-2 px-2 rounded-xl font-semibold transition-all ${
                         category === c
-                          ? 'bg-purple-500 text-white'
-                          : 'bg-white/10 text-white/60 hover:bg-white/15'
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-500/20'
+                          : 'bg-white/8 text-white/50 hover:bg-white/12 hover:text-white/70'
                       }`}
                     >
                       {c}
@@ -272,45 +261,122 @@ export default function LiveStudio() {
               <button
                 onClick={handleGoLive}
                 disabled={isStarting || !title.trim() || !category}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all active:scale-[0.98]"
               >
                 {isStarting ? (
                   <><Loader2 size={16} className="animate-spin" /> Starting...</>
                 ) : (
-                  <><Radio size={16} /> Go Live</>
+                  <>
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+                    </span>
+                    Go Live
+                  </>
                 )}
               </button>
             </motion.div>
           </div>
-        )}
 
-        {/* Live controls */}
-        {step === 'live' && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4 z-10">
-            <div className="flex items-center justify-center gap-4 mb-4">
+          {/* Bottom preview info */}
+          <div className="relative p-4 pb-6 z-10">
+            <div className="flex items-center justify-center gap-6">
               <button
                 onClick={handleToggleCam}
-                className={`p-3 rounded-full ${camEnabled ? 'bg-white/20' : 'bg-red-500'} text-white`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${camEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
               >
                 {camEnabled ? <Video size={20} /> : <VideoOff size={20} />}
               </button>
               <button
                 onClick={handleToggleMic}
-                className={`p-3 rounded-full ${micEnabled ? 'bg-white/20' : 'bg-red-500'} text-white`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${micEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
               >
                 {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── LIVE SCREEN ── */}
+      {step === 'live' && (
+        <>
+          {/* Top gradient */}
+          <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-10 pointer-events-none" />
+
+          {/* Top-left: Back + LIVE badge */}
+          <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between p-4 pt-5">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleEndStream}
+                className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all"
+              >
+                <X size={20} />
+              </button>
+              <div className="flex items-center gap-2 bg-red-500/90 backdrop-blur-md rounded-full pl-1.5 pr-3 py-1.5 shadow-lg shadow-red-500/30">
+                <span className="relative flex h-2.5 w-2.5 ml-1">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+                </span>
+                <span className="text-xs font-bold text-white uppercase tracking-wider">Live</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5">
+                <Clock size={12} className="text-white/70" />
+                <span className="text-xs text-white font-semibold tabular-nums font-mono">{formatTime(elapsed)}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5">
+                <Eye size={12} className="text-white/70" />
+                <span className="text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom gradient */}
+          <div className="absolute bottom-0 inset-x-0 h-44 bg-gradient-to-t from-black/70 to-transparent z-10 pointer-events-none" />
+
+          {/* Bottom controls */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="absolute bottom-0 inset-x-0 z-20 p-4 pb-6"
+          >
+            <div className="flex items-center justify-center gap-5">
+              {/* Camera toggle */}
+              <button
+                onClick={handleToggleCam}
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${
+                  camEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
+                }`}
+              >
+                {camEnabled ? <Video size={22} /> : <VideoOff size={22} />}
+              </button>
+
+              {/* Mic toggle */}
+              <button
+                onClick={handleToggleMic}
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${
+                  micEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
+                }`}
+              >
+                {micEnabled ? <Mic size={22} /> : <MicOff size={22} />}
+              </button>
+
+              {/* End stream (larger, centered emphasis) */}
               <button
                 onClick={handleEndStream}
                 disabled={isEnding}
-                className="p-3 rounded-full bg-red-600 text-white hover:bg-red-700"
+                className="w-16 h-16 rounded-full bg-red-600 text-white hover:bg-red-700 flex items-center justify-center shadow-xl shadow-red-600/40 transition-all active:scale-95"
               >
-                {isEnding ? <Loader2 size={20} className="animate-spin" /> : <PhoneOff size={20} />}
+                {isEnding ? <Loader2 size={24} className="animate-spin" /> : <PhoneOff size={24} />}
               </button>
             </div>
-          </div>
-        )}
-      </div>
+          </motion.div>
+        </>
+      )}
     </div>
   );
 }
