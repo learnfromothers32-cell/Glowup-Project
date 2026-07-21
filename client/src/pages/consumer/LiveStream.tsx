@@ -10,15 +10,50 @@ import { useLiveSession } from '../../hooks/useLiveSession';
 import { RoomEvent } from 'livekit-client';
 import { useToast } from '../../components/ui/Toast';
 import LiveBadge from '../../components/live/LiveBadge';
-import LiveCommentFeed from '../../components/live/LiveCommentFeed';
 import FloatingHeart from '../../components/live/FloatingHeart';
 import * as liveApi from '../../api/live';
 import type { LiveSession } from '../../api/live';
+import type { Comment } from '../../hooks/useLiveSession';
 
 interface TapHeart {
   id: number;
   x: number;
   y: number;
+}
+
+const COMMENT_LIFETIME_MS = 8000;
+const MAX_VISIBLE_FLOATING = 15;
+
+function FloatingComment({ comment, onRemove }: { comment: Comment; onRemove: (id: string) => void }) {
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  useEffect(() => {
+    const timer = setTimeout(() => onRemove(comment.id), COMMENT_LIFETIME_MS);
+    return () => clearTimeout(timer);
+  }, [comment.id, onRemove]);
+
+  return (
+    <motion.div
+      layout
+      initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: -40, scale: 0.9 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -20, scale: 0.85 }}
+      transition={{ duration: prefersReducedMotion ? 0.05 : 0.25, ease: [0.22, 1, 0.36, 1] }}
+      className="flex items-center gap-2 max-w-[75%]"
+    >
+      {comment.userAvatar ? (
+        <img src={comment.userAvatar} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/20" loading="lazy" />
+      ) : (
+        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
+          {comment.userName?.[0]?.toUpperCase() || '?'}
+        </div>
+      )}
+      <div className="flex items-baseline gap-1.5 bg-black/45 backdrop-blur-md rounded-full pl-3 pr-3.5 py-1.5 border border-white/[0.06]">
+        <span className="text-[11px] font-bold text-pink-400 shrink-0">{comment.userName}</span>
+        <span className="text-[12px] text-white/90 leading-snug whitespace-nowrap overflow-hidden text-ellipsis">{comment.text}</span>
+      </div>
+    </motion.div>
+  );
 }
 
 export default function LiveStream() {
@@ -28,7 +63,6 @@ export default function LiveStream() {
   const { toast } = useToast();
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
-  const commentContainerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef(0);
   const tapHeartIdRef = useRef(0);
 
@@ -45,9 +79,9 @@ export default function LiveStream() {
   const [commentFailed, setCommentFailed] = useState(false);
   const [tapHearts, setTapHearts] = useState<TapHeart[]>([]);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [floatingComments, setFloatingComments] = useState<Comment[]>([]);
   const likeInFlightRef = useRef(false);
 
-  // Keyboard-aware padding for mobile
   useEffect(() => {
     const vp = window.visualViewport;
     if (!vp) return;
@@ -82,7 +116,6 @@ export default function LiveStream() {
     disconnect,
     sendComment,
     broadcastLikeUpdate,
-    canSendComment: _canSendComment,
     getCooldownRemaining,
     COMMENT_COOLDOWN_MS,
     MAX_COMMENT_LENGTH,
@@ -92,7 +125,6 @@ export default function LiveStream() {
     initialLikeCount: 0,
   });
 
-  // Cooldown timer
   useEffect(() => {
     if (cooldownRemaining <= 0) return;
     const timer = setInterval(() => {
@@ -125,6 +157,19 @@ export default function LiveStream() {
       });
     return () => { mounted = false; };
   }, [sessionId, setLikeCount, user]);
+
+  useEffect(() => {
+    if (comments.length === 0) return;
+    const latest = comments[comments.length - 1];
+    if (floatingComments.some((c) => c.id === latest.id)) return;
+    if (latest.type === 'comment') {
+      setFloatingComments((prev) => [...prev.slice(-(MAX_VISIBLE_FLOATING - 1)), latest]);
+    }
+  }, [comments, floatingComments]);
+
+  const removeFloatingComment = useCallback((id: string) => {
+    setFloatingComments((prev) => prev.filter((c) => c.id !== id));
+  }, []);
 
   useEffect(() => {
     if (!room || !videoContainerRef.current || !joined) return;
@@ -184,31 +229,32 @@ export default function LiveStream() {
   };
 
   const performLike = useCallback(async () => {
-    if (!sessionId || !user || likeInFlightRef.current) return;
+    if (!sessionId || !user) return;
+    if (likeInFlightRef.current) return;
     likeInFlightRef.current = true;
 
     const prevLiked = userLiked;
     const prevCount = likeCount;
 
-    // Optimistic update
     setUserLiked(!prevLiked);
-    setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
-    broadcastLikeUpdate(prevLiked ? prevCount - 1 : prevCount + 1);
+    setLikeCount(prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
+    broadcastLikeUpdate(prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
 
     try {
       const { likeCount: newCount, liked } = await liveApi.likeLiveSession(sessionId);
       setLikeCount(newCount);
       setUserLiked(liked);
       broadcastLikeUpdate(newCount);
-    } catch {
-      // Rollback on failure
+    } catch (err: any) {
       setUserLiked(prevLiked);
       setLikeCount(prevCount);
       broadcastLikeUpdate(prevCount);
+      const msg = err?.response?.data?.message || err?.message || 'Could not like stream';
+      toast('error', msg);
     } finally {
       likeInFlightRef.current = false;
     }
-  }, [sessionId, user, userLiked, likeCount, setLikeCount, broadcastLikeUpdate]);
+  }, [sessionId, user, userLiked, likeCount, setLikeCount, broadcastLikeUpdate, toast]);
 
   const spawnTapHeart = useCallback((clientX: number, clientY: number) => {
     const id = ++tapHeartIdRef.current;
@@ -280,7 +326,6 @@ export default function LiveStream() {
     }
   };
 
-  // ── Loading skeleton ──
   if (loading) {
     return (
       <div className="h-dvh w-full bg-black relative overflow-hidden select-none" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -307,7 +352,6 @@ export default function LiveStream() {
     );
   }
 
-  // ── Error state ──
   if (error || !session) {
     return (
       <div className="h-dvh w-full bg-black flex flex-col items-center justify-center gap-5 text-white px-6" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -353,7 +397,7 @@ export default function LiveStream() {
         onTouchEnd={handleDoubleTap}
       />
 
-      {/* ── Double-tap floating hearts (at tap position) ── */}
+      {/* ── Double-tap floating hearts ── */}
       <AnimatePresence>
         {tapHearts.map((h) => (
           <motion.div
@@ -501,8 +545,19 @@ export default function LiveStream() {
         ))}
       </AnimatePresence>
 
+      {/* ── Floating comments over video (TikTok-style) ── */}
+      {joined && showComments && (
+        <div className="absolute bottom-24 sm:bottom-28 left-0 right-14 z-20 flex flex-col-reverse gap-1.5 px-3 pointer-events-none overflow-hidden max-h-[40vh]">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {floatingComments.slice(-MAX_VISIBLE_FLOATING).map((c) => (
+              <FloatingComment key={c.id} comment={c} onRemove={removeFloatingComment} />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
       {/* ── Bottom gradient ── */}
-      <div className="absolute bottom-0 inset-x-0 h-72 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 pointer-events-none" />
+      <div className="absolute bottom-0 inset-x-0 h-36 bg-gradient-to-t from-black/70 via-black/25 to-transparent z-10 pointer-events-none" />
 
       {/* ── Right-side action buttons ── */}
       {joined && (
@@ -534,7 +589,7 @@ export default function LiveStream() {
               animate={userLiked ? { scale: [1, 1.4, 1] } : {}}
               transition={{ duration: 0.3 }}
               className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all active:scale-90 ${
-                userLiked ? 'bg-red-500/20' : 'bg-black/30 group-hover:bg-black/50'
+                userLiked ? 'bg-red-500/25' : 'bg-black/30 group-hover:bg-black/50'
               }`}
             >
               <Heart size={20} className={userLiked ? 'text-red-500 fill-red-500' : 'text-white'} />
@@ -570,18 +625,7 @@ export default function LiveStream() {
         </motion.div>
       )}
 
-      {/* ── Comment feed (hidden when comments toggled off) ── */}
-      {joined && showComments && (
-        <div
-          ref={commentContainerRef}
-          className="absolute bottom-14 sm:bottom-16 inset-x-0 z-20 flex flex-col"
-          style={{ height: 'min(38vh, 320px)' }}
-        >
-          <LiveCommentFeed comments={comments} />
-        </div>
-      )}
-
-      {/* ── Comment input bar (hidden when comments toggled off) ── */}
+      {/* ── Comment input bar ── */}
       {joined && showComments && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -591,7 +635,6 @@ export default function LiveStream() {
           style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 12 : undefined }}
         >
           <div className="flex items-center gap-2">
-            {/* User avatar */}
             {user?.avatar ? (
               <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-white/15" />
             ) : (
@@ -631,7 +674,6 @@ export default function LiveStream() {
                 className="flex-1 bg-transparent text-white text-[13px] placeholder:text-white/25 focus:outline-none disabled:opacity-40"
               />
 
-              {/* Character count */}
               {charCount > 0 && (
                 <span className={`text-[10px] tabular-nums mr-2 shrink-0 font-medium ${
                   isOverLimit ? 'text-red-400' : charCount > MAX_COMMENT_LENGTH * 0.8 ? 'text-amber-400' : 'text-white/20'
@@ -640,7 +682,6 @@ export default function LiveStream() {
                 </span>
               )}
 
-              {/* Send button */}
               {commentText.trim() && !isOverLimit ? (
                 <motion.button
                   initial={{ scale: 0, opacity: 0 }}
