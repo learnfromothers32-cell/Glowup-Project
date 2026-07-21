@@ -15,6 +15,7 @@ export interface LiveSession {
   status: 'pending' | 'live' | 'ended';
   viewerCount: number;
   peakViewerCount: number;
+  likeCount: number;
   startedAt?: string;
   endedAt?: string;
   duration: number;
@@ -54,5 +55,12 @@ export const joinLiveSession = async (
   sessionId: string
 ): Promise<{ token: string; wsUrl: string; session: LiveSession }> => {
   const res = await api.post(`/live/${sessionId}/join`);
+  return res.data.data;
+};
+
+export const likeLiveSession = async (
+  sessionId: string
+): Promise<{ likeCount: number; liked: boolean }> => {
+  const res = await api.post(`/live/${sessionId}/like`);
   return res.data.data;
 };

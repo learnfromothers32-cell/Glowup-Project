@@ -97,3 +97,23 @@ export const cleanupStaleSessions = asyncHandler(async (_req: Request, res: Resp
   const count = await liveService.cleanupStaleSessions();
   sendSuccess(res, { cleaned: count }, 'Stale sessions cleaned');
 });
+
+export const likeLiveSession = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) throw new ApiError(401, 'Authentication required');
+
+  const { id } = req.params;
+  const result = await liveService.likeSession(id, userId);
+
+  try {
+    const io = getIO();
+    io.of('/live').emit('live:like-updated', {
+      sessionId: id,
+      likeCount: result.likeCount,
+    });
+  } catch (err) {
+    logger.warn('Failed to broadcast like update', { error: err });
+  }
+
+  sendSuccess(res, result);
+});

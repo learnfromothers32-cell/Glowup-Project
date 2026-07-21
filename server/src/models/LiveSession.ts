@@ -8,6 +8,8 @@ export interface ILiveSession extends Document {
   status: 'pending' | 'live' | 'ended';
   viewerCount: number;
   peakViewerCount: number;
+  likeCount: number;
+  likedUserIds: string[];
   startedAt?: Date;
   endedAt?: Date;
   duration: number;
@@ -51,6 +53,14 @@ const liveSessionSchema = new Schema<ILiveSession>(
     peakViewerCount: {
       type: Number,
       default: 0,
+    },
+    likeCount: {
+      type: Number,
+      default: 0,
+    },
+    likedUserIds: {
+      type: [String],
+      default: [],
     },
     startedAt: {
       type: Date,

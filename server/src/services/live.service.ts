@@ -144,8 +144,26 @@ export async function getSessionById(sessionId: string) {
   return session as any;
 }
 
-export async function joinSession(sessionId: string, userId: string): Promise<{ token: string; wsUrl: string; session: ILiveSession }> {
+export async function likeSession(sessionId: string, userId: string): Promise<{ likeCount: number; liked: boolean }> {
   const session = await LiveSession.findById(sessionId);
+  if (!session) throw new ApiError(404, 'Session not found');
+  if (session.status !== 'live') throw new ApiError(400, 'Session is not live');
+
+  const alreadyLiked = session.likedUserIds.includes(userId);
+  if (alreadyLiked) {
+    return { likeCount: session.likeCount, liked: true };
+  }
+
+  session.likedUserIds.push(userId);
+  session.likeCount = session.likedUserIds.length;
+  await session.save();
+
+  return { likeCount: session.likeCount, liked: true };
+}
+
+export async function joinSession(sessionId: string, userId: string): Promise<{ token: string; wsUrl: string; session: ILiveSession }> {
+  const session = await LiveSession.findById(sessionId)
+    .populate('stylistId', 'name image category followerCount');
   if (!session || session.status !== 'live') {
     throw new ApiError(404, 'Session not found or no longer live');
   }

@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Radio,
-  Loader2, X, Sparkles, Eye, Clock, Users,
+  Loader2, X, Eye, Clock, Heart, MessageCircle,
 } from 'lucide-react';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { useToast } from '../../components/ui/Toast';
 import * as liveApi from '../../api/live';
 import { Track, RoomEvent } from 'livekit-client';
+import FloatingHeart from '../../components/live/FloatingHeart';
+import LiveCommentFeed from '../../components/live/LiveCommentFeed';
 
 const CATEGORIES = [
   'Braids', 'Nails', 'Barber', 'Colorist', 'Stylist',
@@ -27,13 +29,17 @@ export default function LiveStudio() {
   const [isStarting, setIsStarting] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [viewerCount, setViewerCount] = useState(0);
-  const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
   const [micEnabled, setMicEnabled] = useState(true);
   const [camEnabled, setCamEnabled] = useState(true);
+  const [showComments, setShowComments] = useState(true);
 
   const {
     room,
+    viewerCount,
+    setViewerCount,
+    hearts,
+    likeCount,
+    comments,
     connect,
     disconnect,
     toggleCamera,
@@ -69,30 +75,15 @@ export default function LiveStudio() {
   useEffect(() => {
     if (!room) return;
 
-    const handleData = (payload: any) => {
-      try {
-        const data = JSON.parse(new TextDecoder().decode(payload));
-        if (data.type === 'reaction') {
-          const id = Date.now() + Math.random();
-          setHearts((prev) => [...prev.slice(-15), { id, x: 75 + Math.random() * 18 }]);
-          setTimeout(() => setHearts((prev) => prev.filter((h) => h.id !== id)), 2000);
-        }
-      } catch (e) {
-        console.warn('Failed to parse live data:', e);
-      }
-    };
-
     const handleParticipant = () => {
       setViewerCount(room.remoteParticipants.size);
     };
 
-    room.on(RoomEvent.DataReceived, handleData);
     room.on(RoomEvent.ParticipantConnected, handleParticipant);
     room.on(RoomEvent.ParticipantDisconnected, handleParticipant);
     setViewerCount(room.remoteParticipants.size);
 
     return () => {
-      room.off(RoomEvent.DataReceived, handleData);
       room.off(RoomEvent.ParticipantConnected, handleParticipant);
       room.off(RoomEvent.ParticipantDisconnected, handleParticipant);
     };
@@ -143,7 +134,7 @@ export default function LiveStudio() {
       setStep('setup');
       setElapsed(0);
       setViewerCount(0);
-      toast('info', 'Stream ended', `Peak viewers: ${viewerCount} | Duration: ${formatTime(elapsed)}`);
+      toast('info', 'Stream ended', `Peak viewers: ${viewerCount} | Likes: ${likeCount} | Duration: ${formatTime(elapsed)}`);
     } catch {
       toast('error', 'Failed to end stream');
     } finally {
@@ -169,22 +160,7 @@ export default function LiveStudio() {
       {/* ── Floating hearts ── */}
       <AnimatePresence>
         {hearts.map((h) => (
-          <motion.div
-            key={h.id}
-            initial={{ opacity: 1, y: 0, scale: 0.4, rotate: 0 }}
-            animate={{
-              opacity: [1, 1, 0],
-              y: -280,
-              scale: 0.8 + Math.random() * 0.6,
-              rotate: -15 + Math.random() * 30,
-              x: [0, 10, -8, 12, -5],
-            }}
-            transition={{ duration: 1.8 + Math.random() * 0.8, ease: 'easeOut' }}
-            className="absolute bottom-36 pointer-events-none z-50"
-            style={{ left: `${h.x}%` }}
-          >
-            <span className="text-2xl drop-shadow-lg">❤️</span>
-          </motion.div>
+          <FloatingHeart key={h.id} id={h.id} x={h.x} />
         ))}
       </AnimatePresence>
 
@@ -328,6 +304,10 @@ export default function LiveStudio() {
                 <span className="text-xs text-white font-semibold tabular-nums font-mono">{formatTime(elapsed)}</span>
               </div>
               <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5">
+                <Heart size={12} className="text-red-400 fill-red-400" />
+                <span className="text-xs text-white font-semibold tabular-nums">{likeCount}</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5">
                 <Eye size={12} className="text-white/70" />
                 <span className="text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
               </div>
@@ -336,6 +316,25 @@ export default function LiveStudio() {
 
           {/* Bottom gradient */}
           <div className="absolute bottom-0 inset-x-0 h-44 bg-gradient-to-t from-black/70 to-transparent z-10 pointer-events-none" />
+
+          {/* ── Broadcaster comment feed (bottom-left) ── */}
+          {showComments && (
+            <div
+              className="absolute bottom-20 left-0 z-20 pointer-events-auto"
+              style={{ width: 'min(75vw, 300px)', height: 'min(30vh, 220px)' }}
+            >
+              <LiveCommentFeed comments={comments} isBroadcaster />
+            </div>
+          )}
+
+          {/* Comment toggle (bottom-left, above controls) */}
+          <button
+            onClick={() => setShowComments((v) => !v)}
+            className="absolute bottom-20 left-4 z-30 flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5 hover:bg-black/50 transition-all"
+          >
+            <MessageCircle size={14} className={showComments ? 'text-white fill-white/20' : 'text-white/60'} />
+            <span className="text-[10px] text-white/70 font-semibold">{comments.length}</span>
+          </button>
 
           {/* Bottom controls */}
           <motion.div

@@ -8,6 +8,7 @@ import {
   joinLiveSession,
   liveSessionWebhook,
   cleanupStaleSessions,
+  likeLiveSession,
 } from '../controllers/live.controller';
 import { protect, softAuth, requireRole } from '../middleware/auth.middleware';
 import { generalLimiter } from '../middleware/rateLimiter';
@@ -29,5 +30,7 @@ router.post('/:id/start', protect, requireRole('stylist'), startLiveSession);
 router.post('/:id/end', protect, requireRole('stylist'), endLiveSession);
 
 router.post('/:id/join', protect, joinLiveSession);
+
+router.post('/:id/like', protect, likeLiveSession);
 
 export default router;
