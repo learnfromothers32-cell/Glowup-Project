@@ -55,7 +55,6 @@ export default function LiveStream() {
     connect,
     disconnect,
     sendComment,
-    sendReaction,
     broadcastLikeUpdate,
     canSendComment: _canSendComment,
     getCooldownRemaining,
@@ -160,11 +159,10 @@ export default function LiveStream() {
       setLikeCount(newCount);
       setUserLiked(true);
       broadcastLikeUpdate(newCount);
-      sendReaction();
     } catch {
-      sendReaction();
+      likeCooldownRef.current = false;
     }
-  }, [sessionId, user, userLiked, setLikeCount, broadcastLikeUpdate, sendReaction]);
+  }, [sessionId, user, userLiked, setLikeCount, broadcastLikeUpdate]);
 
   const handleDoubleTap = (e: React.TouchEvent | React.MouseEvent) => {
     const now = Date.now();
@@ -294,10 +292,10 @@ export default function LiveStream() {
       <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-10 pointer-events-none" />
 
       {/* ── Top-left: Back + Stylist info ── */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between p-4 pt-5">
-        <div className="flex items-center gap-3">
-          <button onClick={handleBack} className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all">
-            <X size={20} />
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between p-3 sm:p-4 pt-4 sm:pt-5">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <button onClick={handleBack} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all shrink-0">
+            <X size={18} />
           </button>
 
           {joined && (
@@ -305,18 +303,18 @@ export default function LiveStream() {
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="flex items-center gap-2 bg-black/30 backdrop-blur-md rounded-full pr-4 pl-1 py-1"
+              className="flex items-center gap-1.5 sm:gap-2 bg-black/30 backdrop-blur-md rounded-full pr-3 sm:pr-4 pl-1 py-1 min-w-0 max-w-[45vw]"
             >
               {session.stylistId?.image ? (
-                <img src={session.stylistId.image} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-white/20" />
+                <img src={session.stylistId.image} alt="" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-white/20">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-white/20 shrink-0">
                   {session.stylistId?.name?.[0]}
                 </div>
               )}
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-white leading-tight">{session.stylistId?.name}</span>
-                <span className="text-[10px] text-white/50 leading-tight">Host</span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] sm:text-xs font-semibold text-white leading-tight truncate">{session.stylistId?.name}</span>
+                <span className="text-[9px] sm:text-[10px] text-white/50 leading-tight">Host</span>
               </div>
             </motion.div>
           )}
@@ -327,12 +325,12 @@ export default function LiveStream() {
             initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center gap-2 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5"
+            className="flex items-center gap-1.5 sm:gap-2 bg-black/30 backdrop-blur-md rounded-full px-2.5 sm:px-3 py-1.5 shrink-0"
           >
             <LiveBadge size="sm" />
             <div className="flex items-center gap-1">
-              <Eye size={12} className="text-white/70" />
-              <span className="text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
+              <Eye size={11} className="text-white/70" />
+              <span className="text-[11px] sm:text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
             </div>
           </motion.div>
         )}
@@ -364,58 +362,60 @@ export default function LiveStream() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="absolute right-3 bottom-40 z-20 flex flex-col items-center gap-5"
+          className="absolute right-2 sm:right-3 bottom-24 sm:bottom-36 z-20 flex flex-col items-center gap-3 sm:gap-4"
         >
           {/* Stylist profile */}
-          <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-1">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 p-[2px] shadow-lg">
+          <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-0.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 p-[2px] shadow-lg">
               <div className="w-full h-full rounded-full bg-gray-900 p-[1.5px] overflow-hidden">
                 {session.stylistId?.image ? (
                   <img src={session.stylistId.image} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
                   <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">{session.stylistId?.name?.[0]}</span>
+                    <span className="text-xs font-bold text-white">{session.stylistId?.name?.[0]}</span>
                   </div>
                 )}
               </div>
             </div>
-            <span className="text-[9px] text-white/70 font-medium">Profile</span>
+            <span className="text-[8px] sm:text-[9px] text-white/70 font-medium">Profile</span>
           </Link>
 
           {/* Like */}
-          <button onClick={() => performLike()} className="flex flex-col items-center gap-1 group">
+          <button onClick={() => performLike()} disabled={userLiked} className="flex flex-col items-center gap-0.5 group">
             <motion.div
               animate={userLiked ? { scale: [1, 1.4, 1] } : {}}
               transition={{ duration: 0.3 }}
-              className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all"
+              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all ${
+                userLiked ? 'bg-red-500/20' : 'bg-black/30 group-hover:bg-black/50'
+              }`}
             >
-              <Heart size={24} className={userLiked ? 'text-red-500 fill-red-500' : 'text-white'} />
+              <Heart size={20} className={userLiked ? 'text-red-500 fill-red-500' : 'text-white'} />
             </motion.div>
-            <span className="text-[10px] text-white font-semibold tabular-nums">{likeCount}</span>
+            <span className="text-[9px] sm:text-[10px] text-white font-semibold tabular-nums">{likeCount}</span>
           </button>
 
           {/* Comment toggle */}
-          <button onClick={() => setShowComments((v) => !v)} className="flex flex-col items-center gap-1 group">
-            <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all">
-              <MessageCircle size={22} className={showComments ? 'text-white fill-white/20' : 'text-white'} />
+          <button onClick={() => setShowComments((v) => !v)} className="flex flex-col items-center gap-0.5 group">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all">
+              <MessageCircle size={18} className={showComments ? 'text-white fill-white/20' : 'text-white'} />
             </div>
-            <span className="text-[10px] text-white font-semibold">{comments.length}</span>
+            <span className="text-[9px] sm:text-[10px] text-white font-semibold">{comments.length}</span>
           </button>
 
           {/* Share */}
-          <button onClick={handleShare} className="flex flex-col items-center gap-1 group">
-            <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all">
-              <Share2 size={22} className="text-white" />
+          <button onClick={handleShare} className="flex flex-col items-center gap-0.5 group">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all">
+              <Share2 size={18} className="text-white" />
             </div>
-            <span className="text-[10px] text-white font-semibold">Share</span>
+            <span className="text-[9px] sm:text-[10px] text-white font-semibold">Share</span>
           </button>
 
           {/* Book */}
-          <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-1 group">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all">
-              <Calendar size={20} className="text-white" />
+          <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-0.5 group">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all">
+              <Calendar size={16} className="text-white" />
             </div>
-            <span className="text-[10px] text-white font-semibold">Book</span>
+            <span className="text-[9px] sm:text-[10px] text-white font-semibold">Book</span>
           </Link>
         </motion.div>
       )}
@@ -424,8 +424,8 @@ export default function LiveStream() {
       {joined && showComments && (
         <div
           ref={commentContainerRef}
-          className="absolute bottom-16 inset-x-0 z-20 flex flex-col"
-          style={{ height: 'min(45vh, 360px)' }}
+          className="absolute bottom-14 sm:bottom-16 inset-x-0 z-20 flex flex-col"
+          style={{ height: 'min(38vh, 320px)' }}
         >
           <LiveCommentFeed comments={comments} />
         </div>
@@ -437,19 +437,19 @@ export default function LiveStream() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="absolute bottom-0 inset-x-0 z-20 p-3 pb-4"
+          className="absolute bottom-0 inset-x-0 z-20 p-2.5 sm:p-3 pb-3 sm:pb-4"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* User avatar */}
             {user?.avatar ? (
-              <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-white/20" />
+              <img src={user.avatar} alt="" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shrink-0 ring-1 ring-white/20" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shrink-0">
                 {user?.name?.[0]?.toUpperCase() || '?'}
               </div>
             )}
 
-            <div className={`flex-1 flex items-center rounded-full px-4 py-2.5 border transition-colors ${
+            <div className={`flex-1 flex items-center rounded-full px-3 sm:px-4 py-2 sm:py-2.5 border transition-colors ${
               commentFailed
                 ? 'bg-red-500/20 border-red-500/40'
                 : isOverLimit
@@ -476,12 +476,12 @@ export default function LiveStream() {
                 }
                 disabled={!canType && cooldownRemaining > 0}
                 maxLength={MAX_COMMENT_LENGTH + 20}
-                className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 focus:outline-none disabled:opacity-50"
+                className="flex-1 bg-transparent text-white text-xs sm:text-sm placeholder:text-white/30 focus:outline-none disabled:opacity-50"
               />
 
               {/* Character count — only show when typing */}
               {charCount > 0 && (
-                <span className={`text-[10px] tabular-nums mr-2 shrink-0 ${
+                <span className={`text-[9px] sm:text-[10px] tabular-nums mr-1.5 sm:mr-2 shrink-0 ${
                   isOverLimit ? 'text-red-400' : charCount > MAX_COMMENT_LENGTH * 0.8 ? 'text-yellow-400' : 'text-white/30'
                 }`}>
                   {charCount}/{MAX_COMMENT_LENGTH}
@@ -494,9 +494,9 @@ export default function LiveStream() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   onClick={handleSendComment}
-                  className="w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors active:scale-90"
+                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors active:scale-90"
                 >
-                  <Send size={12} className="text-white ml-0.5" />
+                  <Send size={11} className="text-white ml-0.5" />
                 </motion.button>
               )}
             </div>
@@ -511,7 +511,7 @@ export default function LiveStream() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 bg-white/90 backdrop-blur-sm text-black text-xs font-semibold px-4 py-2 rounded-full shadow-lg"
+            className="absolute bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 z-50 bg-white/90 backdrop-blur-sm text-black text-[11px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg"
           >
             Link copied!
           </motion.div>

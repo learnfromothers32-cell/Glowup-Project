@@ -149,16 +149,17 @@ export async function likeSession(sessionId: string, userId: string): Promise<{ 
   if (!session) throw new ApiError(404, 'Session not found');
   if (session.status !== 'live') throw new ApiError(400, 'Session is not live');
 
+  const result = await LiveSession.findByIdAndUpdate(
+    sessionId,
+    { $addToSet: { likedUserIds: userId } },
+    { new: true }
+  );
+
+  if (!result) throw new ApiError(404, 'Session not found');
+
   const alreadyLiked = session.likedUserIds.includes(userId);
-  if (alreadyLiked) {
-    return { likeCount: session.likeCount, liked: true };
-  }
 
-  session.likedUserIds.push(userId);
-  session.likeCount = session.likedUserIds.length;
-  await session.save();
-
-  return { likeCount: session.likeCount, liked: true };
+  return { likeCount: result.likedUserIds.length, liked: true };
 }
 
 export async function joinSession(sessionId: string, userId: string): Promise<{ token: string; wsUrl: string; session: ILiveSession }> {

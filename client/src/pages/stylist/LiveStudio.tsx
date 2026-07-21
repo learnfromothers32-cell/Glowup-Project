@@ -255,19 +255,19 @@ export default function LiveStudio() {
           </div>
 
           {/* Bottom preview info */}
-          <div className="relative p-4 pb-6 z-10">
-            <div className="flex items-center justify-center gap-6">
+          <div className="relative p-3 sm:p-4 pb-4 sm:pb-6 z-10">
+            <div className="flex items-center justify-center gap-4 sm:gap-6">
               <button
                 onClick={handleToggleCam}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${camEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${camEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
               >
-                {camEnabled ? <Video size={20} /> : <VideoOff size={20} />}
+                {camEnabled ? <Video size={18} /> : <VideoOff size={18} />}
               </button>
               <button
                 onClick={handleToggleMic}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${micEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${micEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
               >
-                {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+                {micEnabled ? <Mic size={18} /> : <MicOff size={18} />}
               </button>
             </div>
           </div>
@@ -281,35 +281,35 @@ export default function LiveStudio() {
           <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-10 pointer-events-none" />
 
           {/* Top-left: Back + LIVE badge */}
-          <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between p-4 pt-5">
-            <div className="flex items-center gap-3">
+          <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between p-3 sm:p-4 pt-4 sm:pt-5">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={handleEndStream}
-                className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
-              <div className="flex items-center gap-2 bg-red-500/90 backdrop-blur-md rounded-full pl-1.5 pr-3 py-1.5 shadow-lg shadow-red-500/30">
-                <span className="relative flex h-2.5 w-2.5 ml-1">
+              <div className="flex items-center gap-1.5 bg-red-500/90 backdrop-blur-md rounded-full pl-1.5 pr-2.5 sm:pr-3 py-1 sm:py-1.5 shadow-lg shadow-red-500/30">
+                <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5 ml-0.5 sm:ml-1">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white" />
                 </span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">Live</span>
+                <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">Live</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5">
-                <Clock size={12} className="text-white/70" />
-                <span className="text-xs text-white font-semibold tabular-nums font-mono">{formatTime(elapsed)}</span>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-3 py-1 sm:py-1.5">
+                <Clock size={10} className="text-white/70" />
+                <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums font-mono">{formatTime(elapsed)}</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5">
-                <Heart size={12} className="text-red-400 fill-red-400" />
-                <span className="text-xs text-white font-semibold tabular-nums">{likeCount}</span>
+              <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-3 py-1 sm:py-1.5">
+                <Heart size={10} className="text-red-400 fill-red-400" />
+                <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums">{likeCount}</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5">
-                <Eye size={12} className="text-white/70" />
-                <span className="text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
+              <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-3 py-1 sm:py-1.5">
+                <Eye size={10} className="text-white/70" />
+                <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
               </div>
             </div>
           </div>
@@ -320,8 +320,8 @@ export default function LiveStudio() {
           {/* ── Broadcaster comment feed (bottom-left) ── */}
           {showComments && (
             <div
-              className="absolute bottom-20 left-0 z-20 pointer-events-auto"
-              style={{ width: 'min(75vw, 300px)', height: 'min(30vh, 220px)' }}
+              className="absolute bottom-16 sm:bottom-20 left-0 z-20 pointer-events-auto"
+              style={{ width: 'min(70vw, 280px)', height: 'min(25vh, 200px)' }}
             >
               <LiveCommentFeed comments={comments} isBroadcaster />
             </div>
@@ -330,10 +330,10 @@ export default function LiveStudio() {
           {/* Comment toggle (bottom-left, above controls) */}
           <button
             onClick={() => setShowComments((v) => !v)}
-            className="absolute bottom-20 left-4 z-30 flex items-center gap-1.5 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5 hover:bg-black/50 transition-all"
+            className="absolute bottom-16 sm:bottom-20 left-3 sm:left-4 z-30 flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 hover:bg-black/50 transition-all"
           >
-            <MessageCircle size={14} className={showComments ? 'text-white fill-white/20' : 'text-white/60'} />
-            <span className="text-[10px] text-white/70 font-semibold">{comments.length}</span>
+            <MessageCircle size={12} className={showComments ? 'text-white fill-white/20' : 'text-white/60'} />
+            <span className="text-[9px] sm:text-[10px] text-white/70 font-semibold">{comments.length}</span>
           </button>
 
           {/* Bottom controls */}
@@ -341,36 +341,36 @@ export default function LiveStudio() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="absolute bottom-0 inset-x-0 z-20 p-4 pb-6"
+            className="absolute bottom-0 inset-x-0 z-20 p-3 sm:p-4 pb-4 sm:pb-6"
           >
-            <div className="flex items-center justify-center gap-5">
+            <div className="flex items-center justify-center gap-3 sm:gap-5">
               {/* Camera toggle */}
               <button
                 onClick={handleToggleCam}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${
                   camEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
                 }`}
               >
-                {camEnabled ? <Video size={22} /> : <VideoOff size={22} />}
+                {camEnabled ? <Video size={20} /> : <VideoOff size={20} />}
               </button>
 
               {/* Mic toggle */}
               <button
                 onClick={handleToggleMic}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md ${
                   micEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
                 }`}
               >
-                {micEnabled ? <Mic size={22} /> : <MicOff size={22} />}
+                {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
 
               {/* End stream (larger, centered emphasis) */}
               <button
                 onClick={handleEndStream}
                 disabled={isEnding}
-                className="w-16 h-16 rounded-full bg-red-600 text-white hover:bg-red-700 flex items-center justify-center shadow-xl shadow-red-600/40 transition-all active:scale-95"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-600 text-white hover:bg-red-700 flex items-center justify-center shadow-xl shadow-red-600/40 transition-all active:scale-95"
               >
-                {isEnding ? <Loader2 size={24} className="animate-spin" /> : <PhoneOff size={24} />}
+                {isEnding ? <Loader2 size={22} className="animate-spin" /> : <PhoneOff size={22} />}
               </button>
             </div>
           </motion.div>
