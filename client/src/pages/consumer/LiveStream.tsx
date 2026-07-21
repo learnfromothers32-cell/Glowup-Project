@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, Heart, Send, Eye, Calendar, Loader2, WifiOff,
+  Share2, MessageCircle, Gift, Bookmark, X,
 } from 'lucide-react';
 import { useAuth } from '../../context/authUtils';
 import { useLiveSession } from '../../hooks/useLiveSession';
@@ -13,7 +14,6 @@ import LiveCommentFeed from '../../components/live/LiveCommentFeed';
 import FloatingHeart from '../../components/live/FloatingHeart';
 import * as liveApi from '../../api/live';
 import type { LiveSession } from '../../api/live';
-
 
 export default function LiveStream() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -28,6 +28,11 @@ export default function LiveStream() {
   const [joined, setJoined] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [showComments, setShowComments] = useState(true);
+  const [showShareToast, setShowShareToast] = useState(false);
+  const commentInputRef = useRef<HTMLInputElement>(null);
 
   const handleStreamEnded = useCallback(() => {
     toast('info', 'Stream has ended');
@@ -47,14 +52,16 @@ export default function LiveStream() {
     sendReaction,
   } = useLiveSession({ sessionId: sessionId || '', onStreamEnded: handleStreamEnded });
 
-  // Fetch session
   useEffect(() => {
     if (!sessionId) return;
     let mounted = true;
     liveApi
       .getLiveSession(sessionId)
       .then(({ session: s }) => {
-        if (mounted) setSession(s);
+        if (mounted) {
+          setSession(s);
+          setLikeCount(s.viewerCount || 0);
+        }
       })
       .catch(() => {
         if (mounted) setError('Stream not found');
@@ -62,15 +69,11 @@ export default function LiveStream() {
       .finally(() => {
         if (mounted) setLoading(false);
       });
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [sessionId]);
 
-  // Attach video track to DOM
   useEffect(() => {
     if (!room || !videoContainerRef.current || !joined) return;
-
     const container = videoContainerRef.current;
 
     const attachTracks = () => {
@@ -97,7 +100,6 @@ export default function LiveStream() {
     });
 
     attachTracks();
-
     return () => {
       room.off(RoomEvent.TrackSubscribed, attachTracks);
       room.off(RoomEvent.ParticipantConnected, attachTracks);
@@ -128,7 +130,12 @@ export default function LiveStream() {
   };
 
   const handleHeart = () => {
+    if (!liked) {
+      setLikeCount((c) => c + 1);
+      setLiked(true);
+    }
     sendReaction();
+    setTimeout(() => setLiked(false), 800);
   };
 
   const handleBack = () => {
@@ -136,9 +143,22 @@ export default function LiveStream() {
     navigate(-1);
   };
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: session?.title || 'Live Stream', url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 2000);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="h-dvh bg-black flex items-center justify-center">
         <Loader2 size={32} className="animate-spin text-white" />
       </div>
     );
@@ -146,7 +166,7 @@ export default function LiveStream() {
 
   if (error || !session) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-4 text-white">
+      <div className="h-dvh bg-black flex flex-col items-center justify-center gap-4 text-white">
         <p className="text-lg font-medium">{error || 'Stream not found'}</p>
         <button onClick={() => navigate(-1)} className="text-sm text-white/60 hover:text-white">
           Go back
@@ -156,135 +176,274 @@ export default function LiveStream() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col relative">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80 backdrop-blur-sm z-30">
-        <button onClick={handleBack} className="text-white/70 hover:text-white">
-          <ArrowLeft size={24} />
-        </button>
-        <div className="flex items-center gap-3">
-          <LiveBadge />
-          <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-0.5">
-            <Eye size={12} className="text-white/60" />
-            <span className="text-white text-xs font-medium">{viewerCount}</span>
-          </div>
-        </div>
-        <div className="w-10" />
-      </div>
+    <div className="h-dvh w-full bg-black relative overflow-hidden select-none">
+      {/* ── Video (full-screen background) ── */}
+      <div ref={videoContainerRef} className="absolute inset-0 bg-gray-900" />
 
-      {/* Video */}
-      <div className="flex-1 relative">
-        <div ref={videoContainerRef} className="w-full h-full bg-gray-900" />
-
-        {!joined && (
-          <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 z-20">
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-white mb-1">{session.title}</h2>
-              <p className="text-sm text-white/60">{session.stylistId?.name}</p>
-              <p className="text-xs text-white/40 mt-1">{session.category}</p>
+      {/* ── Pre-join overlay ── */}
+      {!joined && (
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="flex flex-col items-center gap-5 px-6"
+          >
+            {/* Streamer avatar */}
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 p-[3px] shadow-2xl shadow-red-500/30">
+                <div className="w-full h-full rounded-full bg-gray-900 p-[2px] overflow-hidden">
+                  {session.stylistId?.image ? (
+                    <img src={session.stylistId.image} alt="" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-white">{session.stylistId?.name?.[0] || '?'}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <LiveBadge size="sm" className="absolute -bottom-1 left-1/2 -translate-x-1/2" />
             </div>
+
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-white">{session.title}</h2>
+              <p className="text-sm text-white/60 mt-1">{session.stylistId?.name}</p>
+              {session.category && (
+                <span className="inline-block mt-2 px-3 py-1 rounded-full bg-white/10 text-xs text-white/70 font-medium">
+                  {session.category}
+                </span>
+              )}
+            </div>
+
             <button
               onClick={handleJoin}
               disabled={joining}
-              className="px-8 py-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-sm disabled:opacity-50 flex items-center gap-2"
+              className="px-10 py-3.5 rounded-full bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-shadow active:scale-95"
             >
               {joining ? (
                 <><Loader2 size={16} className="animate-spin" /> Joining...</>
               ) : (
-                'Join Stream'
+                <>
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+                  </span>
+                  Join Live
+                </>
               )}
             </button>
-          </div>
-        )}
 
-        {/* Connection status */}
-        {joined && connectionState !== 'connected' && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30">
-            <div className="flex items-center gap-2 bg-yellow-500/20 text-yellow-400 text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm">
-              <WifiOff size={12} />
-              Reconnecting...
-            </div>
-          </div>
-        )}
+            <button onClick={handleBack} className="text-sm text-white/40 hover:text-white/70 transition-colors">
+              Go back
+            </button>
+          </motion.div>
+        </div>
+      )}
 
-        {/* Floating hearts */}
-        <AnimatePresence>
-          {hearts.map((h) => (
-            <FloatingHeart key={h.id} id={h.id} x={h.x} />
-          ))}
-        </AnimatePresence>
+      {/* ── Top gradient ── */}
+      <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-10 pointer-events-none" />
 
-        {/* Stylist info overlay */}
-        {joined && (
-          <div className="absolute top-4 left-4 z-20">
-            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5">
+      {/* ── Top-left: Back + Stylist info ── */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between p-4 pt-5">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleBack}
+            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all"
+          >
+            <X size={20} />
+          </button>
+
+          {joined && (
+            <motion.div
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-2 bg-black/30 backdrop-blur-md rounded-full pr-4 pl-1 py-1"
+            >
               {session.stylistId?.image ? (
-                <img
-                  src={session.stylistId.image}
-                  alt=""
-                  className="w-6 h-6 rounded-full object-cover"
-                />
+                <img src={session.stylistId.image} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-white/20" />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold text-white">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-white/20">
                   {session.stylistId?.name?.[0]}
                 </div>
               )}
-              <span className="text-xs font-medium text-white">{session.stylistId?.name}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Book CTA */}
-        {joined && (
-          <div className="absolute top-4 right-4 z-20">
-            <Link
-              to={`/app/stylist/${session.stylistId?._id}`}
-              className="flex items-center gap-1.5 bg-purple-500/80 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full hover:bg-purple-500 transition-colors"
-            >
-              <Calendar size={12} />
-              Book
-            </Link>
-          </div>
-        )}
-
-        {/* Comment feed */}
-        {joined && (
-          <div className="absolute bottom-20 left-0 right-0 z-20 pointer-events-none">
-            <LiveCommentFeed comments={comments} />
-          </div>
-        )}
-
-        {/* Input bar */}
-        {joined && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4 z-30">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleHeart}
-                className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0"
-              >
-                <Heart size={20} />
-              </button>
-              <div className="flex-1 flex items-center bg-white/10 rounded-full px-4 py-2">
-                <input
-                  type="text"
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
-                  placeholder="Add a comment..."
-                  className="flex-1 bg-transparent text-white text-sm placeholder:text-white/30 focus:outline-none"
-                />
-                <button
-                  onClick={handleSendComment}
-                  disabled={!commentText.trim()}
-                  className="text-purple-400 disabled:text-white/20 ml-2"
-                >
-                  <Send size={16} />
-                </button>
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-white leading-tight">{session.stylistId?.name}</span>
+                <span className="text-[10px] text-white/50 leading-tight">Host</span>
               </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Top-right: Viewer count */}
+        {joined && (
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex items-center gap-2 bg-black/30 backdrop-blur-md rounded-full px-3 py-1.5"
+          >
+            <LiveBadge size="sm" />
+            <div className="flex items-center gap-1">
+              <Eye size={12} className="text-white/70" />
+              <span className="text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
+
+      {/* ── Connection status ── */}
+      {joined && connectionState !== 'connected' && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 bg-yellow-500/90 text-black text-xs font-semibold px-4 py-2 rounded-full shadow-lg"
+          >
+            <WifiOff size={12} />
+            Reconnecting...
+          </motion.div>
+        </div>
+      )}
+
+      {/* ── Floating hearts ── */}
+      <AnimatePresence>
+        {hearts.map((h) => (
+          <FloatingHeart key={h.id} id={h.id} x={h.x} />
+        ))}
+      </AnimatePresence>
+
+      {/* ── Bottom gradient ── */}
+      <div className="absolute bottom-0 inset-x-0 h-72 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 pointer-events-none" />
+
+      {/* ── Right-side action buttons (TikTok style) ── */}
+      {joined && (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, staggerChildren: 0.05 }}
+          className="absolute right-3 bottom-40 z-20 flex flex-col items-center gap-5"
+        >
+          {/* Stylist profile */}
+          <Link
+            to={`/app/stylist/${session.stylistId?._id}`}
+            className="flex flex-col items-center gap-1"
+          >
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 p-[2px] shadow-lg">
+              <div className="w-full h-full rounded-full bg-gray-900 p-[1.5px] overflow-hidden">
+                {session.stylistId?.image ? (
+                  <img src={session.stylistId.image} alt="" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
+                    <span className="text-sm font-bold text-white">{session.stylistId?.name?.[0]}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <span className="text-[9px] text-white/70 font-medium">Profile</span>
+          </Link>
+
+          {/* Like */}
+          <button onClick={handleHeart} className="flex flex-col items-center gap-1 group">
+            <motion.div
+              animate={liked ? { scale: [1, 1.4, 1] } : {}}
+              transition={{ duration: 0.3 }}
+              className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all"
+            >
+              <Heart
+                size={24}
+                className={liked ? 'text-red-500 fill-red-500' : 'text-white'}
+              />
+            </motion.div>
+            <span className="text-[10px] text-white font-semibold tabular-nums">{likeCount}</span>
+          </button>
+
+          {/* Comment toggle */}
+          <button
+            onClick={() => setShowComments((v) => !v)}
+            className="flex flex-col items-center gap-1 group"
+          >
+            <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all">
+              <MessageCircle size={22} className={showComments ? 'text-white fill-white/20' : 'text-white'} />
+            </div>
+            <span className="text-[10px] text-white font-semibold">{comments.length}</span>
+          </button>
+
+          {/* Share */}
+          <button onClick={handleShare} className="flex flex-col items-center gap-1 group">
+            <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all">
+              <Share2 size={22} className="text-white" />
+            </div>
+            <span className="text-[10px] text-white font-semibold">Share</span>
+          </button>
+
+          {/* Book */}
+          <Link
+            to={`/app/stylist/${session.stylistId?._id}`}
+            className="flex flex-col items-center gap-1 group"
+          >
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all">
+              <Calendar size={20} className="text-white" />
+            </div>
+            <span className="text-[10px] text-white font-semibold">Book</span>
+          </Link>
+        </motion.div>
+      )}
+
+      {/* ── Comment feed (bottom-left) ── */}
+      {joined && showComments && (
+        <div className="absolute bottom-20 left-0 right-16 z-20 pointer-events-none max-h-[40%]">
+          <LiveCommentFeed comments={comments} />
+        </div>
+      )}
+
+      {/* ── Comment input bar (bottom) ── */}
+      {joined && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="absolute bottom-0 inset-x-0 z-20 p-3 pb-4"
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center bg-white/10 backdrop-blur-md rounded-full px-4 py-2.5 border border-white/10">
+              <input
+                ref={commentInputRef}
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendComment()}
+                placeholder="Say something..."
+                className="flex-1 bg-transparent text-white text-sm placeholder:text-white/40 focus:outline-none"
+              />
+              {commentText.trim() && (
+                <motion.button
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  onClick={handleSendComment}
+                  className="ml-2 w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0"
+                >
+                  <Send size={12} className="text-white ml-0.5" />
+                </motion.button>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Share toast ── */}
+      <AnimatePresence>
+        {showShareToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 bg-white/90 backdrop-blur-sm text-black text-xs font-semibold px-4 py-2 rounded-full shadow-lg"
+          >
+            Link copied!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
