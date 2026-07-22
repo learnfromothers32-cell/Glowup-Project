@@ -14,7 +14,6 @@ import { useToast } from '../../components/ui/Toast';
 import * as liveApi from '../../api/live';
 import { Track, RoomEvent } from 'livekit-client';
 import FloatingHeart from '../../components/live/FloatingHeart';
-import type { Comment } from '../../hooks/useLiveSession';
 
 const CATEGORIES = [
   'Braids', 'Nails', 'Barber', 'Colorist', 'Stylist',
@@ -517,7 +516,7 @@ export default function LiveStudio() {
             </div>
           </div>
 
-          <div className="absolute bottom-0 inset-x-0 h-[140px] sm:h-[160px] bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
+          <div className="absolute bottom-0 inset-x-0 h-[120px] sm:h-[140px] bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
