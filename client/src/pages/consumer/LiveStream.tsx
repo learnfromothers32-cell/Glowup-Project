@@ -6,6 +6,7 @@ import {
   Share2, MessageCircle, X, RefreshCw, Calendar, Send,
 } from 'lucide-react';
 import { useAuth } from '../../context/authUtils';
+import CommentModal from '../../components/live/CommentModal';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { RoomEvent } from 'livekit-client';
 import { useToast } from '../../components/ui/Toast';
