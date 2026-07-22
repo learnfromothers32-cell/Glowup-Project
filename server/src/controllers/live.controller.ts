@@ -3,6 +3,7 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { ApiError } from '../utils/apiError';
 import { sendSuccess } from '../utils/apiResponse';
 import * as liveService from '../services/live.service';
+import { appConfig } from '../config/app';
 import { getIO } from '../socket';
 import logger from '../utils/logger';
 
@@ -85,6 +86,13 @@ export const joinLiveSession = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const liveSessionWebhook = asyncHandler(async (req: Request, res: Response) => {
+  if (appConfig.livekitWebhookSecret) {
+    const provided = req.headers['x-webhook-secret'] || req.body?.secret;
+    if (provided !== appConfig.livekitWebhookSecret) {
+      throw new ApiError(401, 'Invalid webhook secret');
+    }
+  }
+
   try {
     await liveService.handleWebhook(req.body);
   } catch (err) {

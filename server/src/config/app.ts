@@ -27,6 +27,7 @@ export const appConfig = {
     apiSecret: process.env.LIVEKIT_API_SECRET || '',
     wsUrl: process.env.LIVEKIT_WS_URL || '',
   },
+  livekitWebhookSecret: process.env.LIVEKIT_WEBHOOK_SECRET || '',
 };
 
 export const isProduction = appConfig.env === 'production';

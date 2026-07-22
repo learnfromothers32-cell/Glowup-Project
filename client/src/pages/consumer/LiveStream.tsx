@@ -11,9 +11,13 @@ import { RoomEvent } from 'livekit-client';
 import { useToast } from '../../components/ui/Toast';
 import LiveBadge from '../../components/live/LiveBadge';
 import FloatingHeart from '../../components/live/FloatingHeart';
+import FloatingEmoji from '../../components/live/FloatingEmoji';
+import { FloatingCommentBubble, SystemCommentPill } from '../../components/live/FloatingCommentBubble';
 import * as liveApi from '../../api/live';
 import type { LiveSession } from '../../api/live';
 import type { Comment } from '../../hooks/useLiveSession';
+import { getSocketUrl } from '../../services/socket';
+import { io } from 'socket.io-client';
 
 interface TapHeart {
   id: number;
@@ -21,40 +25,14 @@ interface TapHeart {
   y: number;
 }
 
-const COMMENT_LIFETIME_MS = 8000;
-const MAX_VISIBLE_FLOATING = 15;
-
-function FloatingComment({ comment, onRemove }: { comment: Comment; onRemove: (id: string) => void }) {
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  useEffect(() => {
-    const timer = setTimeout(() => onRemove(comment.id), COMMENT_LIFETIME_MS);
-    return () => clearTimeout(timer);
-  }, [comment.id, onRemove]);
-
-  return (
-    <motion.div
-      layout
-      initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: -40, scale: 0.9 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -20, scale: 0.85 }}
-      transition={{ duration: prefersReducedMotion ? 0.05 : 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="flex items-center gap-2 max-w-[75%]"
-    >
-      {comment.userAvatar ? (
-        <img src={comment.userAvatar} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/20" loading="lazy" />
-      ) : (
-        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
-          {comment.userName?.[0]?.toUpperCase() || '?'}
-        </div>
-      )}
-      <div className="flex items-baseline gap-1.5 bg-black/45 backdrop-blur-md rounded-full pl-3 pr-3.5 py-1.5 border border-white/[0.06]">
-        <span className="text-[11px] font-bold text-pink-400 shrink-0">{comment.userName}</span>
-        <span className="text-[12px] text-white/90 leading-snug whitespace-nowrap overflow-hidden text-ellipsis">{comment.text}</span>
-      </div>
-    </motion.div>
-  );
+interface FloatingEmojiItem {
+  id: number;
+  emoji: string;
+  x: number;
 }
+
+const MAX_VISIBLE_FLOATING = 20;
+const EMOJI_OPTIONS = ['❤️', '🔥', '👏', '💯', '😍', '🎉'];
 
 export default function LiveStream() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -65,6 +43,7 @@ export default function LiveStream() {
   const commentInputRef = useRef<HTMLInputElement>(null);
   const lastTapRef = useRef(0);
   const tapHeartIdRef = useRef(0);
+  const emojiIdRef = useRef(0);
 
   const [session, setSession] = useState<LiveSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,6 +59,7 @@ export default function LiveStream() {
   const [tapHearts, setTapHearts] = useState<TapHeart[]>([]);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [floatingComments, setFloatingComments] = useState<Comment[]>([]);
+  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmojiItem[]>([]);
   const likeInFlightRef = useRef(false);
 
   useEffect(() => {
@@ -103,6 +83,21 @@ export default function LiveStream() {
     navigate('/app');
   }, [toast, navigate]);
 
+  useEffect(() => {
+    if (!sessionId) return;
+    const socket = io(getSocketUrl('live') || undefined, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+    });
+    socket.on('live:session-ended', (data: { sessionId: string }) => {
+      if (data.sessionId === sessionId) {
+        handleStreamEnded();
+      }
+    });
+    return () => { socket.disconnect(); };
+  }, [sessionId, handleStreamEnded]);
+
   const {
     room,
     connectionState,
@@ -116,6 +111,7 @@ export default function LiveStream() {
     disconnect,
     sendComment,
     broadcastLikeUpdate,
+    sendReaction,
     getCooldownRemaining,
     COMMENT_COOLDOWN_MS,
     MAX_COMMENT_LENGTH,
@@ -158,25 +154,35 @@ export default function LiveStream() {
     return () => { mounted = false; };
   }, [sessionId, setLikeCount, user]);
 
+  const seenCommentIdsRef = useRef(new Set<string>());
+
   useEffect(() => {
     if (comments.length === 0) return;
     const latest = comments[comments.length - 1];
-    if (floatingComments.some((c) => c.id === latest.id)) return;
-    if (latest.type === 'comment') {
-      setFloatingComments((prev) => [...prev.slice(-(MAX_VISIBLE_FLOATING - 1)), latest]);
+    if (seenCommentIdsRef.current.has(latest.id)) return;
+    seenCommentIdsRef.current.add(latest.id);
+    if (seenCommentIdsRef.current.size > MAX_VISIBLE_FLOATING * 2) {
+      const ids = Array.from(seenCommentIdsRef.current);
+      seenCommentIdsRef.current = new Set(ids.slice(-MAX_VISIBLE_FLOATING));
     }
-  }, [comments, floatingComments]);
+    setFloatingComments((prev) => [...prev.slice(-(MAX_VISIBLE_FLOATING - 1)), latest]);
+  }, [comments]);
 
-  const removeFloatingComment = useCallback((id: string) => {
-    setFloatingComments((prev) => prev.filter((c) => c.id !== id));
-  }, []);
+  const attachedElementsRef = useRef<HTMLMediaElement[]>([]);
 
   useEffect(() => {
     if (!room || !videoContainerRef.current || !joined) return;
     const container = videoContainerRef.current;
 
+    const detachAll = () => {
+      for (const el of attachedElementsRef.current) {
+        try { el.remove(); } catch {}
+      }
+      attachedElementsRef.current = [];
+    };
+
     const attachTracks = () => {
-      container.innerHTML = '';
+      detachAll();
       const participants = Array.from(room.remoteParticipants.values());
       for (const p of participants) {
         const pub = p.getTrackPublication('camera');
@@ -184,6 +190,7 @@ export default function LiveStream() {
           const el = pub.track.attach();
           el.className = 'w-full h-full object-cover';
           container.appendChild(el);
+          attachedElementsRef.current.push(el);
         }
       }
     };
@@ -203,6 +210,7 @@ export default function LiveStream() {
       room.off(RoomEvent.TrackSubscribed, attachTracks);
       room.off(RoomEvent.ParticipantConnected, attachTracks);
       room.off(RoomEvent.ParticipantDisconnected, attachTracks);
+      detachAll();
     };
   }, [room, joined]);
 
@@ -220,7 +228,7 @@ export default function LiveStream() {
       }
       await connect(wsUrl, token);
       setJoined(true);
-      setViewerCount(s.viewerCount || 1);
+      setViewerCount(Math.max(1, s.viewerCount || 0));
     } catch (err: any) {
       toast('error', err?.response?.data?.message || 'Could not join stream');
     } finally {
@@ -237,14 +245,17 @@ export default function LiveStream() {
     const prevCount = likeCount;
 
     setUserLiked(!prevLiked);
-    setLikeCount(prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
-    broadcastLikeUpdate(prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
+    const newCount = prevLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
+    setLikeCount(newCount);
+    broadcastLikeUpdate(newCount);
+
+    sendReaction();
 
     try {
-      const { likeCount: newCount, liked } = await liveApi.likeLiveSession(sessionId);
-      setLikeCount(newCount);
+      const { likeCount: serverCount, liked } = await liveApi.likeLiveSession(sessionId);
+      setLikeCount(serverCount);
       setUserLiked(liked);
-      broadcastLikeUpdate(newCount);
+      broadcastLikeUpdate(serverCount);
     } catch (err: any) {
       setUserLiked(prevLiked);
       setLikeCount(prevCount);
@@ -254,7 +265,7 @@ export default function LiveStream() {
     } finally {
       likeInFlightRef.current = false;
     }
-  }, [sessionId, user, userLiked, likeCount, setLikeCount, broadcastLikeUpdate, toast]);
+  }, [sessionId, user, userLiked, likeCount, setLikeCount, broadcastLikeUpdate, sendReaction, toast]);
 
   const spawnTapHeart = useCallback((clientX: number, clientY: number) => {
     const id = ++tapHeartIdRef.current;
@@ -277,6 +288,13 @@ export default function LiveStream() {
     }
     lastTapRef.current = now;
   }, [performLike, spawnTapHeart]);
+
+  const spawnEmojiReaction = useCallback((emoji: string) => {
+    const id = ++emojiIdRef.current;
+    const x = 8 + Math.random() * 20;
+    setFloatingEmojis((prev) => [...prev.slice(-10), { id, emoji, x }]);
+    setTimeout(() => setFloatingEmojis((prev) => prev.filter((e) => e.id !== id)), 3000);
+  }, []);
 
   const handleSendComment = () => {
     if (!commentText.trim() || !user) return;
@@ -403,14 +421,21 @@ export default function LiveStream() {
           <motion.div
             key={h.id}
             initial={{ opacity: 1, scale: 0.3 }}
-            animate={{ opacity: [1, 1, 0], scale: 1.2, y: -160 }}
+            animate={{ opacity: [1, 1, 0], scale: 1.3, y: -180 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.2, ease: 'easeOut' }}
             className="absolute pointer-events-none z-50"
             style={{ left: `${h.x}%`, top: h.y }}
           >
-            <span className="text-3xl drop-shadow-lg">❤️</span>
+            <span className="text-4xl drop-shadow-lg">❤️</span>
           </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {/* ── Floating emoji reactions ── */}
+      <AnimatePresence>
+        {floatingEmojis.map((e) => (
+          <FloatingEmoji key={e.id} id={e.id} emoji={e.emoji} x={e.x} />
         ))}
       </AnimatePresence>
 
@@ -545,93 +570,144 @@ export default function LiveStream() {
         ))}
       </AnimatePresence>
 
-      {/* ── Floating comments over video (TikTok-style) ── */}
-      {joined && showComments && (
-        <div className="absolute bottom-24 sm:bottom-28 left-0 right-14 z-20 flex flex-col-reverse gap-1.5 px-3 pointer-events-none overflow-hidden max-h-[40vh]">
+      {/* ── Floating comments over video (TikTok-style, always present) ── */}
+      {joined && (
+        <div className="absolute bottom-[130px] sm:bottom-[140px] left-0 right-14 z-20 flex flex-col-reverse gap-1.5 px-3 pointer-events-none overflow-hidden max-h-[38vh]">
           <AnimatePresence mode="popLayout" initial={false}>
-            {floatingComments.slice(-MAX_VISIBLE_FLOATING).map((c) => (
-              <FloatingComment key={c.id} comment={c} onRemove={removeFloatingComment} />
+            {showComments && floatingComments.slice(-MAX_VISIBLE_FLOATING).map((c) => (
+              c.type === 'system'
+                ? <SystemCommentPill key={c.id} text={c.text} />
+                : <FloatingCommentBubble key={c.id} comment={c} />
             ))}
           </AnimatePresence>
         </div>
       )}
 
       {/* ── Bottom gradient ── */}
-      <div className="absolute bottom-0 inset-x-0 h-36 bg-gradient-to-t from-black/70 via-black/25 to-transparent z-10 pointer-events-none" />
+      <div className="absolute bottom-0 inset-x-0 h-[180px] bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 pointer-events-none" />
 
-      {/* ── Right-side action buttons ── */}
+      {/* ── Right-side action buttons (TikTok style) ── */}
       {joined && (
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="absolute right-2 sm:right-3 bottom-24 sm:bottom-36 z-20 flex flex-col items-center gap-3 sm:gap-4"
+          className="absolute right-2 sm:right-3 bottom-[180px] sm:bottom-[200px] z-20 flex flex-col items-center gap-3 sm:gap-4"
         >
-          {/* Stylist profile */}
+          {/* Stylist profile with follow ring */}
           <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-0.5" aria-label={`View ${session.stylistId?.name}'s profile`}>
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 p-[2px] shadow-lg">
-              <div className="w-full h-full rounded-full bg-gray-900 p-[1.5px] overflow-hidden">
-                {session.stylistId?.image ? (
-                  <img src={session.stylistId.image} alt="" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{session.stylistId?.name?.[0]}</span>
-                  </div>
-                )}
+            <div className="relative">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 via-pink-500 to-purple-500 p-[2.5px] shadow-lg">
+                <div className="w-full h-full rounded-full bg-gray-900 p-[2px] overflow-hidden">
+                  {session.stylistId?.image ? (
+                    <img src={session.stylistId.image} alt="" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
+                      <span className="text-xs font-bold text-white">{session.stylistId?.name?.[0]}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center shadow-md">
+                <span className="text-white text-[10px] font-bold leading-none">+</span>
               </div>
             </div>
-            <span className="text-[8px] sm:text-[9px] text-white/70 font-medium">Profile</span>
           </Link>
 
-          {/* Like */}
+          {/* Like (TikTok-style with burst) */}
           <button onClick={() => performLike()} className="flex flex-col items-center gap-0.5 group" aria-label={userLiked ? 'Unlike stream' : 'Like stream'}>
             <motion.div
-              animate={userLiked ? { scale: [1, 1.4, 1] } : {}}
-              transition={{ duration: 0.3 }}
-              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all active:scale-90 ${
-                userLiked ? 'bg-red-500/25' : 'bg-black/30 group-hover:bg-black/50'
-              }`}
+              animate={userLiked ? { scale: [1, 1.5, 0.9, 1.1, 1] } : {}}
+              transition={{ duration: 0.5, ease: [0.17, 0.67, 0.21, 1.21] }}
+              className="relative"
             >
-              <Heart size={20} className={userLiked ? 'text-red-500 fill-red-500' : 'text-white'} />
+              <div className={`w-12 h-12 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-200 active:scale-90 ${
+                userLiked ? 'bg-red-500/25' : 'bg-black/30 group-hover:bg-black/50'
+              }`}>
+                <Heart size={24} className={`transition-all duration-200 ${userLiked ? 'text-red-500 fill-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 'text-white'}`} />
+              </div>
+              {userLiked && (
+                <>
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 1, scale: 0, x: 0, y: 0 }}
+                      animate={{
+                        opacity: 0,
+                        scale: 1,
+                        x: (i % 2 === 0 ? 1 : -1) * (15 + Math.random() * 15),
+                        y: -10 - Math.random() * 25,
+                      }}
+                      transition={{ duration: 0.5, delay: i * 0.03, ease: 'easeOut' }}
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                    </motion.div>
+                  ))}
+                </>
+              )}
             </motion.div>
-            <span className="text-[9px] sm:text-[10px] text-white font-semibold tabular-nums">{likeCount}</span>
+            <span className="text-[10px] text-white font-semibold tabular-nums">{likeCount}</span>
           </button>
 
           {/* Comment toggle */}
           <button onClick={() => setShowComments((v) => !v)} className="flex flex-col items-center gap-0.5 group" aria-label={showComments ? 'Hide comments' : 'Show comments'}>
-            <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all active:scale-90 ${
+            <div className={`w-12 h-12 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-200 active:scale-90 ${
               showComments ? 'bg-white/20' : 'bg-black/30 group-hover:bg-black/50'
             }`}>
-              <MessageCircle size={18} className={showComments ? 'text-white fill-white/20' : 'text-white'} />
+              <MessageCircle size={22} className={showComments ? 'text-white fill-white/20' : 'text-white'} />
             </div>
-            <span className="text-[9px] sm:text-[10px] text-white font-semibold">{comments.length}</span>
+            <span className="text-[10px] text-white font-semibold">{comments.length}</span>
           </button>
 
           {/* Share */}
           <button onClick={handleShare} className="flex flex-col items-center gap-0.5 group" aria-label="Share stream">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all active:scale-90">
-              <Share2 size={18} className="text-white" />
+            <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all duration-200 active:scale-90">
+              <Share2 size={22} className="text-white" />
             </div>
-            <span className="text-[9px] sm:text-[10px] text-white font-semibold">Share</span>
+            <span className="text-[10px] text-white font-semibold">Share</span>
           </button>
 
           {/* Book */}
           <Link to={`/app/stylist/${session.stylistId?._id}`} className="flex flex-col items-center gap-0.5 group" aria-label="Book appointment">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all active:scale-90">
-              <Calendar size={16} className="text-white" />
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all duration-200 active:scale-90">
+              <Calendar size={18} className="text-white" />
             </div>
-            <span className="text-[9px] sm:text-[10px] text-white font-semibold">Book</span>
+            <span className="text-[10px] text-white font-semibold">Book</span>
           </Link>
         </motion.div>
       )}
 
-      {/* ── Comment input bar ── */}
-      {joined && showComments && (
+      {/* ── Emoji reaction tray (TikTok-style, always visible) ── */}
+      {joined && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.3 }}
+          className="absolute right-14 sm:right-16 bottom-[125px] sm:bottom-[135px] z-20 flex flex-col items-center gap-1.5"
+        >
+          {EMOJI_OPTIONS.map((emoji) => (
+            <motion.button
+              key={emoji}
+              whileTap={{ scale: 1.6 }}
+              whileHover={{ scale: 1.15 }}
+              onClick={() => spawnEmojiReaction(emoji)}
+              className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-xl hover:bg-black/50 transition-colors active:bg-black/60"
+              aria-label={`React with ${emoji}`}
+            >
+              {emoji}
+            </motion.button>
+          ))}
+        </motion.div>
+      )}
+
+      {/* ── Comment input bar (ALWAYS visible when joined, TikTok-style) ── */}
+      {joined && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.3 }}
-          className="absolute bottom-0 inset-x-0 z-20 p-3 sm:p-3.5 pb-3.5 sm:pb-4"
+          className="absolute bottom-0 inset-x-0 z-20 p-3 sm:p-3.5"
           style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 12 : undefined }}
         >
           <div className="flex items-center gap-2">
@@ -694,19 +770,7 @@ export default function LiveStream() {
                 >
                   <Send size={12} className="text-white ml-0.5" />
                 </motion.button>
-              ) : (
-                <button
-                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white/25 hover:text-white/40 transition-colors"
-                  aria-label="Add emoji"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                    <line x1="9" y1="9" x2="9.01" y2="9" />
-                    <line x1="15" y1="9" x2="15.01" y2="9" />
-                  </svg>
-                </button>
-              )}
+              ) : null}
             </div>
           </div>
         </motion.div>

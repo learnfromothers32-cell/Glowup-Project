@@ -11,7 +11,9 @@ import { useToast } from '../../components/ui/Toast';
 import * as liveApi from '../../api/live';
 import { Track, RoomEvent } from 'livekit-client';
 import FloatingHeart from '../../components/live/FloatingHeart';
+import { FloatingCommentBubble, SystemCommentPill } from '../../components/live/FloatingCommentBubble';
 import LiveCommentFeed from '../../components/live/LiveCommentFeed';
+import type { Comment } from '../../hooks/useLiveSession';
 
 const CATEGORIES = [
   'Braids', 'Nails', 'Barber', 'Colorist', 'Stylist',
@@ -36,6 +38,10 @@ export default function LiveStudio() {
   const [camEnabled, setCamEnabled] = useState(true);
   const [showCommentSheet, setShowCommentSheet] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [floatingComments, setFloatingComments] = useState<Comment[]>([]);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const MAX_VISIBLE_FLOATING = 12;
 
   const {
     room,
@@ -50,6 +56,22 @@ export default function LiveStudio() {
     toggleCamera,
     toggleMicrophone,
   } = useLiveSession({ sessionId: sessionId || '', isBroadcaster: true });
+
+  useEffect(() => {
+    const vp = window.visualViewport;
+    if (!vp) return;
+    const onResize = () => {
+      const height = window.innerHeight;
+      const diff = height - vp.height - vp.offsetTop;
+      setKeyboardHeight(Math.max(0, diff));
+    };
+    vp.addEventListener('resize', onResize);
+    vp.addEventListener('scroll', onResize);
+    return () => {
+      vp.removeEventListener('resize', onResize);
+      vp.removeEventListener('scroll', onResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!room || !videoContainerRef.current) return;
@@ -148,13 +170,21 @@ export default function LiveStudio() {
   };
 
   const handleToggleMic = async () => {
-    await toggleMicrophone();
-    setMicEnabled((prev) => !prev);
+    try {
+      await toggleMicrophone();
+      setMicEnabled((prev) => !prev);
+    } catch {
+      toast('error', 'Failed to toggle microphone');
+    }
   };
 
   const handleToggleCam = async () => {
-    await toggleCamera();
-    setCamEnabled((prev) => !prev);
+    try {
+      await toggleCamera();
+      setCamEnabled((prev) => !prev);
+    } catch {
+      toast('error', 'Failed to toggle camera');
+    }
   };
 
   const handleSendComment = () => {
@@ -162,6 +192,13 @@ export default function LiveStudio() {
     sendComment(commentText.trim(), user.id, user.name, user.avatar);
     setCommentText('');
   };
+
+  useEffect(() => {
+    if (comments.length === 0) return;
+    const latest = comments[comments.length - 1];
+    if (floatingComments.some((c) => c.id === latest.id)) return;
+    setFloatingComments((prev) => [...prev.slice(-(MAX_VISIBLE_FLOATING - 1)), latest]);
+  }, [comments, floatingComments, MAX_VISIBLE_FLOATING]);
 
   const handleDragEnd = (_: any, info: { offset: { y: number } }) => {
     if (info.offset.y > 100) {
@@ -180,6 +217,19 @@ export default function LiveStudio() {
           <FloatingHeart key={h.id} id={h.id} x={h.x} />
         ))}
       </AnimatePresence>
+
+      {/* ── Floating comments overlay (broadcaster sees comments on video) ── */}
+      {step === 'live' && (
+        <div className="absolute bottom-[180px] sm:bottom-[200px] left-0 right-16 z-15 flex flex-col-reverse gap-1.5 px-3 pointer-events-none overflow-hidden max-h-[35vh]">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {floatingComments.map((c) => (
+              c.type === 'system'
+                ? <SystemCommentPill key={c.id} text={c.text} />
+                : <FloatingCommentBubble key={c.id} comment={c} />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* ── SETUP SCREEN ── */}
       {step === 'setup' && (
@@ -452,7 +502,7 @@ export default function LiveStudio() {
                   </div>
 
                   {/* Broadcaster input */}
-                  <div className="px-3 py-3 border-t border-white/[0.06]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}>
+                  <div className="px-3 py-3 border-t border-white/[0.06]" style={{ paddingBottom: keyboardHeight > 0 ? keyboardHeight + 12 : undefined }}>
                     <div className="flex items-center gap-2.5">
                       {user?.avatar ? (
                         <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
@@ -489,19 +539,7 @@ export default function LiveStudio() {
                           >
                             <Send size={11} className="text-white ml-0.5" />
                           </motion.button>
-                        ) : (
-                          <button
-                            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 ml-2 text-white/30 hover:text-white/50 transition-colors"
-                            aria-label="Add emoji"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="12" cy="12" r="10" />
-                              <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                              <line x1="9" y1="9" x2="9.01" y2="9" />
-                              <line x1="15" y1="9" x2="15.01" y2="9" />
-                            </svg>
-                          </button>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>

@@ -1,16 +1,17 @@
 import { motion, useReducedMotion } from 'framer-motion';
 
-interface FloatingHeartProps {
+interface FloatingEmojiProps {
   id: number;
+  emoji: string;
   x: number;
 }
 
-export default function FloatingHeart({ id, x: _x }: FloatingHeartProps) {
+export default function FloatingEmoji({ id, emoji, x }: FloatingEmojiProps) {
   const prefersReducedMotion = useReducedMotion();
-  const randomX = 75 + Math.random() * 18;
-  const randomRotate = -15 + Math.random() * 30;
-  const randomScale = 0.8 + Math.random() * 0.6;
-  const duration = 1.8 + Math.random() * 0.8;
+  const randomX = x + (-8 + Math.random() * 16);
+  const randomRotate = -20 + Math.random() * 40;
+  const randomScale = 0.9 + Math.random() * 0.5;
+  const duration = 2 + Math.random() * 1;
 
   return (
     <motion.div
@@ -31,7 +32,7 @@ export default function FloatingHeart({ id, x: _x }: FloatingHeartProps) {
       className="absolute bottom-32 pointer-events-none z-50"
       style={{ left: `${randomX}%` }}
     >
-      <span className="text-3xl drop-shadow-[0_2px_8px_rgba(239,68,68,0.4)]">❤️</span>
+      <span className="text-3xl drop-shadow-lg">{emoji}</span>
     </motion.div>
   );
 }

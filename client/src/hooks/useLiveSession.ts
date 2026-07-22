@@ -41,8 +41,10 @@ export function useLiveSession({
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const roomRef = useRef<Room | null>(null);
   const heartIdRef = useRef(0);
+  const heartTimeoutsRef = useRef(new Set<ReturnType<typeof setTimeout>>());
   const reconnectAttemptsRef = useRef(0);
   const lastCommentTimeRef = useRef(0);
+  const seenCommentIdsRef = useRef(new Set<string>());
   const MAX_RECONNECT_ATTEMPTS = 5;
 
   const addSystemComment = useCallback((text: string) => {
@@ -60,6 +62,8 @@ export function useLiveSession({
   }, []);
 
   const cleanup = useCallback(() => {
+    for (const t of heartTimeoutsRef.current) clearTimeout(t);
+    heartTimeoutsRef.current.clear();
     roomRef.current?.disconnect();
     roomRef.current = null;
     setRoom(null);
@@ -68,6 +72,7 @@ export function useLiveSession({
     setHearts([]);
     reconnectAttemptsRef.current = 0;
     lastCommentTimeRef.current = 0;
+    seenCommentIdsRef.current.clear();
   }, []);
 
   const connect = useCallback(async (wsUrl: string, token: string) => {
@@ -108,10 +113,17 @@ export function useLiveSession({
         const data = JSON.parse(new TextDecoder().decode(payload));
 
         if (data.type === 'comment') {
+          const commentId = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          if (seenCommentIdsRef.current.has(commentId)) return;
+          seenCommentIdsRef.current.add(commentId);
+          if (seenCommentIdsRef.current.size > MAX_VISIBLE_COMMENTS * 2) {
+            const ids = Array.from(seenCommentIdsRef.current);
+            seenCommentIdsRef.current = new Set(ids.slice(-MAX_VISIBLE_COMMENTS));
+          }
           setComments((prev) => [
             ...prev.slice(-(MAX_VISIBLE_COMMENTS - 1)),
             {
-              id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              id: commentId,
               type: 'comment',
               text: String(data.text).slice(0, MAX_COMMENT_LENGTH),
               userId: data.userId,
@@ -124,9 +136,11 @@ export function useLiveSession({
           const id = ++heartIdRef.current;
           const x = 75 + Math.random() * 18;
           setHearts((prev) => [...prev.slice(-15), { id, x }]);
-          setTimeout(() => {
+          const timeout = setTimeout(() => {
+            heartTimeoutsRef.current.delete(timeout);
             setHearts((prev) => prev.filter((h) => h.id !== id));
           }, 2000);
+          heartTimeoutsRef.current.add(timeout);
         } else if (data.type === 'like-update') {
           setLikeCount(data.likeCount);
         }
