@@ -5,10 +5,10 @@ interface FloatingHeartProps {
   x: number;
 }
 
-export default function FloatingHeart({ id, x: _x }: FloatingHeartProps) {
+export default function FloatingHeart({ id, x }: FloatingHeartProps) {
   const prefersReducedMotion = useReducedMotion();
-  const randomX = 75 + Math.random() * 18;
-  const randomRotate = -15 + Math.random() * 30;
+  const randomX = x + (-8 + Math.random() * 16);
+  const randomRotate = -20 + Math.random() * 40;
   const randomScale = 0.8 + Math.random() * 0.6;
   const duration = 1.8 + Math.random() * 0.8;
 
@@ -28,7 +28,7 @@ export default function FloatingHeart({ id, x: _x }: FloatingHeartProps) {
             }
       }
       transition={{ duration: prefersReducedMotion ? 0.4 : duration, ease: 'easeOut' }}
-      className="absolute bottom-32 pointer-events-none z-50"
+      className="absolute bottom-[140px] sm:bottom-[160px] pointer-events-none z-50"
       style={{ left: `${randomX}%` }}
     >
       <span className="text-3xl drop-shadow-[0_2px_8px_rgba(239,68,68,0.4)]">❤️</span>

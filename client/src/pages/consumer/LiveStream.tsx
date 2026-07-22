@@ -1,18 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion';
 import {
-  Heart, Eye, Calendar, Loader2, WifiOff, Wifi,
-  Share2, MessageCircle, X, RefreshCw,
+  Heart, Eye, Loader2, WifiOff, Wifi,
+  Share2, MessageCircle, X, RefreshCw, Calendar, Send,
 } from 'lucide-react';
-import CommentModal from '../../components/live/CommentModal';
 import { useAuth } from '../../context/authUtils';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { RoomEvent } from 'livekit-client';
 import { useToast } from '../../components/ui/Toast';
 import LiveBadge from '../../components/live/LiveBadge';
 import FloatingHeart from '../../components/live/FloatingHeart';
-import FloatingEmoji from '../../components/live/FloatingEmoji';
 import { FloatingCommentBubble, SystemCommentPill } from '../../components/live/FloatingCommentBubble';
 import * as liveApi from '../../api/live';
 import type { LiveSession } from '../../api/live';
@@ -26,14 +24,7 @@ interface TapHeart {
   y: number;
 }
 
-interface FloatingEmojiItem {
-  id: number;
-  emoji: string;
-  x: number;
-}
-
-const MAX_VISIBLE_FLOATING = 20;
-const EMOJI_OPTIONS = ['❤️', '🔥', '👏', '💯', '😍', '🎉'];
+const MAX_VISIBLE_FLOATING = 15;
 
 export default function LiveStream() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -43,7 +34,9 @@ export default function LiveStream() {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef(0);
   const tapHeartIdRef = useRef(0);
-  const emojiIdRef = useRef(0);
+  const commentInputRef = useRef<HTMLInputElement>(null);
+  const dragY = useMotionValue(0);
+  const dragOpacity = useTransform(dragY, [0, 150], [1, 0]);
 
   const [session, setSession] = useState<LiveSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +44,7 @@ export default function LiveStream() {
   const [joined, setJoined] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [streamEnded, setStreamEnded] = useState(false);
   const [userLiked, setUserLiked] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
@@ -58,13 +52,22 @@ export default function LiveStream() {
   const [commentFailed, setCommentFailed] = useState(false);
   const [tapHearts, setTapHearts] = useState<TapHeart[]>([]);
   const [floatingComments, setFloatingComments] = useState<Comment[]>([]);
-  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmojiItem[]>([]);
+  const [joinedToast, setJoinedToast] = useState<string | null>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const likeInFlightRef = useRef(false);
 
+  useEffect(() => {
+    const handleResize = () => {
+      const vh = window.innerHeight;
+      setKeyboardVisible(window.visualViewport ? window.visualViewport.height < vh * 0.75 : false);
+    };
+    window.visualViewport?.addEventListener('resize', handleResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleStreamEnded = useCallback(() => {
-    toast('info', 'Stream has ended');
-    navigate('/app');
-  }, [toast, navigate]);
+    setStreamEnded(true);
+  }, []);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -126,6 +129,9 @@ export default function LiveStream() {
           if (user && s.likedUserIds?.includes(user.id)) {
             setUserLiked(true);
           }
+          if (s.status === 'ended') {
+            setStreamEnded(true);
+          }
         }
       })
       .catch(() => {
@@ -151,6 +157,16 @@ export default function LiveStream() {
     setFloatingComments((prev) => [...prev.slice(-(MAX_VISIBLE_FLOATING - 1)), latest]);
   }, [comments]);
 
+  useEffect(() => {
+    if (comments.length === 0) return;
+    const latest = comments[comments.length - 1];
+    if (latest.type === 'system' && latest.text.includes('joined')) {
+      setJoinedToast(latest.text);
+      const timer = setTimeout(() => setJoinedToast(null), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [comments]);
+
   const attachedElementsRef = useRef<HTMLMediaElement[]>([]);
 
   useEffect(() => {
@@ -159,7 +175,12 @@ export default function LiveStream() {
 
     const detachAll = () => {
       for (const el of attachedElementsRef.current) {
-        try { el.remove(); } catch {}
+        try {
+          el.remove();
+          if ('srcObject' in el) {
+            (el as HTMLMediaElement).srcObject = null;
+          }
+        } catch {}
       }
       attachedElementsRef.current = [];
     };
@@ -196,6 +217,20 @@ export default function LiveStream() {
       detachAll();
     };
   }, [room, joined]);
+
+  useEffect(() => {
+    return () => {
+      for (const el of attachedElementsRef.current) {
+        try {
+          el.remove();
+          if ('srcObject' in el) {
+            (el as HTMLMediaElement).srcObject = null;
+          }
+        } catch {}
+      }
+      attachedElementsRef.current = [];
+    };
+  }, []);
 
   const handleJoin = async () => {
     if (!sessionId || !user) return;
@@ -272,13 +307,6 @@ export default function LiveStream() {
     lastTapRef.current = now;
   }, [performLike, spawnTapHeart]);
 
-  const spawnEmojiReaction = useCallback((emoji: string) => {
-    const id = ++emojiIdRef.current;
-    const x = 8 + Math.random() * 20;
-    setFloatingEmojis((prev) => [...prev.slice(-10), { id, emoji, x }]);
-    setTimeout(() => setFloatingEmojis((prev) => prev.filter((e) => e.id !== id)), 3000);
-  }, []);
-
   const handleSendComment = () => {
     if (!commentText.trim() || !user) return;
 
@@ -300,6 +328,7 @@ export default function LiveStream() {
 
   const handleRetry = () => {
     setError(null);
+    setStreamEnded(false);
     setLoading(true);
     liveApi
       .getLiveSession(sessionId || '')
@@ -310,6 +339,9 @@ export default function LiveStream() {
           setUserLiked(true);
         } else {
           setUserLiked(false);
+        }
+        if (s.status === 'ended') {
+          setStreamEnded(true);
         }
       })
       .catch(() => setError('Stream not found'))
@@ -324,6 +356,12 @@ export default function LiveStream() {
       await navigator.clipboard.writeText(url);
       setShowShareToast(true);
       setTimeout(() => setShowShareToast(false), 2000);
+    }
+  };
+
+  const handleDragEnd = (_: any, info: { offset: { y: number }; velocity: { y: number } }) => {
+    if (info.offset.y > 100 || info.velocity.y > 500) {
+      handleBack();
     }
   };
 
@@ -384,23 +422,60 @@ export default function LiveStream() {
     );
   }
 
-  return (
-    <div className="h-dvh w-full bg-black relative overflow-hidden select-none" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      {/* ── Video (full-screen) ── */}
-      <div
-        ref={videoContainerRef}
-        className="absolute inset-0 bg-gray-900"
-        onClick={handleDoubleTap}
-        onTouchEnd={handleDoubleTap}
-      />
+  if (streamEnded) {
+    return (
+      <div className="h-dvh w-full bg-black flex flex-col items-center justify-center gap-5 text-white px-6" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center">
+          <WifiOff size={32} className="text-white/40" />
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold mb-1">Stream Ended</p>
+          <p className="text-sm text-white/50">
+            {session.stylistId?.name}'s live stream has ended.
+          </p>
+          {session.duration > 0 && (
+            <p className="text-xs text-white/30 mt-2">
+              Duration: {Math.floor(session.duration / 60)}m {session.duration % 60}s
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-6 py-3 rounded-full bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all active:scale-95"
+        >
+          Go back
+        </button>
+      </div>
+    );
+  }
 
-      {/* ── Double-tap floating hearts ── */}
+  return (
+    <motion.div
+      style={{ opacity: dragOpacity }}
+      className="h-dvh w-full bg-black relative overflow-hidden select-none"
+    >
+      <motion.div
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={0.4}
+        onDrag={(_, info) => dragY.set(info.offset.y)}
+        onDragEnd={handleDragEnd}
+        className="absolute inset-0"
+      >
+        <div
+          ref={videoContainerRef}
+          className="absolute inset-0 bg-gray-900"
+          onClick={handleDoubleTap}
+          onTouchEnd={handleDoubleTap}
+        />
+      </motion.div>
+
       <AnimatePresence>
         {tapHearts.map((h) => (
           <motion.div
             key={h.id}
             initial={{ opacity: 1, scale: 0.3 }}
-            animate={{ opacity: [1, 1, 0], scale: 1.3, y: -180 }}
+            animate={{ opacity: [1, 1, 0], scale: 1.3, y: -180, x: [0, 8, -6, 10, -4] }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.2, ease: 'easeOut' }}
             className="absolute pointer-events-none z-50"
@@ -411,14 +486,6 @@ export default function LiveStream() {
         ))}
       </AnimatePresence>
 
-      {/* ── Floating emoji reactions ── */}
-      <AnimatePresence>
-        {floatingEmojis.map((e) => (
-          <FloatingEmoji key={e.id} id={e.id} emoji={e.emoji} x={e.x} />
-        ))}
-      </AnimatePresence>
-
-      {/* ── Pre-join overlay ── */}
       {!joined && (
         <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm">
           <motion.div
@@ -474,19 +541,14 @@ export default function LiveStream() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* ── TOP BAR ── */}
-      {/* ═══════════════════════════════════════════════════ */}
       <div className="absolute top-0 inset-x-0 z-20 pointer-events-none">
-        {/* Gradient */}
         <div className="absolute inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
         <div className="relative flex items-start justify-between px-3 pt-4 sm:px-4 sm:pt-5">
-          {/* Left: Back + Stylist pill */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 pointer-events-auto">
             <button
               onClick={handleBack}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90 shrink-0"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90 shrink-0"
               aria-label="Close stream"
             >
               <X size={18} />
@@ -500,9 +562,9 @@ export default function LiveStream() {
                 className="flex items-center gap-1.5 sm:gap-2 bg-black/30 backdrop-blur-md rounded-full pr-3 sm:pr-4 pl-1 py-1 min-w-0 max-w-[45vw]"
               >
                 {session.stylistId?.image ? (
-                  <img src={session.stylistId.image} alt="" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
+                  <img src={session.stylistId.image} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover ring-2 ring-white/20 shrink-0" />
                 ) : (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-white/20 shrink-0">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white ring-2 ring-white/20 shrink-0">
                     {session.stylistId?.name?.[0]}
                   </div>
                 )}
@@ -514,7 +576,6 @@ export default function LiveStream() {
             )}
           </div>
 
-          {/* Right: LIVE badge + viewer count */}
           {joined && (
             <motion.div
               initial={{ opacity: 0, x: 12 }}
@@ -532,7 +593,6 @@ export default function LiveStream() {
         </div>
       </div>
 
-      {/* ── Connection status ── */}
       <AnimatePresence>
         {joined && connectionState !== 'connected' && (
           <motion.div
@@ -552,21 +612,30 @@ export default function LiveStream() {
         )}
       </AnimatePresence>
 
-      {/* ── Floating hearts (reaction broadcast) ── */}
       <AnimatePresence>
         {hearts.map((h) => (
           <FloatingHeart key={h.id} id={h.id} x={h.x} />
         ))}
       </AnimatePresence>
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* ── BOTTOM GRADIENT ── */}
-      {/* ═══════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {joinedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.9 }}
+            className="absolute top-24 left-1/2 -translate-x-1/2 z-30"
+          >
+            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md text-white/80 text-[11px] font-medium px-3 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+              {joinedToast}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="absolute bottom-0 inset-x-0 h-[160px] sm:h-[180px] bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 pointer-events-none" />
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* ── RIGHT-SIDE ACTION COLUMN ── */}
-      {/* ═══════════════════════════════════════════════════ */}
       {joined && (
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -574,7 +643,6 @@ export default function LiveStream() {
           transition={{ delay: 0.3 }}
           className="absolute right-2 sm:right-3 bottom-[150px] sm:bottom-[170px] z-20 flex flex-col items-center gap-3 sm:gap-4"
         >
-          {/* Stylist profile */}
           <Link
             to={`/app/stylist/${session.stylistId?._id}`}
             className="flex flex-col items-center gap-0.5"
@@ -598,7 +666,6 @@ export default function LiveStream() {
             </div>
           </Link>
 
-          {/* Like */}
           <button
             onClick={() => performLike()}
             className="flex flex-col items-center gap-0.5 group"
@@ -638,7 +705,6 @@ export default function LiveStream() {
             <span className="text-[10px] text-white font-semibold tabular-nums">{likeCount}</span>
           </button>
 
-          {/* Comment — opens modal */}
           <button
             onClick={() => setShowCommentModal(true)}
             className="flex flex-col items-center gap-0.5 group"
@@ -650,7 +716,6 @@ export default function LiveStream() {
             <span className="text-[10px] text-white font-semibold">{comments.length}</span>
           </button>
 
-          {/* Share */}
           <button onClick={handleShare} className="flex flex-col items-center gap-0.5 group" aria-label="Share stream">
             <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all duration-200 active:scale-90">
               <Share2 size={20} className="text-white" />
@@ -658,7 +723,6 @@ export default function LiveStream() {
             <span className="text-[10px] text-white font-semibold">Share</span>
           </button>
 
-          {/* Book */}
           <Link
             to={`/app/stylist/${session.stylistId?._id}`}
             className="flex flex-col items-center gap-0.5 group"
@@ -672,9 +736,6 @@ export default function LiveStream() {
         </motion.div>
       )}
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* ── FLOATING COMMENTS ── */}
-      {/* ═══════════════════════════════════════════════════ */}
       {joined && (
         <div
           className="absolute bottom-[110px] sm:bottom-[120px] left-3 right-[60px] sm:right-[68px] z-20 flex flex-col-reverse gap-1.5 pointer-events-none overflow-hidden max-h-[40vh]"
@@ -692,9 +753,55 @@ export default function LiveStream() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════ */}
-      {/* ── COMMENT MODAL ── */}
-      {/* ═══════════════════════════════════════════════════ */}
+      {joined && !keyboardVisible && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="absolute bottom-0 inset-x-0 z-30 px-3 pb-3 sm:px-4 sm:pb-4"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center bg-white/10 backdrop-blur-md rounded-full px-4 py-2.5 border border-white/[0.08] focus-within:border-white/[0.15] focus-within:bg-white/[0.15] transition-all">
+              <input
+                ref={commentInputRef}
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (commentText.trim()) handleSendComment();
+                  }
+                }}
+                placeholder="Add comment..."
+                disabled={cooldownRemaining > 0}
+                maxLength={MAX_COMMENT_LENGTH + 20}
+                aria-label="Type a comment"
+                className="flex-1 bg-transparent text-white text-[13px] placeholder:text-white/30 focus:outline-none disabled:opacity-40"
+              />
+              {commentText.trim() && (
+                <motion.button
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  onClick={handleSendComment}
+                  aria-label="Send comment"
+                  className="w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shrink-0 ml-2 active:scale-90 shadow-md shadow-red-500/30"
+                >
+                  <Send size={11} className="text-white ml-0.5" />
+                </motion.button>
+              )}
+            </div>
+          </div>
+          {cooldownRemaining > 0 && (
+            <p className="text-[10px] text-white/30 text-center mt-1">Wait {cooldownRemaining}s...</p>
+          )}
+          {commentFailed && (
+            <p className="text-[10px] text-red-400 text-center mt-1">Failed to send. Try again.</p>
+          )}
+        </motion.div>
+      )}
+
       <CommentModal
         open={joined && showCommentModal}
         onClose={() => setShowCommentModal(false)}
@@ -708,7 +815,6 @@ export default function LiveStream() {
         commentFailed={commentFailed}
       />
 
-      {/* ── Share toast ── */}
       <AnimatePresence>
         {showShareToast && (
           <motion.div
@@ -721,6 +827,6 @@ export default function LiveStream() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

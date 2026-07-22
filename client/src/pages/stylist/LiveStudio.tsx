@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Radio,
   Loader2, X, Eye, Clock, Heart, MessageCircle,
+  AlertTriangle, CheckCircle2, Users,
 } from 'lucide-react';
 import CommentModal from '../../components/live/CommentModal';
 import { useLiveSession } from '../../hooks/useLiveSession';
@@ -20,13 +21,20 @@ const CATEGORIES = [
   'Makeup', 'Locs', 'Twists', 'Natural Hair', 'Extensions',
 ];
 
+interface StreamSummary {
+  duration: number;
+  peakViewers: number;
+  totalHearts: number;
+  totalComments: number;
+}
+
 export default function LiveStudio() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
-  const [step, setStep] = useState<'setup' | 'preview' | 'live'>('setup');
+  const [step, setStep] = useState<'setup' | 'preview' | 'live' | 'summary'>('setup');
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -38,6 +46,11 @@ export default function LiveStudio() {
   const [showCommentSheet, setShowCommentSheet] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [floatingComments, setFloatingComments] = useState<Comment[]>([]);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState<string | null>(null);
+  const [noCamera, setNoCamera] = useState(false);
+  const [streamSummary, setStreamSummary] = useState<StreamSummary | null>(null);
+  const [peakViewerCount, setPeakViewerCount] = useState(0);
 
   const MAX_VISIBLE_FLOATING = 12;
 
@@ -54,6 +67,50 @@ export default function LiveStudio() {
     toggleCamera,
     toggleMicrophone,
   } = useLiveSession({ sessionId: sessionId || '', isBroadcaster: true });
+
+  useEffect(() => {
+    if (viewerCount > peakViewerCount) {
+      setPeakViewerCount(viewerCount);
+    }
+  }, [viewerCount, peakViewerCount]);
+
+  const checkCameraPermissions = useCallback(async () => {
+    try {
+      const devices = await navigator.mediaDevices?.enumerateDevices();
+      const videoDevices = devices?.filter((d) => d.kind === 'videoinput') || [];
+      if (videoDevices.length === 0) {
+        setNoCamera(true);
+        return false;
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  }, []);
+
+  const requestPermissions = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setPermissionDenied(null);
+      return true;
+    } catch (err: any) {
+      if (err.name === 'NotAllowedError') {
+        setPermissionDenied('Camera and microphone access is required to go live. Please enable permissions in your browser settings.');
+      } else if (err.name === 'NotFoundError') {
+        setNoCamera(true);
+      } else {
+        setPermissionDenied('Could not access camera or microphone.');
+      }
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (step === 'setup') {
+      checkCameraPermissions();
+    }
+  }, [step, checkCameraPermissions]);
 
   useEffect(() => {
     if (!room || !videoContainerRef.current) return;
@@ -115,6 +172,10 @@ export default function LiveStudio() {
       toast('error', 'Please fill in title and category');
       return;
     }
+
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) return;
+
     setIsStarting(true);
     try {
       const { session, token, wsUrl } = await liveApi.createLiveSession({
@@ -140,14 +201,18 @@ export default function LiveStudio() {
     try {
       await liveApi.endLiveSession(sessionId);
       disconnect();
-      setStep('setup');
-      setElapsed(0);
-      setViewerCount(0);
-      toast('info', 'Stream ended', `Peak viewers: ${viewerCount} | Likes: ${likeCount} | Duration: ${formatTime(elapsed)}`);
+      setStreamSummary({
+        duration: elapsed,
+        peakViewers: peakViewerCount,
+        totalHearts: likeCount,
+        totalComments: comments.length,
+      });
+      setStep('summary');
     } catch {
       toast('error', 'Failed to end stream');
     } finally {
       setIsEnding(false);
+      setShowEndConfirm(false);
     }
   };
 
@@ -182,19 +247,28 @@ export default function LiveStudio() {
     setFloatingComments((prev) => [...prev.slice(-(MAX_VISIBLE_FLOATING - 1)), latest]);
   }, [comments, floatingComments, MAX_VISIBLE_FLOATING]);
 
+  const handleSummaryDone = () => {
+    setStep('setup');
+    setElapsed(0);
+    setViewerCount(0);
+    setPeakViewerCount(0);
+    setSessionId(null);
+    setStreamSummary(null);
+    setTitle('');
+    setCategory('');
+    setFloatingComments([]);
+  };
+
   return (
     <div className="h-dvh w-full bg-black relative overflow-hidden select-none" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      {/* ── Video (full-screen background) ── */}
       <div ref={videoContainerRef} className="absolute inset-0 bg-gray-900" />
 
-      {/* ── Floating hearts ── */}
       <AnimatePresence>
         {hearts.map((h) => (
           <FloatingHeart key={h.id} id={h.id} x={h.x} />
         ))}
       </AnimatePresence>
 
-      {/* ── Floating comments overlay (broadcaster sees comments on video) ── */}
       {step === 'live' && (
         <div
           className="absolute bottom-[140px] sm:bottom-[160px] left-3 right-3 sm:right-[60px] z-15 flex flex-col-reverse gap-1.5 pointer-events-none overflow-hidden max-h-[35vh]"
@@ -217,15 +291,13 @@ export default function LiveStudio() {
       {/* ═══════════════════════════════════════════════════ */}
       {step === 'setup' && (
         <div className="absolute inset-0 z-30 flex flex-col">
-          {/* Top gradient */}
           <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
 
-          {/* Top bar */}
           <div className="relative flex items-center justify-between px-4 pt-4 sm:pt-5 z-10">
             <button
               onClick={() => navigate(-1)}
               aria-label="Go back"
-              className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
+              className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
             >
               <X size={20} />
             </button>
@@ -233,10 +305,9 @@ export default function LiveStudio() {
               <Video size={14} className="text-white/70" />
               <span className="text-xs font-medium text-white/80">Camera Preview</span>
             </div>
-            <div className="w-10" />
+            <div className="w-11" />
           </div>
 
-          {/* Centered setup card */}
           <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -253,6 +324,30 @@ export default function LiveStudio() {
                   <p className="text-xs text-white/50">Set up your stream</p>
                 </div>
               </div>
+
+              {permissionDenied && (
+                <div className="bg-red-500/15 border border-red-500/30 rounded-xl p-3 flex items-start gap-2.5">
+                  <AlertTriangle size={16} className="text-red-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-red-300 font-medium">{permissionDenied}</p>
+                    <button
+                      onClick={requestPermissions}
+                      className="text-[11px] text-red-400 underline mt-1 hover:text-red-300"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {noCamera && (
+                <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5">
+                  <AlertTriangle size={16} className="text-amber-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-amber-300 font-medium">
+                    No camera detected. Please connect a camera to go live.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-semibold text-white/60 mb-1.5 block uppercase tracking-wider">Stream Title</label>
@@ -287,7 +382,7 @@ export default function LiveStudio() {
 
               <button
                 onClick={handleGoLive}
-                disabled={isStarting || !title.trim() || !category}
+                disabled={isStarting || !title.trim() || !category || !!noCamera}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all active:scale-[0.98]"
                 aria-label={isStarting ? 'Starting stream...' : 'Go live'}
               >
@@ -306,7 +401,6 @@ export default function LiveStudio() {
             </motion.div>
           </div>
 
-          {/* Bottom preview controls */}
           <div className="relative px-4 pb-4 sm:pb-6 z-10">
             <div className="flex items-center justify-center gap-4 sm:gap-6">
               <button
@@ -333,17 +427,14 @@ export default function LiveStudio() {
       {/* ═══════════════════════════════════════════════════ */}
       {step === 'live' && (
         <>
-          {/* ── TOP BAR ── */}
           <div className="absolute top-0 inset-x-0 z-20 pointer-events-none">
-            {/* Gradient */}
             <div className="absolute inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
             <div className="relative flex items-start justify-between px-3 pt-4 sm:px-4 sm:pt-5">
-              {/* Left: End + LIVE badge */}
               <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto">
                 <button
-                  onClick={handleEndStream}
-                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
+                  onClick={() => setShowEndConfirm(true)}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
                   aria-label="End stream"
                 >
                   <X size={18} />
@@ -357,7 +448,6 @@ export default function LiveStudio() {
                 </div>
               </div>
 
-              {/* Right: Time + Likes + Viewers */}
               <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
                 <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-2.5 py-1 sm:py-1.5">
                   <Clock size={10} className="text-white/70" />
@@ -375,10 +465,8 @@ export default function LiveStudio() {
             </div>
           </div>
 
-          {/* ── BOTTOM GRADIENT ── */}
           <div className="absolute bottom-0 inset-x-0 h-[140px] sm:h-[160px] bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
 
-          {/* ── BOTTOM CONTROLS ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -386,7 +474,6 @@ export default function LiveStudio() {
             className="absolute bottom-0 inset-x-0 z-20 px-4 pb-4 sm:pb-6"
           >
             <div className="flex items-center justify-center gap-3 sm:gap-4">
-              {/* Comment toggle */}
               <button
                 onClick={() => setShowCommentSheet((v) => !v)}
                 className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md relative active:scale-90 ${
@@ -402,7 +489,6 @@ export default function LiveStudio() {
                 )}
               </button>
 
-              {/* Camera toggle */}
               <button
                 onClick={handleToggleCam}
                 className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md active:scale-90 ${
@@ -413,7 +499,6 @@ export default function LiveStudio() {
                 {camEnabled ? <Video size={20} /> : <VideoOff size={20} />}
               </button>
 
-              {/* Mic toggle */}
               <button
                 onClick={handleToggleMic}
                 className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md active:scale-90 ${
@@ -424,9 +509,8 @@ export default function LiveStudio() {
                 {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
 
-              {/* End stream (primary action, larger) */}
               <button
-                onClick={handleEndStream}
+                onClick={() => setShowEndConfirm(true)}
                 disabled={isEnding}
                 className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-600 text-white hover:bg-red-700 flex items-center justify-center shadow-xl shadow-red-600/40 transition-all active:scale-95"
                 aria-label="End stream"
@@ -436,9 +520,6 @@ export default function LiveStudio() {
             </div>
           </motion.div>
 
-          {/* ═══════════════════════════════════════════════════ */}
-          {/* ── COMMENT MODAL ── */}
-          {/* ═══════════════════════════════════════════════════ */}
           <CommentModal
             open={showCommentSheet}
             onClose={() => setShowCommentSheet(false)}
@@ -452,6 +533,118 @@ export default function LiveStudio() {
           />
         </>
       )}
+
+      {/* ═══════════════════════════════════════════════════ */}
+      {/* ── END STREAM CONFIRMATION ── */}
+      {/* ═══════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {showEndConfirm && (
+          <>
+            <motion.div
+              key="end-confirm-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowEndConfirm(false)}
+              className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              key="end-confirm-dialog"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-gray-900/95 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
+                  <AlertTriangle size={28} className="text-red-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-1">End Live Stream?</h3>
+                <p className="text-sm text-white/50 mb-6">
+                  Your stream will end immediately. Viewers will be notified.
+                </p>
+                <div className="flex items-center gap-3 w-full">
+                  <button
+                    onClick={() => setShowEndConfirm(false)}
+                    className="flex-1 py-3 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/15 transition-all active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleEndStream}
+                    disabled={isEnding}
+                    className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold text-sm hover:bg-red-700 flex items-center justify-center gap-2 transition-all active:scale-95"
+                  >
+                    {isEnding ? <Loader2 size={16} className="animate-spin" /> : <PhoneOff size={16} />}
+                    End Stream
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════════════ */}
+      {/* ── POST-STREAM SUMMARY ── */}
+      {/* ═══════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {step === 'summary' && streamSummary && (
+          <motion.div
+            key="stream-summary"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-gray-950 flex flex-col items-center justify-center px-6"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.2, type: 'spring', damping: 20 }}
+              className="w-full max-w-sm"
+            >
+              <div className="flex flex-col items-center mb-8">
+                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
+                  <CheckCircle2 size={32} className="text-green-400" />
+                </div>
+                <h2 className="text-xl font-bold text-white mb-1">Stream Complete!</h2>
+                <p className="text-sm text-white/50">Here's how your live went</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-8">
+                <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                  <Clock size={20} className="text-white/40 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-white tabular-nums">{formatTime(streamSummary.duration)}</p>
+                  <p className="text-[11px] text-white/40 mt-0.5">Duration</p>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                  <Users size={20} className="text-white/40 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-white tabular-nums">{streamSummary.peakViewers}</p>
+                  <p className="text-[11px] text-white/40 mt-0.5">Peak Viewers</p>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                  <Heart size={20} className="text-red-400 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-white tabular-nums">{streamSummary.totalHearts}</p>
+                  <p className="text-[11px] text-white/40 mt-0.5">Total Hearts</p>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-4 text-center border border-white/5">
+                  <MessageCircle size={20} className="text-white/40 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-white tabular-nums">{streamSummary.totalComments}</p>
+                  <p className="text-[11px] text-white/40 mt-0.5">Comments</p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSummaryDone}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all active:scale-[0.98]"
+              >
+                Done
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

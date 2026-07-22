@@ -26,6 +26,21 @@ interface UseLiveSessionOptions {
 const MAX_VISIBLE_COMMENTS = 50;
 const COMMENT_COOLDOWN_MS = 3000;
 const MAX_COMMENT_LENGTH = 200;
+const REACTION_COOLDOWN_MS = 1500;
+const MAX_HEARTS_ON_SCREEN = 20;
+
+function sanitizeText(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
+    .trim()
+    .slice(0, MAX_COMMENT_LENGTH);
+}
 
 export function useLiveSession({
   sessionId: _sessionId,
@@ -44,6 +59,7 @@ export function useLiveSession({
   const heartTimeoutsRef = useRef(new Set<ReturnType<typeof setTimeout>>());
   const reconnectAttemptsRef = useRef(0);
   const lastCommentTimeRef = useRef(0);
+  const lastReactionTimeRef = useRef(0);
   const seenCommentIdsRef = useRef(new Set<string>());
   const MAX_RECONNECT_ATTEMPTS = 5;
 
@@ -120,22 +136,28 @@ export function useLiveSession({
             const ids = Array.from(seenCommentIdsRef.current);
             seenCommentIdsRef.current = new Set(ids.slice(-MAX_VISIBLE_COMMENTS));
           }
+          const sanitizedText = sanitizeText(String(data.text || '').slice(0, MAX_COMMENT_LENGTH));
+          const sanitizedUserName = sanitizeText(String(data.userName || 'Anonymous').slice(0, 30));
+          if (!sanitizedText) return;
           setComments((prev) => [
             ...prev.slice(-(MAX_VISIBLE_COMMENTS - 1)),
             {
               id: commentId,
               type: 'comment',
-              text: String(data.text).slice(0, MAX_COMMENT_LENGTH),
+              text: sanitizedText,
               userId: data.userId,
-              userName: data.userName,
+              userName: sanitizedUserName,
               userAvatar: data.userAvatar,
               timestamp: Date.now(),
             },
           ]);
         } else if (data.type === 'reaction') {
+          const now = Date.now();
+          if (now - lastReactionTimeRef.current < REACTION_COOLDOWN_MS) return;
+          lastReactionTimeRef.current = now;
           const id = ++heartIdRef.current;
           const x = 75 + Math.random() * 18;
-          setHearts((prev) => [...prev.slice(-15), { id, x }]);
+          setHearts((prev) => [...prev.slice(-(MAX_HEARTS_ON_SCREEN - 1)), { id, x }]);
           const timeout = setTimeout(() => {
             heartTimeoutsRef.current.delete(timeout);
             setHearts((prev) => prev.filter((h) => h.id !== id));
@@ -205,7 +227,7 @@ export function useLiveSession({
       if (!roomRef.current) return false;
       if (!canSendComment()) return false;
 
-      const trimmed = text.trim().slice(0, MAX_COMMENT_LENGTH);
+      const trimmed = sanitizeText(text.trim().slice(0, MAX_COMMENT_LENGTH));
       if (!trimmed) return false;
 
       try {
@@ -225,6 +247,9 @@ export function useLiveSession({
 
   const sendReaction = useCallback(() => {
     if (!roomRef.current) return;
+    const now = Date.now();
+    if (now - lastReactionTimeRef.current < REACTION_COOLDOWN_MS) return;
+    lastReactionTimeRef.current = now;
     try {
       const data = new TextEncoder().encode(JSON.stringify({ type: 'reaction' }));
       roomRef.current.localParticipant.publishData(data, { kind: DataPacket_Kind.RELIABLE });
@@ -282,6 +307,7 @@ export function useLiveSession({
     canSendComment,
     getCooldownRemaining,
     COMMENT_COOLDOWN_MS,
+    REACTION_COOLDOWN_MS,
     MAX_COMMENT_LENGTH,
   };
 }
