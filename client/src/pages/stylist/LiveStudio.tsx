@@ -220,7 +220,12 @@ export default function LiveStudio() {
 
       {/* ── Floating comments overlay (broadcaster sees comments on video) ── */}
       {step === 'live' && (
-        <div className="absolute bottom-[180px] sm:bottom-[200px] left-0 right-16 z-15 flex flex-col-reverse gap-1.5 px-3 pointer-events-none overflow-hidden max-h-[35vh]">
+        <div
+          className="absolute bottom-[140px] sm:bottom-[160px] left-3 right-3 sm:right-[60px] z-15 flex flex-col-reverse gap-1.5 pointer-events-none overflow-hidden max-h-[35vh]"
+          role="log"
+          aria-live="polite"
+          aria-label="Live comments"
+        >
           <AnimatePresence mode="popLayout" initial={false}>
             {floatingComments.map((c) => (
               c.type === 'system'
@@ -231,14 +236,16 @@ export default function LiveStudio() {
         </div>
       )}
 
+      {/* ═══════════════════════════════════════════════════ */}
       {/* ── SETUP SCREEN ── */}
+      {/* ═══════════════════════════════════════════════════ */}
       {step === 'setup' && (
         <div className="absolute inset-0 z-30 flex flex-col">
           {/* Top gradient */}
           <div className="absolute top-0 inset-x-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
 
           {/* Top bar */}
-          <div className="relative flex items-center justify-between p-4 pt-5 z-10">
+          <div className="relative flex items-center justify-between px-4 pt-4 sm:pt-5 z-10">
             <button
               onClick={() => navigate(-1)}
               aria-label="Go back"
@@ -254,12 +261,12 @@ export default function LiveStudio() {
           </div>
 
           {/* Centered setup card */}
-          <div className="flex-1 flex items-center justify-center p-6">
+          <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="w-full max-w-sm bg-black/50 backdrop-blur-xl rounded-3xl p-6 space-y-5 border border-white/10"
+              className="w-full max-w-sm bg-black/50 backdrop-blur-xl rounded-3xl p-5 sm:p-6 space-y-4 sm:space-y-5 border border-white/10"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center shadow-lg shadow-red-500/20">
@@ -285,12 +292,12 @@ export default function LiveStudio() {
 
               <div>
                 <label className="text-xs font-semibold text-white/60 mb-2 block uppercase tracking-wider">Category</label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {CATEGORIES.map((c) => (
                     <button
                       key={c}
                       onClick={() => setCategory(c)}
-                      className={`text-[11px] py-2 px-2 rounded-xl font-semibold transition-all active:scale-95 ${
+                      className={`text-[10px] sm:text-[11px] py-2 px-2 rounded-xl font-semibold transition-all active:scale-95 ${
                         category === c
                           ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-500/20'
                           : 'bg-white/8 text-white/50 hover:bg-white/12 hover:text-white/70'
@@ -306,7 +313,7 @@ export default function LiveStudio() {
                 onClick={handleGoLive}
                 disabled={isStarting || !title.trim() || !category}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all active:scale-[0.98]"
-              aria-label={isStarting ? 'Starting stream...' : 'Go live'}
+                aria-label={isStarting ? 'Starting stream...' : 'Go live'}
               >
                 {isStarting ? (
                   <><Loader2 size={16} className="animate-spin" /> Starting...</>
@@ -323,80 +330,86 @@ export default function LiveStudio() {
             </motion.div>
           </div>
 
-          {/* Bottom preview info */}
-          <div className="relative p-3 sm:p-4 pb-4 sm:pb-6 z-10">
+          {/* Bottom preview controls */}
+          <div className="relative px-4 pb-4 sm:pb-6 z-10">
             <div className="flex items-center justify-center gap-4 sm:gap-6">
               <button
                 onClick={handleToggleCam}
-                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${camEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${camEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
                 aria-label={camEnabled ? 'Turn camera off' : 'Turn camera on'}
               >
-                {camEnabled ? <Video size={18} /> : <VideoOff size={18} />}
+                {camEnabled ? <Video size={20} /> : <VideoOff size={20} />}
               </button>
               <button
                 onClick={handleToggleMic}
-                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${micEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 ${micEnabled ? 'bg-white/15 backdrop-blur-md text-white' : 'bg-red-500/80 text-white'}`}
                 aria-label={micEnabled ? 'Turn microphone off' : 'Turn microphone on'}
               >
-                {micEnabled ? <Mic size={18} /> : <MicOff size={18} />}
+                {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ═══════════════════════════════════════════════════ */}
       {/* ── LIVE SCREEN ── */}
+      {/* ═══════════════════════════════════════════════════ */}
       {step === 'live' && (
         <>
-          {/* Top gradient */}
-          <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent z-10 pointer-events-none" />
+          {/* ── TOP BAR ── */}
+          <div className="absolute top-0 inset-x-0 z-20 pointer-events-none">
+            {/* Gradient */}
+            <div className="absolute inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
-          {/* Top-left: Back + LIVE badge */}
-          <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between p-3 sm:p-4 pt-4 sm:pt-5">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                onClick={handleEndStream}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
-                aria-label="End stream"
-              >
-                <X size={18} />
-              </button>
-              <div className="flex items-center gap-1.5 bg-red-500/90 backdrop-blur-md rounded-full pl-1.5 pr-2.5 sm:pr-3 py-1 sm:py-1.5 shadow-lg shadow-red-500/30">
-                <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5 ml-0.5 sm:ml-1">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white" />
-                </span>
-                <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">Live</span>
+            <div className="relative flex items-start justify-between px-3 pt-4 sm:px-4 sm:pt-5">
+              {/* Left: End + LIVE badge */}
+              <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto">
+                <button
+                  onClick={handleEndStream}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
+                  aria-label="End stream"
+                >
+                  <X size={18} />
+                </button>
+                <div className="flex items-center gap-1.5 bg-red-500/90 backdrop-blur-md rounded-full pl-1.5 pr-2.5 sm:pr-3 py-1 sm:py-1.5 shadow-lg shadow-red-500/30">
+                  <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5 ml-0.5 sm:ml-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white" />
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">Live</span>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-1 sm:gap-2">
-              <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-3 py-1 sm:py-1.5">
-                <Clock size={10} className="text-white/70" />
-                <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums font-mono">{formatTime(elapsed)}</span>
-              </div>
-              <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-3 py-1 sm:py-1.5">
-                <Heart size={10} className="text-red-400 fill-red-400" />
-                <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums">{likeCount}</span>
-              </div>
-              <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-3 py-1 sm:py-1.5">
-                <Eye size={10} className="text-white/70" />
-                <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
+              {/* Right: Time + Likes + Viewers */}
+              <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-2.5 py-1 sm:py-1.5">
+                  <Clock size={10} className="text-white/70" />
+                  <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums font-mono">{formatTime(elapsed)}</span>
+                </div>
+                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-2.5 py-1 sm:py-1.5">
+                  <Heart size={10} className="text-red-400 fill-red-400" />
+                  <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums">{likeCount}</span>
+                </div>
+                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-2.5 py-1 sm:py-1.5">
+                  <Eye size={10} className="text-white/70" />
+                  <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Bottom gradient */}
-          <div className="absolute bottom-0 inset-x-0 h-44 bg-gradient-to-t from-black/70 to-transparent z-10 pointer-events-none" />
+          {/* ── BOTTOM GRADIENT ── */}
+          <div className="absolute bottom-0 inset-x-0 h-[140px] sm:h-[160px] bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
 
-          {/* Bottom controls */}
+          {/* ── BOTTOM CONTROLS ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="absolute bottom-0 inset-x-0 z-20 p-3 sm:p-4 pb-4 sm:pb-6"
+            className="absolute bottom-0 inset-x-0 z-20 px-4 pb-4 sm:pb-6"
           >
-            <div className="flex items-center justify-center gap-3 sm:gap-5">
+            <div className="flex items-center justify-center gap-3 sm:gap-4">
               {/* Comment toggle */}
               <button
                 onClick={() => setShowCommentSheet((v) => !v)}
@@ -407,7 +420,7 @@ export default function LiveStudio() {
               >
                 <MessageCircle size={20} />
                 {comments.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[9px] text-white font-bold flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[9px] text-white font-bold flex items-center justify-center px-1">
                     {comments.length > 99 ? '99+' : comments.length}
                   </span>
                 )}
@@ -435,7 +448,7 @@ export default function LiveStudio() {
                 {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
               </button>
 
-              {/* End stream (larger, centered emphasis) */}
+              {/* End stream (primary action, larger) */}
               <button
                 onClick={handleEndStream}
                 disabled={isEnding}
@@ -447,7 +460,9 @@ export default function LiveStudio() {
             </div>
           </motion.div>
 
-          {/* ── Comment bottom sheet modal ── */}
+          {/* ═══════════════════════════════════════════════════ */}
+          {/* ── COMMENT BOTTOM SHEET MODAL ── */}
+          {/* ═══════════════════════════════════════════════════ */}
           <AnimatePresence>
             {showCommentSheet && (
               <>
@@ -527,7 +542,7 @@ export default function LiveStudio() {
                           aria-label="Type a comment"
                           className="flex-1 bg-transparent text-white text-[13px] placeholder:text-white/25 focus:outline-none"
                         />
-                        {commentText.trim() ? (
+                        {commentText.trim() && (
                           <motion.button
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -539,7 +554,7 @@ export default function LiveStudio() {
                           >
                             <Send size={11} className="text-white ml-0.5" />
                           </motion.button>
-                        ) : null}
+                        )}
                       </div>
                     </div>
                   </div>
