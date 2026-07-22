@@ -7,7 +7,6 @@ import {
   Volume2, UserPlus, ShoppingCart,
 } from 'lucide-react';
 import { useAuth } from '../../context/authUtils';
-import LiveCommentFeed from '../../components/live/LiveCommentFeed';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { RoomEvent, Track } from 'livekit-client';
 import { useToast } from '../../components/ui/Toast';
@@ -23,6 +22,16 @@ interface TapHeart {
   x: number;
   y: number;
 }
+
+interface FloatingComment {
+  id: number;
+  userName: string;
+  text: string;
+  createdAt: number;
+}
+
+const MAX_FLOATING_COMMENTS = 4;
+const FLOATING_COMMENT_DURATION_MS = 5000;
 
 export default function LiveStream() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -48,6 +57,9 @@ export default function LiveStream() {
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const [commentFailed, setCommentFailed] = useState(false);
   const [tapHearts, setTapHearts] = useState<TapHeart[]>([]);
+  const [floatingComments, setFloatingComments] = useState<FloatingComment[]>([]);
+  const floatingCommentIdRef = useRef(0);
+  const floatingTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [audioMuted, setAudioMuted] = useState(true);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
@@ -308,6 +320,35 @@ export default function LiveStream() {
     }
     lastTapRef.current = now;
   }, [performLike, spawnTapHeart]);
+
+  const prevCommentsLenRef = useRef(0);
+  useEffect(() => {
+    if (comments.length <= prevCommentsLenRef.current) {
+      prevCommentsLenRef.current = comments.length;
+      return;
+    }
+    const newComments = comments.slice(prevCommentsLenRef.current);
+    prevCommentsLenRef.current = comments.length;
+
+    for (const c of newComments) {
+      if (c.type === 'system') continue;
+      const id = ++floatingCommentIdRef.current;
+      const fc: FloatingComment = { id, userName: c.userName, text: c.text, createdAt: Date.now() };
+      setFloatingComments((prev) => [...prev.slice(-(MAX_FLOATING_COMMENTS - 1)), fc]);
+      const timer = setTimeout(() => {
+        floatingTimersRef.current.delete(id);
+        setFloatingComments((prev) => prev.filter((f) => f.id !== id));
+      }, FLOATING_COMMENT_DURATION_MS);
+      floatingTimersRef.current.set(id, timer);
+    }
+  }, [comments]);
+
+  useEffect(() => {
+    return () => {
+      for (const timer of floatingTimersRef.current.values()) clearTimeout(timer);
+      floatingTimersRef.current.clear();
+    };
+  }, []);
 
   const handleSendComment = () => {
     if (!commentText.trim() || !user) return;
@@ -736,17 +777,25 @@ export default function LiveStream() {
         </motion.div>
       )}
 
-      {/* ── INLINE COMMENT FEED ── TikTok-style bottom-left scrollable */}
-      {joined && (
-        <div
-          className="absolute bottom-[68px] sm:bottom-[76px] left-3 right-[60px] sm:right-[68px] z-20 max-h-[30vh] bg-black/20 backdrop-blur-sm rounded-2xl overflow-hidden"
-          role="log"
-          aria-live="polite"
-          aria-label="Live comments"
-        >
-          <LiveCommentFeed comments={comments} inline />
-        </div>
-      )}
+      {/* ── FLOATING COMMENTS ── TikTok-style: comments float on the page */}
+      <AnimatePresence>
+        {joined && floatingComments.map((fc, idx) => (
+          <motion.div
+            key={fc.id}
+            initial={{ opacity: 0, x: -20, y: 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: -30, transition: { duration: 0.25 } }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="absolute left-3 z-20 pointer-events-none"
+            style={{ bottom: `${130 + idx * 36}px` }}
+          >
+            <div className="flex items-center gap-1.5 max-w-[70vw]">
+              <span className="text-[12px] font-bold text-white shrink-0 drop-shadow-md">{fc.userName}</span>
+              <span className="text-[12px] text-white/80 truncate drop-shadow-md">{fc.text}</span>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
       {/* ── BOTTOM INPUT BAR ── TikTok-style: input bar at bottom-left */}
       {joined && !keyboardVisible && (

@@ -6,10 +6,7 @@ import {
   Loader2, X, Eye, Clock, Heart, MessageCircle,
   AlertTriangle, CheckCircle2, Users,
 } from 'lucide-react';
-import CommentModal from '../../components/live/CommentModal';
-import LiveCommentFeed from '../../components/live/LiveCommentFeed';
 import { useLiveSession } from '../../hooks/useLiveSession';
-import { useAuth } from '../../context/authUtils';
 import { useToast } from '../../components/ui/Toast';
 import * as liveApi from '../../api/live';
 import { Track, RoomEvent } from 'livekit-client';
@@ -30,7 +27,6 @@ interface StreamSummary {
 export default function LiveStudio() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const [step, setStep] = useState<'setup' | 'preview' | 'live' | 'summary'>('setup');
@@ -42,14 +38,11 @@ export default function LiveStudio() {
   const [elapsed, setElapsed] = useState(0);
   const [micEnabled, setMicEnabled] = useState(true);
   const [camEnabled, setCamEnabled] = useState(true);
-  const [showCommentSheet, setShowCommentSheet] = useState(false);
-  const [commentText, setCommentText] = useState('');
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState<string | null>(null);
   const [noCamera, setNoCamera] = useState(false);
   const [streamSummary, setStreamSummary] = useState<StreamSummary | null>(null);
   const [peakViewerCount, setPeakViewerCount] = useState(0);
-  const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   const {
     room,
@@ -57,16 +50,11 @@ export default function LiveStudio() {
     setViewerCount,
     hearts,
     likeCount,
-    comments,
     totalCommentCount,
     connect,
     disconnect,
-    sendComment,
     toggleCamera,
     toggleMicrophone,
-    canSendComment,
-    getCooldownRemaining,
-    MAX_COMMENT_LENGTH,
   } = useLiveSession({ sessionId: sessionId || '', isBroadcaster: true });
 
   useEffect(() => {
@@ -235,27 +223,6 @@ export default function LiveStudio() {
     }
   };
 
-  const handleSendComment = () => {
-    if (!commentText.trim() || !user) return;
-    if (!canSendComment()) {
-      toast('error', 'Please wait before sending another comment');
-      return;
-    }
-    const sent = sendComment(commentText.trim(), user.id, user.name, user.avatar);
-    if (sent) setCommentText('');
-  };
-
-  useEffect(() => {
-    if (!canSendComment()) {
-      const remaining = getCooldownRemaining();
-      setCooldownRemaining(remaining);
-      const timer = setTimeout(() => setCooldownRemaining(0), remaining);
-      return () => clearTimeout(timer);
-    } else {
-      setCooldownRemaining(0);
-    }
-  }, [comments.length, canSendComment, getCooldownRemaining]);
-
   const handleSummaryDone = () => {
     setStep('setup');
     setElapsed(0);
@@ -276,17 +243,6 @@ export default function LiveStudio() {
           <FloatingHeart key={h.id} id={h.id} x={h.x} />
         ))}
       </AnimatePresence>
-
-      {step === 'live' && (
-        <div
-          className="absolute bottom-[80px] sm:bottom-[88px] left-3 right-3 sm:right-[60px] z-[15] max-h-[30vh] bg-black/20 backdrop-blur-sm rounded-2xl overflow-hidden"
-          role="log"
-          aria-live="polite"
-          aria-label="Live comments"
-        >
-          <LiveCommentFeed comments={comments} inline />
-        </div>
-      )}
 
       {/* ═══════════════════════════════════════════════════ */}
       {/* ── SETUP SCREEN ── */}
@@ -477,21 +433,6 @@ export default function LiveStudio() {
           >
             <div className="flex items-center justify-center gap-3 sm:gap-4">
               <button
-                onClick={() => setShowCommentSheet((v) => !v)}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md relative active:scale-90 ${
-                  showCommentSheet ? 'bg-white/25 text-white' : 'bg-white/15 text-white hover:bg-white/25'
-                }`}
-                aria-label={showCommentSheet ? 'Hide comments' : 'Show comments'}
-              >
-                <MessageCircle size={20} />
-                {totalCommentCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-[9px] text-white font-bold flex items-center justify-center px-1">
-                    {totalCommentCount > 99 ? '99+' : totalCommentCount}
-                  </span>
-                )}
-              </button>
-
-              <button
                 onClick={handleToggleCam}
                 className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md active:scale-90 ${
                   camEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
@@ -564,21 +505,6 @@ export default function LiveStudio() {
               </div>
             </button>
           </motion.div>
-
-          <CommentModal
-            open={showCommentSheet}
-            onClose={() => setShowCommentSheet(false)}
-            comments={comments}
-            commentText={commentText}
-            onCommentTextChange={setCommentText}
-            onSendComment={handleSendComment}
-            user={user}
-            isBroadcaster
-            placeholder="Say something to viewers..."
-            cooldownRemaining={cooldownRemaining}
-            maxCommentLength={MAX_COMMENT_LENGTH}
-            totalCount={totalCommentCount}
-          />
         </>
       )}
 
