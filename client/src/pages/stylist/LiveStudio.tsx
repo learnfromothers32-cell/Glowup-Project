@@ -4,18 +4,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Radio,
   Loader2, X, Eye, Clock, Heart, MessageCircle,
-  AlertTriangle, CheckCircle2, Users,
+  AlertTriangle, CheckCircle2, Users, RefreshCw,
+  Sparkles, Package,
 } from 'lucide-react';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { useToast } from '../../components/ui/Toast';
 import * as liveApi from '../../api/live';
 import { Track, RoomEvent } from 'livekit-client';
 import FloatingHeart from '../../components/live/FloatingHeart';
+import FloatingComments from '../../components/live/FloatingComments';
+import LiveCommentInput from '../../components/live/LiveCommentInput';
+import GiftAnimation, { useGiftQueue } from '../../components/live/GiftAnimation';
+import { GIFT_OPTIONS } from '../../components/live/GiftPickerModal';
+import LiveBadge from '../../components/live/LiveBadge';
+import { useAuth } from '../../context/authUtils';
+import { getMyStylistProfile } from '../../api/stylists';
 
 const CATEGORIES = [
   'Braids', 'Nails', 'Barber', 'Colorist', 'Stylist',
   'Makeup', 'Locs', 'Twists', 'Natural Hair', 'Extensions',
 ];
+
+const GIFT_VALUES: Record<string, number> = {};
+GIFT_OPTIONS.forEach((g) => { GIFT_VALUES[g.type] = g.coins; });
 
 interface StreamSummary {
   duration: number;
@@ -27,6 +38,7 @@ interface StreamSummary {
 export default function LiveStudio() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
   const [step, setStep] = useState<'setup' | 'preview' | 'live' | 'summary'>('setup');
@@ -43,19 +55,29 @@ export default function LiveStudio() {
   const [noCamera, setNoCamera] = useState(false);
   const [streamSummary, setStreamSummary] = useState<StreamSummary | null>(null);
   const [peakViewerCount, setPeakViewerCount] = useState(0);
+  const [showcaseOpen, setShowcaseOpen] = useState(false);
+  const [showcaseToast, setShowcaseToast] = useState<string | null>(null);
+  const [stylistServices, setStylistServices] = useState<any[]>([]);
+  const [earnings, setEarnings] = useState(0);
 
   const {
     room,
     viewerCount,
     setViewerCount,
     hearts,
+    comments,
     likeCount,
     totalCommentCount,
     connect,
     disconnect,
     toggleCamera,
     toggleMicrophone,
+    getCooldownRemaining,
+    sendComment,
+    MAX_COMMENT_LENGTH,
   } = useLiveSession({ sessionId: sessionId || '', isBroadcaster: true });
+
+  const { gifts, addGift } = useGiftQueue();
 
   useEffect(() => {
     if (viewerCount > peakViewerCount) {
@@ -145,15 +167,53 @@ export default function LiveStudio() {
   }, [room]);
 
   useEffect(() => {
+    if (!room) return;
+
+    const handleData = (payload: Uint8Array) => {
+      try {
+        const data = JSON.parse(new TextDecoder().decode(payload));
+        if (data.type === 'gift') {
+          const coinValue = GIFT_VALUES[data.giftType] || 0;
+          setEarnings((prev) => prev + coinValue);
+          addGift(data.emoji || '🎁', data.giftLabel || 'Gift', data.senderName || 'Viewer');
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    room.on(RoomEvent.DataReceived, handleData);
+    return () => { room.off(RoomEvent.DataReceived, handleData); };
+  }, [room, addGift]);
+
+  useEffect(() => {
     if (step !== 'live') return;
     const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(interval);
   }, [step]);
 
+  useEffect(() => {
+    if (step === 'live' && user?.id) {
+      getMyStylistProfile()
+        .then((p: any) => setStylistServices(p.services || []))
+        .catch(() => {});
+    }
+  }, [step, user?.id]);
+
+  useEffect(() => {
+    if (!showcaseToast) return;
+    const t = setTimeout(() => setShowcaseToast(null), 2500);
+    return () => clearTimeout(t);
+  }, [showcaseToast]);
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  const formatEarnings = (val: number) => {
+    return `$${(val * 0.05).toFixed(2)}`;
   };
 
   const handleGoLive = async () => {
@@ -223,16 +283,35 @@ export default function LiveStudio() {
     }
   };
 
-  const handleSummaryDone = () => {
-    setStep('setup');
-    setElapsed(0);
-    setViewerCount(0);
-    setPeakViewerCount(0);
-    setSessionId(null);
-    setStreamSummary(null);
-    setTitle('');
-    setCategory('');
+  const handleSendComment = useCallback(
+    (text: string): boolean => {
+      if (!sessionId) return false;
+      const userId = user?.id || 'stylist';
+      const userName = user?.name || 'Stylist';
+      return sendComment(text, userId, userName);
+    },
+    [sessionId, user, sendComment]
+  );
+
+  const handleShowcaseFeature = (svc: any) => {
+    if (!room) return;
+    try {
+      const data = new TextEncoder().encode(
+        JSON.stringify({
+          type: 'showcase',
+          serviceName: svc.name,
+          servicePrice: svc.price,
+        })
+      );
+      room.localParticipant.publishData(data, { reliable: true });
+    } catch {
+      // ignore
+    }
+    setShowcaseOpen(false);
+    setShowcaseToast(`Now showcasing ${svc.name}`);
   };
+
+  const stylistDisplayName = user?.name || 'Stylist';
 
   return (
     <div className="h-dvh w-full bg-black relative overflow-hidden select-none" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -385,131 +464,143 @@ export default function LiveStudio() {
       {/* ═══════════════════════════════════════════════════ */}
       {step === 'live' && (
         <>
+          {/* Layer 2: Dark gradient overlay — bottom 40% */}
+          <div className="absolute bottom-0 inset-x-0 h-[40%] bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
+
+          {/* Layer 3: All UI controls */}
+
+          {/* ── TOP BAR ── */}
           <div className="absolute top-0 inset-x-0 z-20 pointer-events-none">
             <div className="absolute inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
             <div className="relative flex items-start justify-between px-3 pt-4 sm:px-4 sm:pt-5">
-              <div className="flex items-center gap-2 sm:gap-3 pointer-events-auto">
+              {/* Left: X button */}
+              <div className="flex items-center gap-2 pointer-events-auto">
                 <button
                   onClick={() => setShowEndConfirm(true)}
-                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/50 transition-all active:scale-90"
+                  className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white active:scale-90"
                   aria-label="End stream"
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
-                <div className="flex items-center gap-1.5 bg-red-500/90 backdrop-blur-md rounded-full pl-1.5 pr-2.5 sm:pr-3 py-1 sm:py-1.5 shadow-lg shadow-red-500/30">
-                  <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5 ml-0.5 sm:ml-1">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white" />
-                  </span>
-                  <span className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">Live</span>
-                </div>
               </div>
 
-              <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
-                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-2.5 py-1 sm:py-1.5">
-                  <Clock size={10} className="text-white/70" />
-                  <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums font-mono">{formatTime(elapsed)}</span>
-                </div>
-                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-2.5 py-1 sm:py-1.5">
-                  <Heart size={10} className="text-red-400 fill-red-400" />
-                  <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums">{likeCount}</span>
-                </div>
-                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 sm:px-2.5 py-1 sm:py-1.5">
+              {/* Center: Stylist name */}
+              <div className="absolute left-1/2 -translate-x-1/2 pt-0.5">
+                <span className="text-[15px] font-bold text-white">{stylistDisplayName}</span>
+              </div>
+
+              {/* Right: LiveBadge + viewer count + earnings */}
+              <div className="flex items-center gap-1.5 pointer-events-auto">
+                <LiveBadge />
+                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 py-1">
                   <Eye size={10} className="text-white/70" />
-                  <span className="text-[10px] sm:text-xs text-white font-semibold tabular-nums">{viewerCount}</span>
+                  <span className="text-[11px] text-white font-semibold tabular-nums">{viewerCount}</span>
+                </div>
+                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 py-1">
+                  <span className="text-[11px] text-white font-bold tabular-nums">{formatEarnings(earnings)}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="absolute bottom-0 inset-x-0 h-[120px] sm:h-[140px] bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="absolute bottom-0 inset-x-0 z-20 px-4 pb-4 sm:pb-6"
-          >
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-              <button
-                onClick={handleToggleCam}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md active:scale-90 ${
-                  camEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
-                }`}
-                aria-label={camEnabled ? 'Turn camera off' : 'Turn camera on'}
-              >
-                {camEnabled ? <Video size={20} /> : <VideoOff size={20} />}
-              </button>
-
-              <button
-                onClick={handleToggleMic}
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all backdrop-blur-md active:scale-90 ${
-                  micEnabled ? 'bg-white/15 text-white hover:bg-white/25' : 'bg-red-500/80 text-white'
-                }`}
-                aria-label={micEnabled ? 'Turn microphone off' : 'Turn microphone on'}
-              >
-                {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
-              </button>
-
-              <button
-                onClick={() => setShowEndConfirm(true)}
-                disabled={isEnding}
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-600 text-white hover:bg-red-700 flex items-center justify-center shadow-xl shadow-red-600/40 transition-all active:scale-95"
-                aria-label="End stream"
-              >
-                {isEnding ? <Loader2 size={22} className="animate-spin" /> : <PhoneOff size={22} />}
-              </button>
-            </div>
-          </motion.div>
-
-          {/* ── RIGHT-SIDE HOST CONTROLS ── Same position as viewer action rail */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="absolute right-2 sm:right-3 bottom-[180px] sm:bottom-[200px] z-20 flex flex-col items-center gap-3 sm:gap-4"
-          >
+          {/* ── RIGHT SIDE ICON BAR ── */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-4">
             {/* Flip camera */}
             <button
               onClick={handleToggleCam}
-              className="flex flex-col items-center gap-0.5 group"
+              className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center active:scale-90"
               aria-label="Flip camera"
             >
-              <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full backdrop-blur-md flex items-center justify-center transition-all duration-200 active:scale-90 ${
-                camEnabled ? 'bg-black/30 group-hover:bg-black/50' : 'bg-red-500/80'
-              }`}>
-                {camEnabled ? <Video size={20} className="text-white" /> : <VideoOff size={20} className="text-white" />}
-              </div>
+              <RefreshCw size={20} className="text-white" />
+            </button>
+
+            {/* Mic toggle */}
+            <button
+              onClick={handleToggleMic}
+              className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center active:scale-90 relative"
+              aria-label={micEnabled ? 'Mute microphone' : 'Unmute microphone'}
+            >
+              {micEnabled ? (
+                <Mic size={20} className="text-white" />
+              ) : (
+                <>
+                  <MicOff size={20} className="text-white" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border border-black/50" />
+                </>
+              )}
             </button>
 
             {/* Effects placeholder */}
             <button
-              className="flex flex-col items-center gap-0.5 group"
+              onClick={() => toast('info', 'Effects coming soon')}
+              className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center active:scale-90"
               aria-label="Effects"
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center group-hover:bg-black/50 transition-all duration-200 active:scale-90">
-                <span className="text-lg">✨</span>
-              </div>
+              <Sparkles size={20} className="text-white" />
             </button>
 
-            {/* End Live */}
+            {/* Showcase */}
             <button
-              onClick={() => setShowEndConfirm(true)}
-              disabled={isEnding}
-              className="flex flex-col items-center gap-0.5 group"
-              aria-label="End live"
+              onClick={() => setShowcaseOpen(true)}
+              className="w-11 h-11 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center active:scale-90"
+              aria-label="Showcase a service"
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/30 group-hover:bg-red-700 transition-all duration-200 active:scale-90">
-                {isEnding ? <Loader2 size={18} className="text-white animate-spin" /> : <PhoneOff size={18} className="text-white" />}
-              </div>
+              <Package size={20} className="text-white" />
             </button>
-          </motion.div>
+          </div>
+
+          {/* ── FLOATING COMMENTS ── */}
+          <div className="absolute left-3 bottom-[120px] sm:bottom-[135px] w-[65%] z-[25]">
+            <FloatingComments comments={comments} />
+          </div>
+
+          {/* ── BOTTOM BAR ── */}
+          <div className="absolute bottom-0 inset-x-0 z-20" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}>
+            <div className="bg-black/45 backdrop-blur-sm px-3 pt-2 pb-2 flex items-end gap-2">
+              <div className="flex-1 min-w-0">
+                <LiveCommentInput
+                  onSend={handleSendComment}
+                  cooldownRemaining={getCooldownRemaining()}
+                  maxLength={MAX_COMMENT_LENGTH}
+                />
+              </div>
+              <button
+                onClick={() => setShowEndConfirm(true)}
+                disabled={isEnding}
+                className="shrink-0 px-4 h-10 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                style={{ backgroundColor: '#FE2C55' }}
+                aria-label="End live"
+              >
+                <PhoneOff size={14} className="text-white" />
+                <span className="text-[13px] font-bold text-white">End</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ── GIFT ANIMATION ── */}
+          <div className="absolute inset-0 z-[35] pointer-events-none flex items-center justify-center">
+            <GiftAnimation gifts={gifts} />
+          </div>
+
+          {/* ── SHOWCASE TOAST ── */}
+          <AnimatePresence>
+            {showcaseToast && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute top-20 left-1/2 -translate-x-1/2 z-[40] bg-black/70 backdrop-blur-md rounded-full px-4 py-2"
+              >
+                <span className="text-[12px] font-semibold text-white">{showcaseToast}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
 
       {/* ═══════════════════════════════════════════════════ */}
-      {/* ── END STREAM CONFIRMATION ── */}
+      {/* ── END LIVE MODAL ── */}
       {/* ═══════════════════════════════════════════════════ */}
       <AnimatePresence>
         {showEndConfirm && (
@@ -528,33 +619,95 @@ export default function LiveStudio() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-gray-900/95 backdrop-blur-xl rounded-3xl p-6 border border-white/10 shadow-2xl"
+              className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-50 rounded-2xl p-6 border border-white/10 shadow-2xl"
+              style={{ backgroundColor: '#1a1a1a' }}
             >
               <div className="flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
-                  <AlertTriangle size={28} className="text-red-400" />
-                </div>
-                <h3 className="text-lg font-bold text-white mb-1">End Live Stream?</h3>
-                <p className="text-sm text-white/50 mb-6">
-                  Your stream will end immediately. Viewers will be notified.
+                <h3 className="text-[17px] font-bold text-white mb-1">End your live?</h3>
+                <p className="text-[13px] text-white/50 mb-6">
+                  Your viewers will be notified
                 </p>
                 <div className="flex items-center gap-3 w-full">
                   <button
                     onClick={() => setShowEndConfirm(false)}
-                    className="flex-1 py-3 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/15 transition-all active:scale-95"
+                    className="flex-1 py-3 rounded-xl border border-white/20 text-white font-semibold text-sm hover:bg-white/10 transition-all active:scale-95"
                   >
-                    Cancel
+                    Keep Going
                   </button>
                   <button
                     onClick={handleEndStream}
                     disabled={isEnding}
-                    className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold text-sm hover:bg-red-700 flex items-center justify-center gap-2 transition-all active:scale-95"
+                    className="flex-1 py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                    style={{ backgroundColor: '#FE2C55' }}
                   >
                     {isEnding ? <Loader2 size={16} className="animate-spin" /> : <PhoneOff size={16} />}
-                    End Stream
+                    End Live
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════════════ */}
+      {/* ── SHOWCASE MODAL ── */}
+      {/* ═══════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {showcaseOpen && (
+          <>
+            <motion.div
+              key="showcase-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowcaseOpen(false)}
+              className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            />
+            <motion.div
+              key="showcase-sheet"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="absolute bottom-0 inset-x-0 z-51 rounded-t-3xl px-5 pt-4 pb-8 max-h-[60vh] overflow-y-auto"
+              style={{ backgroundColor: '#1a1a1a', paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 32px)' }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-white">Showcase a Service</h3>
+                <button
+                  onClick={() => setShowcaseOpen(false)}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:scale-90"
+                  aria-label="Close"
+                >
+                  <X size={16} className="text-white/70" />
+                </button>
+              </div>
+
+              {stylistServices.length === 0 ? (
+                <p className="text-[13px] text-white/40 text-center py-6">No services available</p>
+              ) : (
+                <div className="space-y-2">
+                  {stylistServices.map((svc: any, i: number) => (
+                    <div
+                      key={svc._id || i}
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/5"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-bold text-white truncate">{svc.name}</p>
+                        <p className="text-[12px] text-white/50">{svc.price ? `$${svc.price}` : 'Free'}</p>
+                      </div>
+                      <button
+                        onClick={() => handleShowcaseFeature(svc)}
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white active:scale-95 transition-transform"
+                        style={{ backgroundColor: '#FE2C55' }}
+                      >
+                        Feature
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </>
         )}
@@ -610,7 +763,17 @@ export default function LiveStudio() {
               </div>
 
               <button
-                onClick={handleSummaryDone}
+                onClick={() => {
+                  setStep('setup');
+                  setElapsed(0);
+                  setViewerCount(0);
+                  setPeakViewerCount(0);
+                  setSessionId(null);
+                  setStreamSummary(null);
+                  setTitle('');
+                  setCategory('');
+                  setEarnings(0);
+                }}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-500 via-pink-500 to-red-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all active:scale-[0.98]"
               >
                 Done
