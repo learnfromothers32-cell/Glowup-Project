@@ -11,12 +11,13 @@ import { useLiveSession } from '../../hooks/useLiveSession';
 import { useToast } from '../../components/ui/Toast';
 import * as liveApi from '../../api/live';
 import { Track, RoomEvent } from 'livekit-client';
-import FloatingHeart from '../../components/live/FloatingHeart';
-import FloatingComments from '../../components/live/FloatingComments';
+import FloatingHearts from '../../components/live/FloatingHearts';
+import LiveCommentFeed from '../../components/live/LiveCommentFeed';
 import LiveCommentInput from '../../components/live/LiveCommentInput';
 import GiftAnimation, { useGiftQueue } from '../../components/live/GiftAnimation';
 import { GIFT_OPTIONS } from '../../components/live/GiftPickerModal';
 import LiveBadge from '../../components/live/LiveBadge';
+import LiveViewerCount from '../../components/live/LiveViewerCount';
 import { useAuth } from '../../context/authUtils';
 import { getMyStylistProfile } from '../../api/stylists';
 
@@ -358,14 +359,11 @@ export default function LiveStudio() {
     <div className="h-dvh w-full bg-black relative overflow-hidden select-none" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div ref={videoContainerRef} className="absolute inset-0 bg-gray-900" />
 
-      <AnimatePresence>
-        {hearts.map((h) => (
-          <FloatingHeart key={h.id} id={h.id} x={h.x} />
-        ))}
-      </AnimatePresence>
+      {/* Floating hearts */}
+      <FloatingHearts hearts={hearts} />
 
       {/* ═══════════════════════════════════════════════════ */}
-      {/* ── SETUP SCREEN ── */}
+      {/* ── PRE-LIVE SETUP SCREEN ── */}
       {/* ═══════════════════════════════════════════════════ */}
       {step === 'setup' && (
         <div className="absolute inset-0 z-30 flex flex-col">
@@ -433,7 +431,7 @@ export default function LiveStudio() {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="What are you streaming today?"
+                  placeholder="What are you showcasing today?"
                   maxLength={100}
                   className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white text-sm placeholder:text-white/30 focus:outline-none focus:border-red-500/60 focus:bg-white/15 transition-all"
                 />
@@ -515,15 +513,13 @@ export default function LiveStudio() {
             <div className="absolute inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
             <div className="relative flex items-start justify-between px-3 pt-4 sm:px-4 sm:pt-5">
-              {/* Left: X button */}
+              {/* Left: Live badge + duration */}
               <div className="flex items-center gap-2 pointer-events-auto">
-                <button
-                  onClick={() => setShowEndConfirm(true)}
-                  className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white active:scale-90"
-                  aria-label="End stream"
-                >
-                  <X size={16} />
-                </button>
+                <LiveBadge />
+                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 py-1">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[11px] text-white font-semibold tabular-nums">{formatTime(elapsed)}</span>
+                </div>
                 {micPermDenied && (
                   <div className="flex items-center gap-1 bg-amber-500/80 rounded-full px-2 py-0.5">
                     <MicOff size={10} className="text-white" />
@@ -537,16 +533,22 @@ export default function LiveStudio() {
                 <span className="text-[15px] font-bold text-white">{stylistDisplayName}</span>
               </div>
 
-              {/* Right: LiveBadge + viewer count + earnings */}
+              {/* Right: viewer count + earnings + end button */}
               <div className="flex items-center gap-1.5 pointer-events-auto">
-                <LiveBadge />
-                <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 py-1">
-                  <Eye size={10} className="text-white/70" />
-                  <span className="text-[11px] text-white font-semibold tabular-nums">{viewerCount}</span>
-                </div>
+                <LiveViewerCount count={viewerCount} />
                 <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2 py-1">
                   <span className="text-[11px] text-white font-bold tabular-nums">{formatEarnings(earnings)}</span>
                 </div>
+                <button
+                  onClick={() => setShowEndConfirm(true)}
+                  disabled={isEnding}
+                  className="px-3 h-8 rounded-full flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                  style={{ backgroundColor: 'rgba(254, 44, 85, 0.8)' }}
+                  aria-label="End live"
+                >
+                  <PhoneOff size={14} className="text-white" />
+                  <span className="text-[11px] font-bold text-white">End</span>
+                </button>
               </div>
             </div>
           </div>
@@ -615,9 +617,7 @@ export default function LiveStudio() {
           </div>
 
           {/* ── FLOATING COMMENTS ── */}
-          <div className="absolute left-3 bottom-[120px] sm:bottom-[135px] w-[65%] z-[25]">
-            <FloatingComments comments={comments} shiftUp={stylistInputFocused} />
-          </div>
+          <LiveCommentFeed comments={comments} shiftUp={stylistInputFocused} />
 
           {/* ── BOTTOM BAR ── */}
           <div className="fixed bottom-0 inset-x-0 z-30" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 20px), 12px)' }}>
@@ -631,16 +631,6 @@ export default function LiveStudio() {
                   onBlur={() => setStylistInputFocused(false)}
                 />
               </div>
-              <button
-                onClick={() => setShowEndConfirm(true)}
-                disabled={isEnding}
-                className="shrink-0 px-4 h-10 rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
-                style={{ backgroundColor: '#FE2C55' }}
-                aria-label="End live"
-              >
-                <PhoneOff size={14} className="text-white" />
-                <span className="text-[13px] font-bold text-white">End</span>
-              </button>
             </div>
           </div>
 

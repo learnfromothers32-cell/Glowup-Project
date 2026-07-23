@@ -4,19 +4,20 @@ import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-mo
 import {
   Heart, Eye, Loader2, WifiOff,
   Share2, Volume2, Gift, Calendar,
-  ChevronLeft,
+  ChevronLeft, X,
 } from 'lucide-react';
 import { useAuth } from '../../context/authUtils';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { RoomEvent, Track } from 'livekit-client';
 import { useToast } from '../../components/ui/Toast';
 import LiveBadge from '../../components/live/LiveBadge';
-import FloatingHeart from '../../components/live/FloatingHeart';
-import FloatingComments from '../../components/live/FloatingComments';
+import FloatingHearts from '../../components/live/FloatingHearts';
+import LiveCommentFeed from '../../components/live/LiveCommentFeed';
 import LiveCommentInput from '../../components/live/LiveCommentInput';
 import GiftPickerModal from '../../components/live/GiftPickerModal';
 import GiftAnimation, { useGiftQueue } from '../../components/live/GiftAnimation';
 import BookingPromptCard from '../../components/live/BookingPromptCard';
+import LiveViewerCount from '../../components/live/LiveViewerCount';
 import * as liveApi from '../../api/live';
 import type { LiveSession } from '../../api/live';
 import { getSocketUrl } from '../../services/socket';
@@ -565,11 +566,7 @@ export default function LiveStream() {
       </AnimatePresence>
 
       {/* Heuristic hearts */}
-      <AnimatePresence>
-        {hearts.map((h) => (
-          <FloatingHeart key={h.id} id={h.id} x={h.x} />
-        ))}
-      </AnimatePresence>
+      <FloatingHearts hearts={hearts} />
 
       {/* Gift animation center */}
       <div className="absolute inset-0 z-[35] pointer-events-none flex items-center justify-center">
@@ -600,10 +597,7 @@ export default function LiveStream() {
               <p className="text-[14px] mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>is live now</p>
             </div>
 
-            <div className="flex items-center gap-1.5 text-white/60">
-              <Eye size={13} />
-              <span className="text-[13px] font-semibold">{viewerCount} watching</span>
-            </div>
+            <LiveViewerCount count={viewerCount} />
 
             {(session.title || session.category) && (
               <p className="text-[13px] text-white/50 italic text-center">
@@ -664,18 +658,15 @@ export default function LiveStream() {
               <LiveBadge size="sm" />
             </div>
 
-            {/* Right: viewer count + share */}
+            {/* Right: viewer count + close */}
             <div className="flex items-center gap-3 pointer-events-auto">
-              <div className="flex items-center gap-1">
-                <Eye size={12} className="text-white/70" />
-                <span className="text-[12px] text-white font-semibold tabular-nums">{viewerCount}</span>
-              </div>
+              <LiveViewerCount count={viewerCount} />
               <button
-                onClick={handleShare}
-                className="active:scale-90"
-                aria-label="Share stream"
+                onClick={handleBack}
+                className="w-7 h-7 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center active:scale-90"
+                aria-label="Close stream"
               >
-                <Share2 size={20} className="text-white" />
+                <X size={16} className="text-white" />
               </button>
             </div>
           </div>
@@ -763,9 +754,7 @@ export default function LiveStream() {
       {/* ── FLOATING COMMENTS ── */}
       {/* ═══════════════════════════════════════════════════ */}
       {joined && (
-        <div className="absolute left-3 w-[60%] z-[25]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 20px) + 130px)' }}>
-          <FloatingComments comments={comments} shiftUp={inputFocused} />
-        </div>
+        <LiveCommentFeed comments={comments} shiftUp={inputFocused} />
       )}
 
       {/* ═══════════════════════════════════════════════════ */}
