@@ -47,18 +47,23 @@ export default function BookingPromptCard({
           initial={
             prefersReducedMotion
               ? { opacity: 1 }
-              : { opacity: 0, y: 20, scale: 0.95 }
+              : { y: '100%' }
           }
-          animate={{ opacity: 1, y: 0, scale: 1 }}
+          animate={{ y: 0, opacity: 1 }}
           exit={
             prefersReducedMotion
               ? { opacity: 0 }
-              : { opacity: 0, y: 20, scale: 0.95 }
+              : { y: '100%' }
           }
-          transition={{ duration: prefersReducedMotion ? 0.05 : 0.3, ease: 'easeOut' }}
-          className="absolute bottom-[140px] sm:bottom-[155px] left-3 right-[60px] sm:right-[68px] z-[26]"
+          transition={
+            prefersReducedMotion
+              ? { duration: 0.05 }
+              : { type: 'spring', stiffness: 300, damping: 30 }
+          }
+          className="absolute bottom-0 left-3 right-[60px] sm:right-[68px] z-[26]"
+          style={{ bottom: 'max(env(safe-area-inset-bottom, 20px), 80px)' }}
         >
-          <div className="rounded-2xl p-3.5 backdrop-blur-xl border border-white/10 shadow-2xl" style={{ backgroundColor: 'rgba(20,20,20,0.92)' }}>
+          <div className="rounded-2xl p-3.5 backdrop-blur-xl border border-white/10 shadow-2xl overflow-hidden" style={{ backgroundColor: 'rgba(20,20,20,0.92)' }}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center shrink-0">
@@ -86,6 +91,15 @@ export default function BookingPromptCard({
             >
               Book Now
             </button>
+
+            {/* Progress bar */}
+            <motion.div
+              className="h-[2px] rounded-full mt-3"
+              style={{ backgroundColor: '#FE2C55' }}
+              initial={{ width: '100%' }}
+              animate={{ width: '0%' }}
+              transition={{ duration: autoDismissMs / 1000, ease: 'linear' }}
+            />
           </div>
         </motion.div>
       )}

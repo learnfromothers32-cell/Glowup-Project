@@ -5,7 +5,7 @@ import {
   Video, VideoOff, Mic, MicOff, PhoneOff, Radio,
   Loader2, X, Eye, Clock, Heart, MessageCircle,
   AlertTriangle, CheckCircle2, Users, RefreshCw,
-  Sparkles, Package,
+  Sparkles, Package, WifiOff,
 } from 'lucide-react';
 import { useLiveSession } from '../../hooks/useLiveSession';
 import { useToast } from '../../components/ui/Toast';
@@ -59,6 +59,10 @@ export default function LiveStudio() {
   const [showcaseToast, setShowcaseToast] = useState<string | null>(null);
   const [stylistServices, setStylistServices] = useState<any[]>([]);
   const [earnings, setEarnings] = useState(0);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [disconnectedOverlay, setDisconnectedOverlay] = useState(false);
+  const [micPermDenied, setMicPermDenied] = useState(false);
+  const [stylistInputFocused, setStylistInputFocused] = useState(false);
 
   const {
     room,
@@ -104,10 +108,30 @@ export default function LiveStudio() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       stream.getTracks().forEach((t) => t.stop());
       setPermissionDenied(null);
+      setMicPermDenied(false);
       return true;
     } catch (err: any) {
       if (err.name === 'NotAllowedError') {
-        setPermissionDenied('Camera and microphone access is required to go live. Please enable permissions in your browser settings.');
+        try {
+          const camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          camStream.getTracks().forEach((t) => t.stop());
+          setPermissionDenied(null);
+          setMicPermDenied(true);
+          return true;
+        } catch {
+          try {
+            const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            micStream.getTracks().forEach((t) => t.stop());
+            setMicPermDenied(false);
+            setPermissionDenied('Camera access denied. Please allow camera access in your browser settings to go live.');
+            setNoCamera(true);
+            return false;
+          } catch {
+            setPermissionDenied('Camera and microphone access denied. Please enable permissions in your browser settings.');
+            setNoCamera(true);
+            return false;
+          }
+        }
       } else if (err.name === 'NotFoundError') {
         setNoCamera(true);
       } else {
@@ -185,6 +209,23 @@ export default function LiveStudio() {
     room.on(RoomEvent.DataReceived, handleData);
     return () => { room.off(RoomEvent.DataReceived, handleData); };
   }, [room, addGift]);
+
+  useEffect(() => {
+    if (!room) return;
+    const handleReconnecting = () => { setReconnecting(true); };
+    const handleReconnected = () => { setReconnecting(false); setDisconnectedOverlay(false); };
+    const handleDisconnected = () => {
+      if (step === 'live') setDisconnectedOverlay(true);
+    };
+    room.on('reconnecting', handleReconnecting);
+    room.on('connected', handleReconnected);
+    room.on('disconnected', handleDisconnected);
+    return () => {
+      room.off('reconnecting', handleReconnecting);
+      room.off('connected', handleReconnected);
+      room.off('disconnected', handleDisconnected);
+    };
+  }, [room, step]);
 
   useEffect(() => {
     if (step !== 'live') return;
@@ -470,7 +511,7 @@ export default function LiveStudio() {
           {/* Layer 3: All UI controls */}
 
           {/* ── TOP BAR ── */}
-          <div className="absolute top-0 inset-x-0 z-20 pointer-events-none">
+          <div className="absolute top-0 inset-x-0 z-20 pointer-events-none" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
             <div className="absolute inset-x-0 h-28 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
             <div className="relative flex items-start justify-between px-3 pt-4 sm:px-4 sm:pt-5">
@@ -483,6 +524,12 @@ export default function LiveStudio() {
                 >
                   <X size={16} />
                 </button>
+                {micPermDenied && (
+                  <div className="flex items-center gap-1 bg-amber-500/80 rounded-full px-2 py-0.5">
+                    <MicOff size={10} className="text-white" />
+                    <span className="text-[9px] text-white font-semibold">No mic</span>
+                  </div>
+                )}
               </div>
 
               {/* Center: Stylist name */}
@@ -503,6 +550,23 @@ export default function LiveStudio() {
               </div>
             </div>
           </div>
+
+          {/* Reconnecting banner */}
+          <AnimatePresence>
+            {reconnecting && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-16 left-1/2 -translate-x-1/2 z-30"
+              >
+                <div className="flex items-center gap-2 bg-yellow-500/90 text-black text-[11px] font-semibold px-4 py-2 rounded-full shadow-lg">
+                  <WifiOff size={12} />
+                  Connection lost. Reconnecting...
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* ── RIGHT SIDE ICON BAR ── */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-4">
@@ -552,17 +616,19 @@ export default function LiveStudio() {
 
           {/* ── FLOATING COMMENTS ── */}
           <div className="absolute left-3 bottom-[120px] sm:bottom-[135px] w-[65%] z-[25]">
-            <FloatingComments comments={comments} />
+            <FloatingComments comments={comments} shiftUp={stylistInputFocused} />
           </div>
 
           {/* ── BOTTOM BAR ── */}
-          <div className="absolute bottom-0 inset-x-0 z-20" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 12px)' }}>
+          <div className="fixed bottom-0 inset-x-0 z-30" style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 20px), 12px)' }}>
             <div className="bg-black/45 backdrop-blur-sm px-3 pt-2 pb-2 flex items-end gap-2">
               <div className="flex-1 min-w-0">
                 <LiveCommentInput
                   onSend={handleSendComment}
                   cooldownRemaining={getCooldownRemaining()}
                   maxLength={MAX_COMMENT_LENGTH}
+                  onFocus={() => setStylistInputFocused(true)}
+                  onBlur={() => setStylistInputFocused(false)}
                 />
               </div>
               <button
@@ -708,6 +774,56 @@ export default function LiveStudio() {
                   ))}
                 </div>
               )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════════════ */}
+      {/* ── DISCONNECTED OVERLAY ── */}
+      {/* ═══════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {disconnectedOverlay && (
+          <>
+            <motion.div
+              key="disconnect-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[55] bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              key="disconnect-modal"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-[55] rounded-2xl p-6 border border-white/10 shadow-2xl"
+              style={{ backgroundColor: '#1a1a1a' }}
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-14 h-14 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
+                  <WifiOff size={28} className="text-amber-400" />
+                </div>
+                <h3 className="text-[17px] font-bold text-white mb-1">You were disconnected</h3>
+                <p className="text-[13px] text-white/50 mb-6">Your live may have ended.</p>
+                <div className="flex items-center gap-3 w-full">
+                  <button
+                    onClick={() => { setDisconnectedOverlay(false); navigate(-1); }}
+                    className="flex-1 py-3 rounded-xl border border-white/20 text-white font-semibold text-sm hover:bg-white/10 transition-all active:scale-95"
+                  >
+                    Go to Dashboard
+                  </button>
+                  <button
+                    onClick={() => { setDisconnectedOverlay(false); }}
+                    className="flex-1 py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+                    style={{ backgroundColor: '#FE2C55' }}
+                  >
+                    <RefreshCw size={16} />
+                    Try to Reconnect
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </>
         )}

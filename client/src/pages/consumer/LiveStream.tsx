@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion';
 import {
-  Heart, Eye, Loader2, WifiOff, Wifi,
+  Heart, Eye, Loader2, WifiOff,
   Share2, Volume2, Gift, Calendar,
   ChevronLeft,
 } from 'lucide-react';
@@ -52,7 +52,6 @@ export default function LiveStream() {
   const [streamEnded, setStreamEnded] = useState(false);
   const [userLiked, setUserLiked] = useState(false);
   const [tapHearts, setTapHearts] = useState<TapHeart[]>([]);
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [audioMuted, setAudioMuted] = useState(true);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const likeInFlightRef = useRef(false);
@@ -62,15 +61,10 @@ export default function LiveStream() {
   const { gifts, addGift } = useGiftQueue();
   const [showcase, setShowcase] = useState<ShowcaseData | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const vh = window.innerHeight;
-      setKeyboardVisible(window.visualViewport ? window.visualViewport.height < vh * 0.75 : false);
-    };
-    window.visualViewport?.addEventListener('resize', handleResize);
-    return () => window.visualViewport?.removeEventListener('resize', handleResize);
-  }, []);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [reconnectFailed, setReconnectFailed] = useState(false);
+  const [showJoinedToast, setShowJoinedToast] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
 
   const handleStreamEnded = useCallback(() => {
     setStreamEnded(true);
@@ -245,6 +239,31 @@ export default function LiveStream() {
     room.on(RoomEvent.DataReceived, handleData);
     return () => { room.off(RoomEvent.DataReceived, handleData); };
   }, [room, joined, addGift]);
+
+  useEffect(() => {
+    if (!room) return;
+    const handleReconnecting = () => { setReconnecting(true); setReconnectFailed(false); };
+    const handleReconnected = () => { setReconnecting(false); setReconnectFailed(false); };
+    const handleDisconnected = () => {
+      if (joined) setReconnectFailed(true);
+    };
+    room.on('reconnecting', handleReconnecting);
+    room.on('connected', handleReconnected);
+    room.on('disconnected', handleDisconnected);
+    return () => {
+      room.off('reconnecting', handleReconnecting);
+      room.off('connected', handleReconnected);
+      room.off('disconnected', handleDisconnected);
+    };
+  }, [room, joined]);
+
+  useEffect(() => {
+    if (joined) {
+      setShowJoinedToast(true);
+      const t = setTimeout(() => setShowJoinedToast(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [joined]);
 
   const handleUnmute = useCallback(() => {
     setAudioMuted(false);
@@ -620,7 +639,7 @@ export default function LiveStream() {
       {/* ── TOP BAR ── */}
       {/* ═══════════════════════════════════════════════════ */}
       {joined && (
-        <div className="absolute top-0 inset-x-0 z-20 pointer-events-none">
+        <div className="absolute top-0 inset-x-0 z-20 pointer-events-none" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
           <div className="relative flex items-center justify-between px-3 pt-3 sm:pt-4">
             {/* Left: back + avatar + name + badge */}
             <div className="flex items-center gap-2 min-w-0 pointer-events-auto">
@@ -663,21 +682,62 @@ export default function LiveStream() {
         </div>
       )}
 
-      {/* Connection state indicator */}
+      {/* Reconnecting / Disconnected banners */}
       <AnimatePresence>
-        {joined && connectionState !== 'connected' && (
+        {joined && reconnecting && (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            key="reconnecting-banner"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
             className="absolute top-14 left-1/2 -translate-x-1/2 z-30"
           >
-            <div className="flex items-center gap-2 bg-yellow-500/90 text-black text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
-              {connectionState === 'reconnecting' ? (
-                <><WifiOff size={12} /> Reconnecting...</>
-              ) : (
-                <><Wifi size={12} /> Connecting...</>
-              )}
+            <div className="flex items-center gap-2 bg-yellow-500/90 text-black text-[11px] font-semibold px-4 py-2 rounded-full shadow-lg">
+              <WifiOff size={12} />
+              Connection lost. Reconnecting...
+            </div>
+          </motion.div>
+        )}
+        {joined && reconnectFailed && !reconnecting && (
+          <motion.div
+            key="disconnect-failed"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="absolute inset-x-4 bottom-1/3 z-[55] rounded-2xl p-5 border border-white/10 shadow-2xl"
+            style={{ backgroundColor: '#1a1a1a' }}
+          >
+            <div className="flex flex-col items-center text-center">
+              <WifiOff size={28} className="text-amber-400 mb-3" />
+              <h3 className="text-[16px] font-bold text-white mb-1">Connection lost</h3>
+              <p className="text-[12px] text-white/50 mb-4">The stream disconnected and could not reconnect.</p>
+              <button
+                onClick={handleBack}
+                className="w-full py-2.5 rounded-xl text-white text-[13px] font-semibold active:scale-95 transition-transform"
+                style={{ backgroundColor: '#FE2C55' }}
+              >
+                Go Back
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* "You joined live" indicator */}
+      <AnimatePresence>
+        {joined && showJoinedToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute top-14 left-1/2 -translate-x-1/2 z-30"
+          >
+            <div className="flex items-center gap-2 bg-green-500/90 text-white text-[11px] font-semibold px-4 py-2 rounded-full shadow-lg">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+              </span>
+              You joined live
             </div>
           </motion.div>
         )}
@@ -703,8 +763,8 @@ export default function LiveStream() {
       {/* ── FLOATING COMMENTS ── */}
       {/* ═══════════════════════════════════════════════════ */}
       {joined && (
-        <div className="absolute left-3 bottom-[130px] w-[60%] z-[25]">
-          <FloatingComments comments={comments} />
+        <div className="absolute left-3 w-[60%] z-[25]" style={{ bottom: 'calc(env(safe-area-inset-bottom, 20px) + 130px)' }}>
+          <FloatingComments comments={comments} shiftUp={inputFocused} />
         </div>
       )}
 
@@ -712,7 +772,7 @@ export default function LiveStream() {
       {/* ── RIGHT SIDE ICON BAR ── */}
       {/* ═══════════════════════════════════════════════════ */}
       {joined && (
-        <div className="absolute right-3 bottom-[140px] z-20 flex flex-col items-center gap-5">
+        <div className="absolute right-3 z-20 flex flex-col items-center gap-5" style={{ bottom: 'calc(env(safe-area-inset-bottom, 20px) + 140px)' }}>
           {/* Stylist Avatar + Follow */}
           <Link
             to={`/app/stylist/${stylistId}`}
@@ -819,15 +879,17 @@ export default function LiveStream() {
       {/* ═══════════════════════════════════════════════════ */}
       {/* ── BOTTOM BAR ── */}
       {/* ═══════════════════════════════════════════════════ */}
-      {joined && !keyboardVisible && (
+      {joined && (
         <div
-          className="absolute bottom-0 inset-x-0 z-30 px-3 pb-2"
-          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)' }}
+          className="fixed bottom-0 inset-x-0 z-30 px-3 pb-2"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 20px), 8px)' }}
         >
           <LiveCommentInput
             onSend={handleSendComment}
             cooldownRemaining={getCooldownRemaining()}
             maxLength={MAX_COMMENT_LENGTH}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
           />
         </div>
       )}

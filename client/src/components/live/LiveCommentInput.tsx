@@ -7,6 +7,8 @@ interface LiveCommentInputProps {
   cooldownRemaining: number;
   maxLength?: number;
   placeholder?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 export default function LiveCommentInput({
@@ -14,6 +16,8 @@ export default function LiveCommentInput({
   cooldownRemaining,
   maxLength = 200,
   placeholder = 'Say something...',
+  onFocus,
+  onBlur,
 }: LiveCommentInputProps) {
   const [text, setText] = useState('');
   const [failed, setFailed] = useState(false);
@@ -56,6 +60,8 @@ export default function LiveCommentInput({
               if (text.trim() && !disabled) handleSend();
             }
           }}
+          onFocus={onFocus}
+          onBlur={onBlur}
           placeholder={disabled ? `Wait ${cooldownRemaining}s...` : placeholder}
           disabled={disabled}
           maxLength={maxLength + 20}
